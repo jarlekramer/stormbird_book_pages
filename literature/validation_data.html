@@ -1,0 +1,258 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Validation data - Stormbird</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Stormbird</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="plot_scripts/plot_settings.js"></script>
+<h1 id="validation-data"><a class="header" href="#validation-data">Validation data</a></h1>
+<p>This chapter contains useful references for extracting data about the lift and drag on different wind propulsion devices, that, for instance, can be used to validate a simulation setup. The most relevant comparison data are from methods that can be considered to be <em>higher fidelity</em> than the methods in Stormbird. In other words, the articles below mostly contain data from either CFD, experiments, or some type of processing of full-scale measurements.</p>
+<h2 id="wing-sails"><a class="header" href="#wing-sails">Wing sails</a></h2>
+<h3 id="relevant-papers"><a class="header" href="#relevant-papers">Relevant papers</a></h3>
+<ul>
+<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0029801814002637?via%3Dihub">Comparison of full 3D-RANS simulations with 2D-RANS/lifting line method calculations for the flow analysis of rigid wings for high performance multihulls</a></strong> (2014), by K. Graf and more. Paper that contains experimental results for a single element wing sail and CFD results for a two-element wingsail.</li>
+<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0029801823029803?via%3Dihub">Rapid aerodynamic method for predicting the performance of interacting wing sails</a></strong> (2023) by K. Malmek and more. Paper about a lifting line method for wind propulsion devices, that also contains CFD data for validation purposes. The CFD results are particularly useful for validating interaction effects.</li>
+<li><strong><a href="https://onepetro.org/JST/article/9/01/110/569569/Wind-Tunnel-Tests-of-a-Two-Element-Wingsail-with">Wind Tunnel Tests of a Two-Element Wingsail with Focus on Near-Stall Aerodynamics</a></strong> (2024), by A. Hillenbrand and more. A paper about an experimental study of a two-element wing sail, with particular focus on how the stall angle is dependent on dynamic situations.</li>
+</ul>
+<h2 id="rotor-sails"><a class="header" href="#rotor-sails">Rotor sails</a></h2>
+<p>The flow around rotor sails are defined by very high lift coefficients and therefore strong tip vortices. They often come with end-plates to specifically reduce the tip losses, and thereby increase lift and reduce drag forces. CFD simulations done on rotor sails in the KSP WIND project indicate that the exact features of the <em>tip-geometry</em> can have large impact on the final results. For instance, the foundation geometry can have a large impact on the forces. These types of geometric details will not be part of a simplified line model of a rotor sails directly. As such, it is <strong>generally necessary to tune the models to achieve the right combination of lift and drag</strong>.</p>
+<p>Tuning the lift can generally be done by adjusting the values of the lift coefficients in the sectional model, as the 3D lift is generally very close to the 2D lift for a rotor sail. This is because the lift is not dependent on the angle of attack, in the same way as for a wing sail or suction sail.</p>
+<p>The recommended practice when modeling rotor sails is to first adjust the model of a single sail by comparing it to some high-fidelity data source, and then use the Stormbird library when, for instance, interaction effects are of interest.</p>
+<h3 id="relevant-papers-1"><a class="header" href="#relevant-papers-1">Relevant papers</a></h3>
+<ul>
+<li><strong><a href="https://ntrs.nasa.gov/citations/19930090695">Application of the Magnus effect to the wind propulsion of ships</a></strong> (1926), by L. Prandtl. One of the first papers about rotor sails. The text mainly consists of a general discussion about the concept and the history of the first ship using rotor sails for propulsion, namely the <em>The Buckau</em>. However, there is also results from one of the first experiments of rotor sails in the appendix of the paper.</li>
+<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0167610518307396">Experiments on a Flettner rotor at critical and supercritical Reynolds numbers</a></strong> (2019), by G. Bordogna and more. Contains results from experiments where lift, drag and power coefficients on rotor sails where measured at different Reynolds numbers and spin ratios. <strong>Note</strong>: the experiments are performed in a wind tunnel where the rotor extends from the floor to the roof, which indicate that the force measurements should be interpreted as two-dimensional. However, it is mentioned in the article that there might be three-dimensional effects due to the boundary layer along the walls. The measured drag is also so large that there seem to be some three-dimensional effects present. The results are therefore probably most useful as a comparison for lift and power, while the drag values are a bit hard to interpret.</li>
+<li><strong><a href="https://doi.org/10.1016/j.oceaneng.2020.107603">Design, operation and analysis of wind-assisted cargo ships</a></strong> (2020), by F. Tillig and more. A paper about methods to set up empirical modelling of wind powered ships. One of the empirical methods presented is for the lift, drag and power consumption of rotor sails, tuned based on full-scale measurements.</li>
+<li><strong><a href="https://www.intmaritimeengineering.org/index.php/ijme/article/view/1146/356">Retrofitting of Flettner Rotors – Results From Sea Trials of the General Cargo Ship "Fehn Pollux</a></strong> (2020), by M. Vahs. A paper that really is about the how to analyze sea-trail data from a ship equipped with rotor sails. A part of the paper also contain wind tunnel measurements that originates from a bachelor thesis (original source not found), which gives lift and drag as a function of spin ratio.</li>
+<li><strong><a href="http://data.hiper-conf.info/Hiper2022_Cortona.pdf">Levelling the Playing Field: A Numerical Platform for the Fair Comparison of Wind Propulsion Systems</a></strong> (2022), by F. C. Gerhardt and more. A paper mostly about the need to have independent analysis of wind propulsion devices. As part of explaining the rotor sail models, CFD results of lift and drag as a function of spin ratio are presented. This presentation also includes a comparison against other available data sources.</li>
+<li><strong><a href="https://blueoasis.pt/wp-content/uploads/2023/10/Nutts2023_proceedings_v4.pdf">Calculation of Flettner rotor forces using lifting line and CFD methods</a></strong> (2023), by A. Östman and more. A paper that compares lifting line simulations against CFD simulations for rotor sails. As part of this, there is both two- and three-dimensional data for lift and drag. The two-dimensional data from this paper is used as the default values in the rotating cylinder sectional model in Stormbird.</li>
+<li><strong>Aerodynamics of the Flettner rotor at high Reynolds number</strong> (2024), by F. Deybach and more. <strong>Note</strong>: not yet publicly available. Part of the RINA conference on wind propulsion in 2024. Contains experimental results, where a rotor sail is tested in a wind tunnel at different reynolds numbers and spin ratios, as well with different end plate configurations. Concludes that the lift is not very little sensitive to the Reynolds number.</li>
+</ul>
+<h3 id="other-data-sources"><a class="header" href="#other-data-sources">Other data sources</a></h3>
+<p>The KSP WIND project (the project funding the development of Stormbird) has performed CFD simulations of rotor sails as part of the project. These data are not yet published anywhere, except shown in the plots below. The primary goal of these simulations where to investigate the impact of the foundation on the lift and drag. The result indicate that the foundation can have a huge impact on the forces. A model that does not include the tip vortex on the bottom of the sails can, therefore, be overly optimistic.</p>
+<figure>
+    <img src="../static/rotor_sail_w_and_wo_foundation.png" alt="Rotor sails">
+    <figcaption>Figure 1: Streamlines from CFD simulations of rotor sails with and without the foundation present, to illustrate the strength of the vortices, and the impact on the bottom tip vortex when the foundation is inclined in the simulation. Each version of the sail is simulated dependently, and then the streamlines are combined in post-processing</figcaption>
+</figure>
+<h3 id="plot-of-data"><a class="header" href="#plot-of-data">Plot of data</a></h3>
+<h4 id="three-dimensional-data"><a class="header" href="#three-dimensional-data">Three dimensional data</a></h4>
+<div id="rotor-sail-3d-forces"></div>
+<script src="plot_scripts/plot_rotor_sail_3d_data.js"></script>
+<h4 id="two-dimensional-data"><a class="header" href="#two-dimensional-data">Two-dimensional data</a></h4>
+<div id="rotor-sail-2d-forces"></div>
+<script src="plot_scripts/plot_rotor_sail_2d_data.js"></script>
+<h2 id="suction-sails"><a class="header" href="#suction-sails">Suction sails</a></h2>
+<h3 id="relevant-papers-2"><a class="header" href="#relevant-papers-2">Relevant papers</a></h3>
+<ul>
+<li><strong><a href="https://www.jmwe.org/uploads/1/0/6/4/106473271/aa_suction_sails_turbosail_ventifoil_cousteau_report.pdf">Fondation Cousteau and windship propulsion - 1980 - 1985 - System Cousteau - Pechiney</a></strong> (1985), by B. Charrier and more. A paper about the original suction sail concept, known as turbo sails. Part of the presentation is lift and drag data from the sail for different suction rates based on wind tunnel measurements.</li>
+<li><strong><a href="https://repository.tudelft.nl/record/uuid:a681c8e6-552e-45a1-8657-893123a8e06b">Wind Propulsion for Merchant Vessels</a></strong> (2017). A master thesis about how to model ships with wind propulsion, that also contains CFD simulations of suction sails, compared against experimental data from the original Turbosail.</li>
+<li><strong><a href="https://www.researchgate.net/publication/355675684_A_CFD_Study_on_Wind_Assisted_Propulsion_Technology_for_Commercial_Shipping">A CFD Study on Wind Assisted Propulsion Technology for Commercial Shipping</a></strong> (2021), by W. Hopes and more. A paper about CFD modelling of suction sails, which includes data on lift and drag.</li>
+<li><strong><a href="http://data.hiper-conf.info/Hiper2022_Cortona.pdf">Levelling the Playing Field: A Numerical Platform for the Fair Comparison of Wind Propulsion Systems</a></strong> (2022), by F. C. Gerhardt and more. A paper mostly about the need to have independent analysis of wind propulsion devices. As part of explaining the suction sail model, CFD results of lift and drag for different suction rates and angles of attack is presented.</li>
+</ul>
+<p>Data from the original <a href="https://en.wikipedia.org/wiki/Turbosail">Turbosail</a> from Charrier et al. (1985) seem to still be the primary data source used in open research. The other papers above typically try to reproduce the same values, only with CFD. That is, the references mentioned do not provide new insight into the performance of the suction sail directly, but attempts reproduce the same values using CFD.  <strong>Important note</strong>: newer producers of suctions sails, such as <a href="https://bound4blue.com/">Bound4Blue</a>, <a href="https://econowind.nl/">Econowind</a> and <a href="https://gtwings.com/">GT Wings</a> uses different designs than the Turbosail, and claim better performance. The Turbosail data should therefore be interpreted as a <em>lower-estimate</em> on the performance of a modern suction sail. However, at the moment, we don't know about any <em>openly available source</em> that document this directly.</p>
+<h4 id="three-dimensional-data-1"><a class="header" href="#three-dimensional-data-1">Three dimensional data</a></h4>
+<div id="suction-sail-3d-forces"></div>
+<script src="plot_scripts/plot_suction_sail_3d_data.js"></script>
+<h4 id="two-dimensional-data-1"><a class="header" href="#two-dimensional-data-1">Two dimensional data</a></h4>
+<div id="suction-sail-2d-forces"></div>
+<script src="plot_scripts/plot_suction_sail_2d_data.js"></script>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../literature/similar_simulation_methods.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../literature/similar_simulation_methods.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

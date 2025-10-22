@@ -1,0 +1,245 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Simulation methods - Stormbird</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Stormbird</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="simulation-methods"><a class="header" href="#simulation-methods">Simulation methods</a></h1>
+<p>This chapter gives references to papers and other literature that use similar or identical methods as the ones implemented in Stormbird. These can be read to gain better understanding of the underlying methods, or to find alternative implementations to the Stormbird library.</p>
+<h2 id="publications-using-stormbird"><a class="header" href="#publications-using-stormbird">Publications using Stormbird</a></h2>
+<p>Articles that use the Stormbird library directly is shown in the sub sections below.</p>
+<ul>
+<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0029801822010447">Sail-induced resistance on a wind-powered cargo ship</a></strong> (2022), by J. V. Kramer and S. Steen. A larger article that was really about the hydrodynamic modelling of wind-powered ships. However, an early version of the lifting line method implemented in Stormbird was used for the sail modelling. It also contains a simple validation experiment that compares lifting line simulations against CFD.</li>
+<li><strong><a href="https://www.researchgate.net/publication/374976524_Actuator_Line_for_Wind_Propulsion_Modelling">Actuator line for wind propulsion modelling</a></strong> (2023), by J. V. Kramer and S. Steen. Compares CFD, lifting line and actuator line simulations against each other for a case that includes two wing sails in close proximity. The actuator line simulations also contains the effect of a superstructure.</li>
+</ul>
+<h2 id="lifting-line"><a class="header" href="#lifting-line">Lifting line</a></h2>
+<h3 id="open-source-projects"><a class="header" href="#open-source-projects">Open source projects</a></h3>
+<p>Below is a list of other open source lifting line implementations that have similar functionality as Stormbird</p>
+<ul>
+<li><strong><a href="https://gitlab.com/lheea/CN-AeroModels">CN-AeroModels</a></strong>. An open source implementation of a discrete static lifting line, intended for wind propulsion modelling. The capabilities of this software are very similar to the static lifting line implementation in Stormbird.</li>
+<li><strong><a href="https://github.com/usuaero/MachUpX">MachUpX</a></strong>. An open source implementation of a discrete static lifting line, intended for wings with and without sweep.</li>
+</ul>
+<h3 id="papers"><a class="header" href="#papers">Papers</a></h3>
+<p>Below is a list of papers that either use lifting line methods for sail modeling or serves as direct inspiration for the lifting line method implemented in Stormbird.</p>
+<ul>
+<li><strong><a href="https://arc.aiaa.org/doi/abs/10.2514/2.2649?journalCode=ja">Modern Adaptation of Prandtl's Classic Lifting-Line Theory</a></strong> (2000) by W. F. Phillips and more. First known example of a discrete lifting line, as in, capable of modelling multiple wings in the same simulation.</li>
+<li><strong><a href="https://digitalcommons.usu.edu/spacegrant/2011/Session1/4/">A Numerical Lifting-Line Method Using Horseshoe Vortex Sheets</a></strong> (2011) by W. F. Phillips. Another example of a discrete lifting line implementation.</li>
+<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0045793013001606">Numerical analysis of multiple, thin-sail geometries based on Prandtl’s lifting-line theory</a></strong> (2013) by R. E. Spall and more. A paper about modeling sails using lifting line theory. The output is compared against other potential theory methods with good results.</li>
+<li><strong><a href="https://www.researchgate.net/profile/Kostia-Roncin/publication/330114548_Local_Results_Verification_of_a_3D_Non-Linear_Lifting_Line_Method_for_Fluid-Structure_Interactions_Simulation_on_a_Towing_Kite_for_Vessels/links/5c2e2f41299bf12be3ab2165/Local-Results-Verification-of-a-3D-Non-Linear-Lifting-Line-Method-for-Fluid-Structure-Interactions-Simulation-on-a-Towing-Kite-for-Vessels.pdf">Local Results Verification of a 3D Non-Linear Lifting Line Method for Fluid-Structure Interactions Simulation on a Towing Kite for Vessels</a></strong> (2017) by C. Duport and more. Example of a discrete lifting line being used for towing kite modelling.</li>
+<li><strong><a href="https://www.researchgate.net/publication/348240031_Practical_Implementation_of_a_General_Numerical_Lifting-Line_Method">Practical Implementation of a General Numerical Lifting-Line Method</a></strong> (2021) by C. Goates. Another discrete lifting line method, with particular focus on how to deal with swept wings.</li>
+<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0029801823029803?via%3Dihub">Rapid aerodynamic method for predicting the performance of interacting wing sails</a></strong> (2023) by K. Malmek and more. About a lifting line method that employs a practical simplification; rather than solving for the vortex strength on the individual line elements, the lift and drag on a single sail is computed directly from the simplified elliptic wing equations for 3D effects, as a function of the local angle of attack. Interaction effects between multiple sails are still computed using a discrete lifting line approach, but with where the circulation distribution is assumed to be elliptic. This allows for a quicker solution, but still with good results. A similar simulation type is possible in Stormbird, by using a "prescribed circulation" with an elliptical shape.</li>
+</ul>
+<h2 id="actuator-line"><a class="header" href="#actuator-line">Actuator line</a></h2>
+<h3 id="papers-1"><a class="header" href="#papers-1">Papers</a></h3>
+<ul>
+<li><strong><a href="https://asmedigitalcollection.asme.org/fluidsengineering/article/124/2/393/444521/Numerical-Modeling-of-Wind-Turbine-Wakes">Numerical Modeling of Wind Turbine Wakes </a></strong> (2002) by J. N. Sørrensen and more. As far as we know, the first paper about actuator line modelling.</li>
+<li><strong><a href="https://backend.orbit.dtu.dk/ws/portalfiles/portal/5452244/Robert.PDF">Actuator Disc Methods Applied to Wind Turbines</a></strong> (2004) by R. F. Mikkelsen. A PhD thesis that include investigations of actuator line modelling. The thesis introduces the concept of using a 'planar force distribution' that is constant along a line section. The same principle is used in Stormbird.</li>
+<li><strong><a href="https://www.researchgate.net/publication/271374677_A_Comparison_of_Actuator_Disk_and_Actuator_Line_Wind_Turbine_Models_and_Best_Practices_for_Their_Use">A Comparison of Actuator Disk and Actuator Line Wind Turbine Models and Best Practices for Their Use</a></strong> (2012) by L A. Martinez and more. A paper that tests different settings for actuator line simulations.</li>
+<li><strong><a href="https://www.nrel.gov/docs/fy17osti/67611.pdf">An Advanced Actuator Line Method for Wind Energy Applications and Beyond</a></strong> (2017) by M. Churchfield and more. Introduces two "advanced" functionalities for actuator line simulations (both of which are also available in Stormbird): the concept of an anisotropic force distribution and weighted integral sampling of the control point velocity.</li>
+<li><strong><a href="https://www.researchgate.net/publication/350027407_A_RANS-BEM_Method_to_Efficiently_Include_Appendage_Effects_in_RANS-Based_Hull_Shape_Evaluation">A RANS-BEM Method to Efficiently Include Appendage Effects in RANS-Based Hull Shape Evaluation</a></strong> (2021) by H. Renzsch and more. A paper about the use of actuator lines to model a sail boat keel.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../literature/literature_intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../literature/validation_data.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../literature/literature_intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../literature/validation_data.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
