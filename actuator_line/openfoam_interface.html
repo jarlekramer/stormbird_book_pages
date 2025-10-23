@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Simulation overview - Stormbird</title>
+        <title>OpenFOAM interface - Stormbird</title>
 
 
         <!-- Custom HTML head -->
@@ -157,48 +157,17 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="simulation-overview"><a class="header" href="#simulation-overview">Simulation overview</a></h1>
-<p>The actuator line model is mostly managed through the <code>ActuatorLine</code> structure, which is a pure Rust implementation of the <strong>most</strong> of the functionality needed for this medellin type. However, this model cannot execute a complete simulation alone; it needs to be <strong>combined with a CFD solver</strong>, and some of the functionality for the model is also necessary to implement directly in the interface with the CFD solver, rather than in the Stormbird library. In particular, this is the case for of the <a href="velocity_sampling.html">velocity sampling</a> functionality. See the <a href="cfd_interface.html">CFD interface chapter</a> for more details on how the coupling works in practice for the case of OpenFOAM.</p>
-<p>That being said, as much functionality as possible is still kept on the Stormbird side, to make it easier to use the same library across different CFD solvers.</p>
-<h2 id="creating-a-simulation"><a class="header" href="#creating-a-simulation">Creating a simulation</a></h2>
-<p>The builder pattern is used to create an actuator line simulation. The main structure for this is the <code>ActuatorLineBuilder</code>, where the available fields is shown below:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct ActuatorLineBuilder {
-    pub line_force_model: LineForceModelBuilder,
-    pub projection_settings: ProjectionSettings,
-    pub solver_settings: SolverSettings,
-    pub sampling_settings: SamplingSettings,
-    pub controller: Option&lt;ControllerBuilder&gt;,
-    pub write_iterations_full_result: usize,
-    pub start_iteration: usize,
-    pub lifting_line_correction: Option&lt;LiftingLineCorrectionBuilder&gt;,
-    pub empirical_circulation_correction: Option&lt;EmpiricalCirculationCorrection&gt;,
-    pub empirical_angle_of_attack_correction: Option&lt;EmpiricalAngleOfAttackCorrection&gt;,
-}
-<span class="boring">}</span></code></pre></pre>
-<p>In the same way as for the rest of the library, this structure can be automatically deserialized from a JSON input file. As such, to create a setup to be used withing a CFD solver, it is mostly a matter of creating the right setup.</p>
-<p>All settings have default values, so the only required field to get started is the <code>line_force_model</code>. This field specifies the sail geometry, using the exact same format as for lifting line simulations. See the <a href="../line_model/line_model_intro.html">line model chapter</a> for more details on how to create a line model.</p>
-<p>The other settings mainly control how the velocity is sampled from the CFD domain, how the forces are projected back, and what type of corrections to use. There are some details for all of these which can be important to know about. As a <strong>general warning</strong>, actuator line models have more details in the settings, which may also affect the final results more than, for instance, a lifting line simulation. As such, some care should be taken when setting up the model to ensure that the settings are appropriate for the specific case. More on this in the respective chapters for <a href="velocity_sampling.html">velocity sampling</a>, <a href="force_projection.html">force projection</a> and <a href="corrections.html">corrections</a>.</p>
-<h2 id="running-a-simulation"><a class="header" href="#running-a-simulation">Running a simulation</a></h2>
-<p>The overall execution of an actuator line simulation is, necessarily, controller from the CFD solver. That is, the duration of the simulation, the time step, what type of disturbances to include, and the general freestream velocity must all be part of the CFD setup. For each time step, the following happens internally in code:</p>
-<ol>
-<li>The <strong>velocity on the control point of each line segment</strong> in the line force model is sampled from the CFD domain, using one of the available <a href="velocity_sampling.html">velocity sampling methods</a>.</li>
-<li><strong>The circulation strength on each line segment is calculated</strong> based on the sampled velocity and the sectional models, in the same way as for the <a href="../lifting_line/solver.html">non-linear solver</a> in the lifting line model, but with only one iteration. That is, the new circulation is estimated directly from the velocity, but the final values can be based on the previous time step as well, using the same general damping technique as for the lifting line model. The reason for using only one iteration is that no way to update the velocity fields in the CFD domain outside the general solver loop. As such, the number of iterations are inherently controlled by the CFD solver directly, and not by the actuator line model.</li>
-<li><strong>If any corrections are enabled</strong>, these are applied to the estimated circulation strength. The corrections may be crucial for accurate results. See the <a href="corrections.html">corrections chapter</a> for more details on what corrections are available and when they should be used.</li>
-<li>Based on the estimated circulation strength, the forces on each line segment are calculated, and the <strong>circulatory forces are projected back to the CFD grid</strong> using the methods and settings specified in the <a href="force_projection.html">force projection chapter</a> chapter.</li>
-<li>The <strong><a href="../line_model/force_calculations.html">result data</a></strong> for each time step will finally be written to disk, and the actuator line model is ready for the next time step.</li>
-</ol>
+                        <h1 id="openfoam-interface"><a class="header" href="#openfoam-interface">OpenFOAM interface</a></h1>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../actuator_line/actuator_line.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../actuator_line/corrections.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../actuator_line/velocity_sampling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../utils/utils_intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -208,11 +177,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../actuator_line/actuator_line.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../actuator_line/corrections.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../actuator_line/velocity_sampling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../utils/utils_intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
