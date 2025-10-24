@@ -24,20 +24,19 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root and default themes to javascript -->
+        <!-- Provide site root to javascript -->
         <script>
-            const path_to_root = "../";
-            const default_light_theme = "light";
-            const default_dark_theme = "navy";
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -47,8 +46,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -62,8 +61,7 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
+            var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -76,8 +74,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -113,7 +111,6 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -158,11 +155,35 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="velocity-sampling"><a class="header" href="#velocity-sampling">Velocity sampling</a></h1>
-<p>As with the lifting line method, the actuator line method needs the velocity at each control point in the line force model to compute forces. The Stormbird implementation offers two separate methods to estimate this value from the CFD simulation.</p>
+<p>As with the lifting line method, the actuator line method needs the velocity at each control point in the line force model to compute the forces acting on each line segment. There are in general two different methods to obtain these, described in the subsections below. The overall structure controlling the sampling method is also shown below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct SamplingSettings {
+    pub use_point_sampling: bool,
+    pub span_projection_factor: Float,
+    pub neglect_span_projection: bool,
+    pub weight_limit: Float,
+    pub extrapolate_end_velocities: bool,
+    pub remove_span_velocity: bool,
+    pub correction_factor: Float
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Some of the settings are independent of the sampling methods chosen. In particular, this is true for the following settings:</p>
+<ul>
+<li><code>extrapolate_end_velocities</code>: If true, the velocities at the end control points are extrapolated from the inner control points to avoid edge effects. It is set to false by default.</li>
+<li><code>remove_span_velocity</code>: If true, the component of the velocity along the actuator line segment is removed from the sampled velocity. It is set to false by default.</li>
+<li><code>correction_factor</code>: A global correction factor applied to all sampled velocities, which can be used to either artificially increase or decrease the velocity magnitude. It is set to 1.0 by default.</li>
+</ul>
 <h2 id="linear-interpolation"><a class="header" href="#linear-interpolation">Linear interpolation</a></h2>
-<p>The classical approach for</p>
+<p>The first and most direct method is to simply use interpolated velocities from the CFD grid at each control point. This method relies on the built in interpolation methods in the CFD solver. To active this method, simply set the <code>use_point_sampling</code> flag to true in the <code>SamplingSettings</code>.</p>
 <h2 id="body-force-weighted-estimate"><a class="header" href="#body-force-weighted-estimate">Body force weighted estimate</a></h2>
-<p>Taken from <a href="https://www.nrel.gov/docs/fy17osti/67611.pdf">this paper</a></p>
+<p>The second method for velocity sampling is implemented based on the explanation in <a href="https://www.nrel.gov/docs/fy17osti/67611.pdf">this paper</a>. Rather than using a direct interpolation, the velocity at each control point is estimated using a Gaussian weighted average of the velocities in the CFD cells around each control point. The weighting is set to be identical to the kernel used to <a href="force_projection.html">project the force</a> back into the CFD domain, along the two dimensions normal to the span line.</p>
+<p>The additional settings variables for this sampling method are generally connected to how the Gaussian kernel should be along the spanwise direction for each line segment. There are two variables controlling this:</p>
+<ul>
+<li><code>span_projection_factor</code>: This variable sets the width of the Gaussian kernel along the spanwise direction as a multiple of the local line segment length. The default value is 1.0.</li>
+<li><code>neglect_span_projection</code>: If this flag is set to true, the Gaussian kernel is assumed to be infinitely wide along the spanwise direction, effectively reducing the kernel to a 2D Gaussian in the plane normal to the line segment. The default value is false.</li>
+</ul>
+<p>This method is claimed to be more robust against numerical noise, in particular when using coarse grids. It also has the benefit that the interpolation method itself is not dependent on the CFD solver so that it is easy to use with any solver.</p>
 
                     </main>
 

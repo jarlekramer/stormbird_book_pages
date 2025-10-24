@@ -24,20 +24,19 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root and default themes to javascript -->
+        <!-- Provide site root to javascript -->
         <script>
-            const path_to_root = "../";
-            const default_light_theme = "light";
-            const default_dark_theme = "navy";
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -47,8 +46,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -62,8 +61,7 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
+            var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -76,8 +74,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -113,7 +111,6 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -220,7 +217,7 @@ pub struct DynamicSettings {
 ) -&gt; SimulationResult
 <span class="boring">}</span></code></pre></pre>
 <p>The input is the current time, time step, and an a vector containing the freestream velocity at all relevant points for the model. See the <a href="./velocity_input.html">velocity input section</a> for more on how this vector is defined and how to generate it.</p>
-<p>On the Python side, the same function looks like this <sup class="footnote-reference" id="fr-note1-1"><a href="#footnote-note1">1</a></sup>:</p>
+<p>On the Python side, the same function looks like this <sup class="footnote-reference"><a href="#note1">1</a></sup>:</p>
 <pre><code class="language-python">def do_step(
     self,
     *,
@@ -230,16 +227,15 @@ pub struct DynamicSettings {
 ) -&gt; SimulationResult
 </code></pre>
 <p>That is, the python code takes in the same input as the Rust side, but with the equivalent Python data structures. The <code>SpatialVector</code> input is actually just a wrapper around an array with three elements, representing the velocity components in x, y, and z orientation. On the Python side, one can pass in a list with many three-elements sub-lists that will be converted to <code>SpatialVectors</code> inside the Python wrapper function before being passed to the Rust code.</p>
-<p>If the simulation is executed using the quasi-steady approach, the time step will not generally affect the results <sup class="footnote-reference" id="fr-note2-1"><a href="#footnote-note2">2</a></sup>. That means that a steady simulation can be executed by running a quasi-steady simulation only once.</p>
+<p>If the simulation is executed using the quasi-steady approach, the time step will not generally affect the results <sup class="footnote-reference"><a href="#note2">2</a></sup>. That means that a steady simulation can be executed by running a quasi-steady simulation only once.</p>
 <p>The return from each time step is a <a href="./../line_model/force_calculations.html">SimulationResult</a>. This structure has a Python implementation as well, with some minor helper methods to interpret the results.</p>
-<hr>
-<ol class="footnote-definition"><li id="footnote-note1">
-<p>The actual implementation is actually written slightly different as it is written in Rust and uses PyO3 to generate the Python interface. However, the code shown represents how it would have look like if it were written as Python code directly. <a href="#fr-note1-1">↩</a></p>
-</li>
-<li id="footnote-note2">
-<p>This is only true for the first time step. It will never affect the circulatory lift, but it may add forces from added mass effects and dynamic rotation effects on the foil, if these effects are turned on. They are not turned on by default, though. In addition, these effects are always turned off for the first time step, as no motion history is available. That is, the acceleration and translation and rotation velocity is always assumed to be zero at the first time step. <a href="#fr-note2-1">↩</a></p>
-</li>
-</ol>
+<div class="footnote-definition" id="note1"><sup class="footnote-definition-label">1</sup>
+<p>The actual implementation is actually written slightly different as it is written in Rust and uses PyO3 to generate the Python interface. However, the code shown represents how it would have look like if it were written as Python code directly.</p>
+</div>
+<div class="footnote-definition" id="note2"><sup class="footnote-definition-label">2</sup>
+<p>This is only true for the first time step. It will never affect the circulatory lift, but it may add forces from added mass effects and dynamic rotation effects on the foil, if these effects are turned on. They are not turned on by default, though. In addition, these effects are always turned off for the first time step, as no motion history is available. That is, the acceleration and translation and rotation velocity is always assumed to be zero at the first time step.</p>
+</div>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

@@ -24,20 +24,19 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root and default themes to javascript -->
+        <!-- Provide site root to javascript -->
         <script>
-            const path_to_root = "../";
-            const default_light_theme = "light";
-            const default_dark_theme = "navy";
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -47,8 +46,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                let theme = localStorage.getItem('mdbook-theme');
-                let sidebar = localStorage.getItem('mdbook-sidebar');
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -62,8 +61,7 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
-            let theme;
+            var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -76,8 +74,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -113,7 +111,6 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -164,7 +161,10 @@
 <h2 id="what-if-i-want-to-model-a-three-element-foil"><a class="header" href="#what-if-i-want-to-model-a-three-element-foil">What if I want to model a three-element foil?</a></h2>
 <p>More complex models with more internal variable might be added in the future. This will be done when the use case represent itself, and likely not before. However, it is still possible to use the <code>VaryingFoil</code> structure to model sails with more control parameters in a slightly simplified way.</p>
 <p>For instance, lets assume you want to model a three-element foil, where there is both a flap and a leading edge slot. Currently it is not possible to model changing values of the slot- and flap-angle independently directly in Stormbird. However, if you assume some relationship between the flap angle and the slot angle, the <code>VariableFoil</code> structure can still be used.</p>
-<p>This might not be such a large simplification for practical use cases<sup class="footnote-reference" id="fr-more_investigation_note-1"><a href="#footnote-more_investigation_note">1</a></sup>. The point of a multi-element foil is both to create larger maximum lift forces and to reduce the drag force for a given lift force. In a lifting line model - and also mostly for wings in general - the lift-induced velocities are not very affected by <em>how</em> the lift is created. Rather, it is just the value of the lift-coefficient that matters. For a given <em>wanted lift coefficient</em> it seems reasonable that there is always a single optimum combination of flap- and slot-angle, which <em>probably</em> can be computed independently of three-dimensional effects. As such, reducing the model to a single internal variable <em>might</em> not be a big problem.</p>
+<p>This might not be such a large simplification for practical use cases<sup class="footnote-reference"><a href="#more_investigation_note">1</a></sup>. The point of a multi-element foil is both to create larger maximum lift forces and to reduce the drag force for a given lift force. In a lifting line model - and also mostly for wings in general - the lift-induced velocities are not very affected by <em>how</em> the lift is created. Rather, it is just the value of the lift-coefficient that matters. For a given <em>wanted lift coefficient</em> it seems reasonable that there is always a single optimum combination of flap- and slot-angle, which <em>probably</em> can be computed independently of three-dimensional effects. As such, reducing the model to a single internal variable <em>might</em> not be a big problem.</p>
+<div class="footnote-definition" id="more_investigation_note"><sup class="footnote-definition-label">1</sup>
+<p>This is currently a hypothesis which we hope to be able to explore more in the future...</p>
+</div>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
 <p>The available parameters in the structure is shown below.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -175,11 +175,7 @@
     pub current_internal_state: f64,
 }
 <span class="boring">}</span></code></pre></pre>
-<hr>
-<ol class="footnote-definition"><li id="footnote-more_investigation_note">
-<p>This is currently a hypothesis which we hope to be able to explore more in the future... <a href="#fr-more_investigation_note-1">↩</a></p>
-</li>
-</ol>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
