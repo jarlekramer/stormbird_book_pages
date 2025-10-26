@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -155,7 +159,21 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="corrections"><a class="header" href="#corrections">Corrections</a></h1>
+<p>The accuracy of an actuator line model is sensitive to both the force projection (shape and width), the mesh resolution in the CFD simulation, and the velocity sampling method. First, just to clarify, it is generally thought that wings will be simulated with a similar accuracy as a lifting line model IF the projection width is set to be sufficiently small, AND the mesh resolution is sufficiently high to allow for a small projection width. That is, an <strong>actuator line model should converge towards a lifting line model</strong> when the projection width is reduced.</p>
+<p>However, at least when using isotropic force projections, it is often impractical to have a small enough force projection width to allow for this. This is especially the case as the whole point of using an actuator line model, rather than a direct CFD simulation, is to significantly reduce the number of cells used in a simulation. As such, it is fairly <strong>common to combine an actuator line model with some form of correction</strong> to the <em>raw circulation distribution</em>, to achieve better accuracy at coarse meshes. In particular, the main issue with an actuator line model is typically that the <strong>tip circulation is predicted to be too large</strong>. Or, in other words, the lift-induced velocities on the tip is too small.</p>
+<p>As explored in the paper by <a href="../literature/simulation_methods.html#an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017">Churchfield et al., 2017</a>, this is an issue that might be also be solved by using force projection shapes that are more physically representative of a real wing, i.e. like with anisotropic kernels. However, other techniques are also often used, and the exact effect of the anisotropic force projection width deserves more investigation.</p>
+<p>The Stormbird  library currently implements two different correction methods based on suggestions from the literature.</p>
 <h2 id="lifting-line-correction-for-the-induced-velocity"><a class="header" href="#lifting-line-correction-for-the-induced-velocity">Lifting line correction for the induced velocity</a></h2>
+<h3 id="background"><a class="header" href="#background">Background</a></h3>
+<p>The first, and perhaps most promising, correction technique comes from the paper by <a href="../literature/simulation_methods.html#a-new-tip-correction-for-actuator-line-computations-2020">Dag and Sørensen, 2020</a>. The idea is based on an important observation: the lift-induced velocities from an actuator line model with a certain projection width, and an isotropic force projection kernel, seem to almost perfectly match the lift-induced velocity from a lifting line model with the same circulation distribution and a <strong>viscous core length equal to the projection width</strong>. That is, the vortices created by an actuator line model is like a smoothed, viscous, version of a pure potential theory vortex. The solution from this observation, suggested by Dag and Sørensen, is then to compute the error in the velocity field explicitly using a simple lifting line model, that directly quantify the effect of the viscous core.</p>
+<p>For each time step in the simulation, the circulation strength from the previous time step is known. These strength values are also the values used when projecting the forces at the previous time step, and the strength that was active when the velocity from the CFD domain was sampled. A correction to the sampled velocity can then be computed based on the difference in the induced velocity from a lifting line model with and without a viscous core.</p>
+<p>This is done by first computing the lift-induced velocities from a lifting line wake model with a viscous core equal to the projection width, and then doing the same calculation with very small core length. The difference in the induced velocity between the two wake models at each control point can then be used to correct the sampled velocity from the CFD grid.</p>
+<h3 id="wake-shape"><a class="header" href="#wake-shape">Wake shape</a></h3>
+<p>One challenge with such an approach is that the shape of the wake must be assumed somehow. This is a trivial task if there is only a single wing, but more difficult if there are multiple wings in close proximity OR wings standing on a ship superstructure. However, the point of the lifting line corrections is <strong>only to compute the error due to a too large projection width</strong>. The effect of a viscous core on the induced velocities are most significant from the wake close to the wing. The effect from the vortices far downstream should be small. The exact wake shape for the correction may, therefore, not be that important.</p>
+<p>As a simple solution to this, the lifting line correction in Stormbird assumes a steady wake shape, with a direction equal to the average sampled velocity over each wing. The correction for each wing is also simulated independently. That is, <strong>the correction should NOT affect interaction effects between wings in any way</strong>, only errors due to a too large viscous core on the wings own wake. This is choice is made to keep the correction method local to a single wing. In other words, the lifting line correction only correct for errors in the <em>self-induced</em> velocities, and not interaction effects.</p>
+<p>The actual code used to calculate the correction for a given time step is the same as the steady <a href="../lifting_line/wake.html">wake models</a> used in the lifting line methods.</p>
+<h3 id="input-structure"><a class="header" href="#input-structure">Input structure</a></h3>
+<p>To activate the lifting line correction, set the a value for <code>lifting_line_correction</code> in the <code>ActuatorLineBuilder</code>. The available options are shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct LiftingLineCorrectionBuilder {
@@ -163,7 +181,20 @@
     pub symmetry_condition: SymmetryCondition
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>wake_length_factor</code> is set to 100.0 by default, which means that the wake used for computing lift-induced velocities is assumed to extend 100 chord lengths downstream. The <code>symmetry_condition</code> is set to <code>NoSymmetry</code> by default. The symmetry condition should generally reflect the same symmetry condition as used in the CFD simulation. For instance, if the bottom of the domain is at the lowest z-coordinate, the symmetry condition should be set to <code>Z</code>.</p>
+<p>Experience from this correction technique is that it works very well for actuator line simulations that only includes wings. Even with a <strong>large isotropic projection width</strong>, the result from an actuator line simulation will match the lifting line model almost perfectly. However, it can also create instabilities when combined with complex ship geometries. <strong>The hope is to find a solution to this in the future</strong>, as this type of correction is believed to be very general and promising for practical use cases.</p>
 <h2 id="empirical-circulation-correction"><a class="header" href="#empirical-circulation-correction">Empirical circulation correction</a></h2>
+<p>A more classical correction technique for actuator line simulations is to use an empirical correction factor to the calculated circulation on each wing. As mentioned, the <em>raw circulation at the tips</em> is often predicted to be too large. A simple solution is, then, to artificially reduce it based on a analytical correction. There are many small variations in how this is done. A recent discussion about the topic can be found in the paper by <a href="../literature/simulation_methods.html#spanwise-flow-corrections-for-tidal-turbines-2018">Wimshurst and Willden, 2018</a>. The correction in Stormbird follows the following principle:</p>
+<p>The raw circulation distribution, \( \Gamma_{raw} \), estimated directly from the sampled velocity, is multiplied by a correction function, \( f_{cor}(s) \), that takes the non-dimensional span distance at each wing, \( s \) as input, as well as a shape parameter \( \beta \). The function has the following shape:</p>
+<p>\[
+f_{cor}(s) = \frac{2.0}{\pi}\cos^{-1}(e^{-\beta (0.5 - |s|)})
+\]</p>
+<p>The plot below shows how the correction function looks for different values of \( \beta \). In general, any value of \( \beta \) will force the circulation towards zero at the tips. However, the larger the value, the steeper the reduction towards the tip, and the less effect it has on the inner part of the wing.</p>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<div id="circulation-correction-plot"></div>
+<script src="plot_scripts/circulation-correction-plot.js"></script>
+<h3 id="input-structure-1"><a class="header" href="#input-structure-1">Input structure</a></h3>
+<p>To active this correction, the <code>EmpiricalCirculationCorrection</code> structure must be set in the <code>ActuatorLineBuilder</code>, as shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct EmpiricalCirculationCorrection {
@@ -171,6 +202,8 @@
     pub overall_correction: f64,
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>exp_factor</code> corresponds to the \( \beta \) variable in the equation above. It is set to 10.0 by default, but should ideally always be tuned for the specific case. The idea with this type of correction is to first tune the shape parameter based on simulation of a single wing, and then assume that it can remain constant also when simulating multiple wings or wings on a ship.</p>
+<p>The <code>overall_correction</code> is a global correction factor applied to the entire circulation distribution, that can be used to either increase or decrease the overall circulation level. It is set to 1.0 by default.</p>
 
                     </main>
 

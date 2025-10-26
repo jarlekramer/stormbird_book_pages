@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -155,7 +159,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="simulation-overview"><a class="header" href="#simulation-overview">Simulation overview</a></h1>
-<p>The actuator line model is mostly managed through the <code>ActuatorLine</code> structure, which is a pure Rust implementation of the <strong>most</strong> of the functionality needed for this medellin type. However, this model cannot execute a complete simulation alone; it needs to be <strong>combined with a CFD solver</strong>, and some of the functionality for the model is also necessary to implement directly in the interface with the CFD solver, rather than in the Stormbird library. In particular, this is the case for of the <a href="velocity_sampling.html">velocity sampling</a> functionality. See the <a href="cfd_interface.html">CFD interface chapter</a> for more details on how the coupling works in practice for the case of OpenFOAM.</p>
+<p>The actuator line model is mostly managed through the <code>ActuatorLine</code> structure, which is a pure Rust implementation of <strong>most</strong> of the functionality needed for this medellin type. However, this model cannot execute a complete simulation alone; it needs to be <strong>combined with a CFD solver</strong>, and some of the functionality for the model is also necessary to implement directly in the direct interface to the CFD solver, rather than in the Stormbird library itself. In particular, this is the case for of the <a href="velocity_sampling.html">velocity sampling</a> functionality. See also the <a href="cfd_interface.html">CFD interface chapter</a> for more details on how the coupling works in practice for the case of OpenFOAM.</p>
 <p>That being said, as much functionality as possible is still kept on the Stormbird side, to make it easier to use the same library across different CFD solvers.</p>
 <h2 id="creating-a-simulation"><a class="header" href="#creating-a-simulation">Creating a simulation</a></h2>
 <p>The builder pattern is used to create an actuator line simulation. The main structure for this is the <code>ActuatorLineBuilder</code>, where the available fields is shown below:</p>
@@ -173,9 +177,9 @@
     pub empirical_circulation_correction: Option&lt;EmpiricalCirculationCorrection&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>In the same way as for the rest of the library, this structure can be automatically deserialized from a JSON input file. As such, to create a setup to be used withing a CFD solver, it is mostly a matter of creating the right setup.</p>
-<p>All settings have default values, so the only required field to get started is the <code>line_force_model</code>. This field specifies the sail geometry, using the exact same format as for lifting line simulations. See the <a href="../line_model/line_model_intro.html">line model chapter</a> for more details on how to create a line model.</p>
-<p>The other settings mainly control how the velocity is sampled from the CFD domain, how the forces are projected back, and what type of corrections to use. There are some details for all of these which can be important to know about. As a <strong>general warning</strong>, actuator line models have more details in the settings, which may also affect the final results more than, for instance, a lifting line simulation. As such, some care should be taken when setting up the model to ensure that the settings are appropriate for the specific case. More on this in the respective chapters for <a href="velocity_sampling.html">velocity sampling</a>, <a href="force_projection.html">force projection</a> and <a href="corrections.html">corrections</a>.</p>
+<p>In the same way as for the rest of the library, this structure can be automatically deserialized from a JSON input file. As such, to create a setup to be used within a CFD solver, it is mostly a matter of creating the right JSON string. This can be done directly, or through the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/stormbird_setup">stormbird_setup</a> Python library.</p>
+<p>All settings have default values, so the only required field to get started is the <code>line_force_model</code>. This field specifies the sail geometry, using the exact same format as for lifting line simulations. See the <a href="../line_model/line_model_intro.html">line model chapter</a> for more details on how to create a builder for the line force model.</p>
+<p>The other settings mainly control how the velocity is sampled from the CFD domain, how the forces are projected back, and what type of corrections to use. There are some details for all of these which can be important to know about. As a <strong>general warning</strong>, actuator line models can be said to be affected more by details in the settings than, for instance, a lifting line simulation. As such, some care should be taken when setting up the model to ensure that the settings are appropriate for the specific case. More on this in the respective chapters for <a href="velocity_sampling.html">velocity sampling</a>, <a href="force_projection.html">force projection</a> and <a href="corrections.html">corrections</a>.</p>
 <h2 id="running-a-simulation"><a class="header" href="#running-a-simulation">Running a simulation</a></h2>
 <p>The overall execution of an actuator line simulation is, necessarily, controller from the CFD solver. That is, the duration of the simulation, the time step, what type of disturbances to include, and the general freestream velocity must all be part of the CFD setup. For each time step, the following happens internally in code:</p>
 <ol>

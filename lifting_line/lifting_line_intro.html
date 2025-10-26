@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -155,35 +159,32 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="lifting-line-simulations"><a class="header" href="#lifting-line-simulations">Lifting line simulations</a></h1>
-<p>The basics of the lifting line simulations in Stormbird have a lot in common with the classical approaches made by Lanchester (1907) and Prandtl (1918) more than 100 years ago, and which are also often taught in many introduction courses for fluid dynamics and lifting surfaces (e.g., in text books like Anderson (2005)). That is, the overall concept and equations is the same. The wing geometry is reduced to vortex lines along the span, the lift and circulation on the line elements are estimated from the local velocity and angle of attack based on a two-dimensional sectional model, and the lift-induced velocities due to the estimated circulation is calculated based on a potential theory wake model.</p>
+<p>The basics of the lifting line simulations in Stormbird have a lot in common with the classical approaches made by Lanchester (1907) and Prandtl (1918) more than 100 years ago, and which are also often taught in many introduction courses for fluid dynamics and lifting surfaces (e.g., the text books in the <a href="../literature/simulation_methods.html">literature chapters</a>). That is, the overall concept and equations is the same. The wing geometry is reduced to vortex lines along the span, the lift and circulation on the line elements are estimated from the local velocity and angle of attack based on a two-dimensional sectional model, and the lift-induced velocities due to the estimated circulation is calculated based on a potential theory wake model.</p>
 <p>However, the Stormbird implementation also differs from the classical lifting line approach in at least three broad-stroke ways, explained further in the subsections below</p>
 <h2 id="non-linear-solver"><a class="header" href="#non-linear-solver">Non-linear solver</a></h2>
-<p>In the classical lifting line method, the circulation is found by solving a <em>simplfied linearized equation system</em>. The system is based on the assumptions that the lift-induced velocities are small and that there is a linear relationship between the lift and vertical induced velocities on the wing. As a consequence, only a single equations system must be solved for each free stream condition, which makes the solution fast and simple.</p>
+<p>In the classical lifting line method, the circulation is found by solving a <em>simplified linearized equation system</em>. The system is based on the assumptions that the lift-induced velocities are small and that there is a linear relationship between the lift and vertical induced velocities on the wing. As a consequence, only a single equations system must be solved for each free stream condition, which makes the solution fast and simple.</p>
 <p>The big problem with this type of solver in the context of wind propulsion devices is that the final solution does not include viscous effects on the lift. Viscous effects are, for instance, important when wing sails or suction sails are operated close to stall. In addition, the assumption about small lift-induced velocities may not be correct for high-lift wind propulsion types, such as rotor- and suction sails.</p>
 <p>Stormbird solves for the circulation strength in ways that attempt to capture the viscous effects in physical correct ways. That is, a stalled wing section affect both the forces and the lift-induced velocities from the wing. At the moment, there are two solvers. The first is based on the original linearized equations system, but with a post-solver empirical correction to account for viscose effects on each section. The second is a based on and iterative non-linear solver, which is mathematically more correct when the lift-induced velocities becomes large. However, with the right tuning of the model, both solvers can generally find a good solution.</p>
 <p>More details is given in the <a href="solver.html">solver chapter</a></p>
 <h2 id="arbitrary-shaped-wings"><a class="header" href="#arbitrary-shaped-wings">Arbitrary shaped wings</a></h2>
 <p>The classical methods assumes that both the wing and the wake is completely flat, and that the potential theory vortex wake extends indefinitely far downstream of the wing. These are necessary assumptions to develop an analytical equation system. However, they are not necessary when solving the equations numerically.</p>
 <p>As already explained in the <a href="./../line_model/line_model_intro.html">line model chapter</a>, simulation models are built up of several discrete line elements. This makes it possible to have arbitrary shaped wings, and have multiple wings together in the same simulations. To make this possible in a lifting line simulation, it is necessary with some way to calculate <em>induced velocities</em> from a line element. This is done by assuming that each line line element is a <em>constant strength vortex line</em>.</p>
-<p>Such vortex lines are also often used in panel methods or vortex lattice methods to represent <em>doublet panels</em>. See for instance Katz and Plotkin (2001) for more details of such methods.</p>
-<p>The exact formulation for the induced velocity as a function of line geometry and strength are taken from the <a href="https://ntrs.nasa.gov/api/citations/19900004884/downloads/19900004884.pdf">VSAERO theory document</a>, found in the link or in Maskew (1987)</p>
+<p>Such vortex lines are also often used in panel methods or vortex lattice methods to represent <em>doublet panels</em>. The exact formulation for the induced velocity as a function of line geometry and strength are taken from the <a href="../literature/simulation_methods.html#vsaero-theory-document-1987">VSAERO theory document</a></p>
 <h2 id="unsteady-simulations-and-dynamic-wakes"><a class="header" href="#unsteady-simulations-and-dynamic-wakes">Unsteady simulations and dynamic wakes</a></h2>
-<p>The final extension from the classical lifting line approach is the inclusion of dynamic wakes and unsteady modelling. This means that the wings can move during a simulation, and the velocity input can change as a function of time.</p>
-<p>Unsteady simulations comes in two flavours: 1) <strong>quasi-steady</strong> and 2) <strong>dynamic</strong>. In the quasi-steady case, the wake is as it is in a conventional lifting line simulation: It consist of <em>horseshoe</em> vortices that extend far downstream from the span lines of each wing for every time step. However, unsteady behavior is still modeled by changes in the <em>felt velocity</em> at the line elements due to the motion of the wings or changes in the freestream input.</p>
-<p>In the dynamic case, the wake modeled is extended to consist of many doublet panels, similar to how it would be in an unsteady panel- or vortex lattice method. Both the strength and the shape of the wake panels will vary as a function of time, which allows for proper dynamic modelling of the lift. That is, the lift-induced velocities depend not only on the current <em>state</em> of the line model, but also the history of previous states.</p>
-<p>For a single conventional wing, the shape of the vortex wake is typically not that important, which is why is often assumed to be flat in simplified methods. However, we have found that this is not necessarily the case when the lift coefficient becomes very high - such as for rotor sails - or when several sails are placed so close together at the wakes get strongly deformed by other wings. When running dynamic simulations, the shape of the wake can be modified by the induced velocities in the simulation<sup class="footnote-reference"><a href="#note">1</a></sup>. This can also be used to simulate steady cases where a detailed wake shape is of interest.</p>
-<div class="footnote-definition" id="note"><sup class="footnote-definition-label">1</sup>
-<p>It is also possible to turn this of to increase the computational speed. See the <a href="./wake_builders.html">wake builders section</a> for more</p>
-</div>
+<p>The final extension from the classical lifting line approach is the inclusion of dynamic wakes and unsteady modeling. This means that the wings can move during a simulation, and the velocity input can change as a function of time.</p>
+<p>Unsteady simulations comes in two flavors: 1) <strong>quasi-steady</strong> and 2) <strong>dynamic</strong>. In the quasi-steady case, the wake is as it is in a conventional lifting line simulation: It consist of <em>horseshoe</em> vortices that extend far downstream from the span lines of each wing for every time step. However, unsteady behavior is still modeled by changes in the <em>felt velocity</em> at the line elements due to the motion of the wings or changes in the freestream input.</p>
+<p>In the dynamic case, the wake modeled is extended to consist of many doublet panels, similar to how it would be in an unsteady panel- or vortex lattice method. Both the strength and the shape of the wake panels will vary as a function of time, which allows for proper dynamic modeling of the lift. That is, the lift-induced velocities depend not only on the current <em>state</em> of the line model, but also the history of previous states.</p>
+<p>For a single conventional wing, the shape of the vortex wake is typically not that important, which is why is often assumed to be flat in simplified methods. However, we have found that this is not necessarily the case when the lift coefficient becomes very high - such as for rotor sails - or when several sails are placed so close together at the wakes get strongly deformed by other wings. When running dynamic simulations, the shape of the wake can be modified by the induced velocities in the simulation<sup class="footnote-reference" id="fr-note-1"><a href="#footnote-note">1</a></sup>. This can also be used to simulate steady cases where a detailed wake shape is of interest.</p>
 <h2 id="references"><a class="header" href="#references">References</a></h2>
 <ul>
-<li>Anderson, J. D., 2005. Fundamentals of Aerodynamics. Fourth edition. McGraw hill</li>
-<li>Katz, J., Plotkin, A., 2001. Low-speed aerodynamics. Vol 13. Cambridge university press</li>
 <li>Lanchester, F. W., 1907. Aerodynamics: Constituting the First Volume of a Complete Work on Aerial Flight</li>
-<li>Maskew, B., 1987. Program VSAERO Theory Document. NASA technical report.</li>
 <li>Prandtl, L., 1918. Tragflügeltheorie. Königliche Gesellschaft der Wissenschaften zu Göttingen.</li>
 </ul>
-
+<hr>
+<ol class="footnote-definition"><li id="footnote-note">
+<p>It is also possible to turn this of to increase the computational speed. See the <a href="./wake_builders.html">wake builders section</a> for more <a href="#fr-note-1">↩</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

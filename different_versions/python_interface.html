@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -204,7 +208,45 @@ input_str = json.dumps(foil_dict)
 foil_model = VaryingFoil(input_string)
 </code></pre>
 <p>The same example with the <code>stormbird_setup</code> library would look like this:</p>
-<pre><code>TO COME
+<pre><code class="language-python">import numpy as np
+from pystormbird.section_models import VaryingFoil
+
+# General structures for storing the right variables in a class
+from stormbird_setup.direct_setup.section_models import Foil
+
+# Change the name of the VaryingFoil class from stormbird_setup to avoid name clash
+from stormbird_setup.direct_setup.section_models import VaryingFoil as VaryingFoilSetup
+
+
+# Parameters for the model, representing the foil forces at different lap angles
+flap_angles = np.radians([0, 5, 10, 15])
+
+cl_zero_angle = np.array([0.0, 0.3454, 0.7450, 1.0352])
+mean_stall_angle = np.radians([20.0, 19.0 , 17.8, 16.5])
+
+cd_zero_angle = np.array([0.0101, 0.0154, 0.0328, 0.0542])
+cd_second_order_factor = np.array([0.6, 0.9, 1.2, 1.5])
+
+# Loop over the parameters to create individual foil models
+foils_data = []
+for i_flap in range(len(flap_angles)):
+    foils_data.append(
+        Foil(
+            cl_zero_angle: cl_zero_angle[i_flap],
+            cd_zero_angl: cd_zero_angle[i_flap],
+            cd_second_order_factor: cd_second_order_factor[i_flap],
+            mean_stall_angle: mean_stall_angle[i_flap]
+        )
+    )
+
+# Collect the foil models into a "varying foil" model
+varying_foil_setup = VaryingFoilSetup(
+    internal_state_data = flap_angles.tolist(),
+    foils_data = foils_data
+)
+
+# Pass it to the Stormbird library
+foil_model = VaryingFoil(varying_foil_setup.to_json_string())
 </code></pre>
 
                     </main>

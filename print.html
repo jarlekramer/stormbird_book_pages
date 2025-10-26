@@ -25,19 +25,21 @@
         <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc.js"></script>
@@ -47,8 +49,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -62,7 +64,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -75,8 +78,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -112,6 +115,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -184,13 +188,13 @@
 </ol>
 <p>The library is developed as part of the research project <a href="https://www.sintef.no/en/projects/2023/wind-enabling-zero-emission-shipping-with-wind-assisted-propulsion/">KSP WIND</a> by the Department of Marine Technology at the <a href="https://www.ntnu.edu/">Norwegian University of Science and Technology</a>. The main developer is Jarle Vinje Kramer.</p>
 <h2 id="who-the-book-is-for"><a class="header" href="#who-the-book-is-for">Who the Book is for</a></h2>
-<p>You should read this if you are interested in using Stormbird to run lifting line or actuator line simulations, or if you just want more information on the theory behind each method. The book is intended to introduce the theory, available models, and overall concepts in the implementation. In other words, the goal is to give a bird' s-eye view of the library and its functionality. When appropriate, other literature will be referenced for more details. That is, it is written primarily for <em>users</em>, and are therefore not focused directly on the underlying source code. However, there will often be examples from the source code when that is the easiest way to illustrate functionality. For instance, data structures will often be shown directly source code to illustrate what fields and settings that are available.</p>
-<h2 id="don-forget-to-also-look-at-the-code"><a class="header" href="#don-forget-to-also-look-at-the-code">Don forget to also look at the code!</a></h2>
+<p>You should read this if you are interested in using Stormbird to run lifting line or actuator line simulations, or if you just want more information on the theory behind each method. The book is intended to introduce the theory, available models, and overall concepts in the implementation. In other words, the goal is to give a bird's-eye view of the library and its functionality. When appropriate, other literature will be referenced for more details. That is, it is written primarily for <em>users</em>, and are therefore not focused directly on the underlying source code. However, there will often be examples from the source code when that is the easiest way to illustrate functionality. For instance, data structures will often be shown directly source code to illustrate what fields and settings that are available.</p>
+<h2 id="dont-forget-to-also-look-at-the-code"><a class="header" href="#dont-forget-to-also-look-at-the-code">Don't forget to also look at the code!</a></h2>
 <p>The text in this book will not cover everything! It may also, at times, be outdated relative to the latest version of the library. The only way to get a full insight into the inner workings is, therefore, to look at the source code itself and the examples of how to use the code. Below is some relevant links for this purpose</p>
 <ul>
-<li>The Stormbird guthub page can be found <a href="https://github.com/NTNU-IMT/stormbird">here</a>. It contains the core library, utility functionality, interfaces and examples.</li>
+<li>The Stormbird GitHub page can be found <a href="https://github.com/NTNU-IMT/stormbird">here</a>. It contains the core library, utility functionality, interfaces and examples.</li>
 <li>More specifically, examples of how to use the Python interface of the code can be found <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/pystormbird/examples">here</a>.</li>
-<li>Automated code documentation can be found <a href="https://docs.rs/stormbird/0.6.0/stormbird/">here</a> for the core Stormbird library and <a href="https://docs.rs/stormath/0.1.1/stormath/">here</a> for the Stormath library, which contains mathematical utility functionality written for Stormbird.</li>
+<li>Automated code documentation can be found <a href="https://docs.rs/stormbird/0.7.0/stormbird/">here</a> for the core Stormbird library and <a href="https://docs.rs/stormath/0.1.1/stormath/">here</a> for the Stormath library, which contains mathematical utility functionality written for Stormbird.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="overview-of-different-versions"><a class="header" href="#overview-of-different-versions">Overview of different versions</a></h1>
 <p>Stormbird itself is a <a href="https://www.rust-lang.org/">Rust</a> library. The Rust programming language was chosen as it combines high computational speed with a modern user-friendly developer experience. One potential way to set up a Stormbird simulation is, therefore, to make a custom Rust executable. However, for those that don't know Rust, or just want to use the library in a high-level setting, it is also possible to use one of the <em>high-level</em> interfaces to the core functionality, listed below:</p>
@@ -323,7 +327,45 @@ input_str = json.dumps(foil_dict)
 foil_model = VaryingFoil(input_string)
 </code></pre>
 <p>The same example with the <code>stormbird_setup</code> library would look like this:</p>
-<pre><code>TO COME
+<pre><code class="language-python">import numpy as np
+from pystormbird.section_models import VaryingFoil
+
+# General structures for storing the right variables in a class
+from stormbird_setup.direct_setup.section_models import Foil
+
+# Change the name of the VaryingFoil class from stormbird_setup to avoid name clash
+from stormbird_setup.direct_setup.section_models import VaryingFoil as VaryingFoilSetup
+
+
+# Parameters for the model, representing the foil forces at different lap angles
+flap_angles = np.radians([0, 5, 10, 15])
+
+cl_zero_angle = np.array([0.0, 0.3454, 0.7450, 1.0352])
+mean_stall_angle = np.radians([20.0, 19.0 , 17.8, 16.5])
+
+cd_zero_angle = np.array([0.0101, 0.0154, 0.0328, 0.0542])
+cd_second_order_factor = np.array([0.6, 0.9, 1.2, 1.5])
+
+# Loop over the parameters to create individual foil models
+foils_data = []
+for i_flap in range(len(flap_angles)):
+    foils_data.append(
+        Foil(
+            cl_zero_angle: cl_zero_angle[i_flap],
+            cd_zero_angl: cd_zero_angle[i_flap],
+            cd_second_order_factor: cd_second_order_factor[i_flap],
+            mean_stall_angle: mean_stall_angle[i_flap]
+        )
+    )
+
+# Collect the foil models into a "varying foil" model
+varying_foil_setup = VaryingFoilSetup(
+    internal_state_data = flap_angles.tolist(),
+    foils_data = foils_data
+)
+
+# Pass it to the Stormbird library
+foil_model = VaryingFoil(varying_foil_setup.to_json_string())
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="functional-mockup-unit"><a class="header" href="#functional-mockup-unit">Functional Mockup Unit</a></h1>
 <p>The lifting line functionality in Stormbird is available as a <em>Functional Mockup Unit</em>, which means that the functionality can be executed through the <a href="https://fmi-standard.org/">Functional Mockup Interface standard</a>. The actual interface is generated using the <a href="https://github.com/jarlekramer/fmu_from_struct">fmu_from_struct</a> library, which is made by the same developer as Stormbird.</p>
@@ -340,7 +382,10 @@ foil_model = VaryingFoil(input_string)
 </ol>
 <p>There are no direct coupling to VeSim or HLCC in the Stormbird FMU, but the choice of input and output variables was made, in part, based on what makes sense for these external software packages. That is, the design of the Stormbird FMU interface is not made in isolation.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="openfoam-version"><a class="header" href="#openfoam-version">OpenFOAM version</a></h1>
-<p>COMING SOON!</p>
+<p><a href="https://www.openfoam.com/">OpenFOAM</a> is a general open source CFD solver, widely used both in academia and in industry.</p>
+<p>The OpenFOAM version of Stormbird is currently the only way to run actuator line simulations. It consist of a volume force interface between the Stormbird library and the OpenFOAM library, that can be activated together with a solver in OpenFOAM.
+More details about this interface can be found both in the <a href="different_versions/../actuator_line/actuator_line.html">actuator line chapter</a> and the specific chapter about the <a href="different_versions/../actuator_line/openfoam_interface.html">OpenFOAM interface</a>.</p>
+<p>As a general not, this interface could also serve as an inspiration for how to connect Stormbird to other CFD solvers, if this turns out to be relevant in the future.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="line-model-representation-of-wings"><a class="header" href="#line-model-representation-of-wings">Line model representation of wings</a></h1>
 <p>The fundamental building block of all the methods in Stormbird is a simplified <em>line representation</em> of the lifting surfaces. This means that the full geometry of the wings is reduced to multiple discrete <strong>line elements</strong>. Each line element represents a section of a lifting surface that has the following properties:</p>
 <ul>
@@ -377,7 +422,7 @@ foil_model = VaryingFoil(input_string)
     pub input_power_models: Vec&lt;InputPowerModel&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>More details on each field can be found in the code documentation [LINK TO COME]. The constriuction of a line force model is generally not done with the structure directly, but rather through a <a href="line_model//line_model/building_line_model.html">builder</a></p>
+<p>More details on each field can be found in the code <a href="https://docs.rs/stormbird/0.7.0/stormbird/">documentation</a>. The construction of a line force model is generally not done with the structure directly, but rather through a <a href="line_model//line_model/building_line_model.html">builder</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="building-a-line-model"><a class="header" href="#building-a-line-model">Building a line model</a></h1>
 <p>As shown in the <a href="line_model/./line_model_intro.html">intro section</a>, a line model consist of many line elements. To simplify the construction of this line model, Stormbird uses a <em>line force model builder</em> that helps with at least two things:</p>
 <ol>
@@ -399,13 +444,10 @@ foil_model = VaryingFoil(input_string)
     pub translation: SpatialVector,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>The only required input is the vector containing  <code>WingBuilder</code> structures and the <code>nr_sections</code> <sup class="footnote-reference"><a href="#nr_sections_note">1</a></sup>. The nr sections should be tested for each project, and will affect both the accuracy and the computational speed. Typical values range between 10-50. The <code>density</code> is set to the <a href="https://en.wikipedia.org/wiki/Density_of_air">standard air density for 15 degrees Celsius</a> by default ( which = 1.225 kg / m^3).</p>
+<p>The only required input is the vector containing  <code>WingBuilder</code> structures and the <code>nr_sections</code> <sup class="footnote-reference" id="fr-nr_sections_note-1"><a href="#footnote-nr_sections_note">1</a></sup>. The nr sections should be tested for each project, and will affect both the accuracy and the computational speed. Typical values range between 10-50. The <code>density</code> is set to the <a href="https://en.wikipedia.org/wiki/Density_of_air">standard air density for 15 degrees Celsius</a> by default ( which = 1.225 kg / m^3).</p>
 <p>The <code>circulation_corrections</code> is an enum, where the default variant is <code>None</code>, and therefore not used by default. There will be more on the circulation corrections option <a href="line_model/./circulation_strength.html">later</a>. This is only used in special circumstances, for instance when a pure lifting line simulation might fail due to numerical issues.</p>
 <p>The <code>output_coordinate_system</code> is an enum that specifies how the forces and moments from the line force model should be calculated. The default is <code>Global</code>, which means all values are in a global coordinate system. That is, the coordinate system for the forces are not moved even if the wings are moved during a simulation. The other option is to set it to <code>Body</code>. In this case, the coordinate system of the forces will always follow the wings when they are moved.</p>
 <p>The <code>local_wing_angles</code>, <code>rotation</code>, and <code>translation</code> specifies the initial values for the local rotation of the wing angles as well as the global rotation and translation of the whole line force model. See the <a href="line_model//line_model/move_line_models.html">move line models chapter</a> for more.</p>
-<div class="footnote-definition" id="nr_sections_note"><sup class="footnote-definition-label">1</sup>
-<p>The number of sections for set in the <code>LineForceModelBuilder</code> is used as default, except when another value is defined in the <code>WingBuilder</code> below.</p>
-</div>
 <h3 id="wing-builder"><a class="header" href="#wing-builder">Wing builder</a></h3>
 <p>A wing builder contain data to build line segments for a single wing. When a vector (or list) of wing builders are provided, the <code>LineForceModelBuilder</code> will automatically keep track of which line segment belong to each wing. The fields in a <code>WingBuilder</code> structure is as shown as Rust code below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -423,14 +465,18 @@ foil_model = VaryingFoil(input_string)
 <p>Each wing also needs a <a href="line_model/./../sectional_models/sectional_models_intro.html">sectional model</a>. The sectional model can differ between different wings given to the <code>LineForceModelBuilder</code>, which is useful for cases where different sail types are installed on the same ship (uncommon today, but might happen in the future).</p>
 <p>The <code>non_zero_circulation_at_ends</code> is boolean values that specifies the expected behavior of the circulation distribution at the ends of the wing. It is used when initializing the circulation distribution before a simulation, and when applying corrections to the circulation distribution. In most cases, the expected value of the circulation strength at the ends is zero, and the value of this variable should be <code>[false, false]</code>. However, if, for instance, the wing is standing directly on a symmetry plane, or is directly coupled to another wing, the circulation distribution will typically not be zero. If an end is coupled to <em>something</em> that might give a non-zero circulation, then that end should then get a <code>true</code> value. For instance, if the first end is standing on a symmetry plane, the value of this variable should be <code>[true, false]</code>.</p>
 <p>The <code>nr_sections</code> variable is optional but can be set for each wing to override the default parameters in the <code>LineForceModelBuilder</code>. Typically, it will not be used, as the most common scenario is to have the same number of sections for each wing.</p>
-<p>When building a line force model from a wing builder, the wings are divided into multiple line segments based on the data in the <code>WingBuilder</code> structure. Each point in between the specified points are linearly interpolated <sup class="footnote-reference"><a href="#interpolation_note">2</a></sup></p>
-<div class="footnote-definition" id="interpolation_note"><sup class="footnote-definition-label">2</sup>
-<p>The interpolation method is possible to change or update to something that can handle non-linear changes between section points. This is, however, so far not prioritized as most sail types tend to use fairly simple geometrical structures. This might change in the future if there is a need to do so.</p>
-</div>
+<p>When building a line force model from a wing builder, the wings are divided into multiple line segments based on the data in the <code>WingBuilder</code> structure. Each point in between the specified points are linearly interpolated <sup class="footnote-reference" id="fr-interpolation_note-1"><a href="#footnote-interpolation_note">2</a></sup></p>
 <h2 id="input-to-methods"><a class="header" href="#input-to-methods">Input to methods</a></h2>
 <p>In many cases, the methods in Stormbird will handle the actual building of the line force models automatically, using a builder structure as input. That is, the input to some function is often the builder and not the line force model itself. For instance, when setting up a lifting line simulation in Python, you only have to supply the builder data, and the line force model will be built automatically internally.</p>
 <p>However, it is also possible to convert a builder into a line force model. This happens by calling the <code>build()</code> method, as usual for Rust builder structures.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="circulation-strength"><a class="header" href="#circulation-strength">Circulation strength</a></h1>
+<hr>
+<ol class="footnote-definition"><li id="footnote-nr_sections_note">
+<p>The number of sections for set in the <code>LineForceModelBuilder</code> is used as default, except when another value is defined in the <code>WingBuilder</code> below. <a href="#fr-nr_sections_note-1">↩</a></p>
+</li>
+<li id="footnote-interpolation_note">
+<p>The interpolation method is possible to change or update to something that can handle non-linear changes between section points. This is, however, so far not prioritized as most sail types tend to use fairly simple geometrical structures. This might change in the future if there is a need to do so. <a href="#fr-interpolation_note-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="circulation-strength"><a class="header" href="#circulation-strength">Circulation strength</a></h1>
 <p>The circulation strength along a wing determines both the magnitude of the lift-forces and the induced velocities from the wing. The velocity is affected either through induced velocities from a wake model based on potential theory, in the case of lifting line simulations, or through body forces projected into a CFD domain, in the case of actuator line simulations.</p>
 <p>This chapter specifies how the circulation strength is estimated from the local velocity on each line section, and how it is possible to modify the estimation for stability purposes. The procedure is the same for all simulation methods in Stormbird. That is, there are no differences in this regard between the static lifting line, dynamic lifting line or the actuator line. The responsibility for calculating the values are therefore given to the line force model.</p>
 <h2 id="raw-lifting-line-theory-estimation"><a class="header" href="#raw-lifting-line-theory-estimation">Raw lifting line theory estimation</a></h2>
@@ -459,39 +505,77 @@ L = 0.5 \cdot \rho \cdot c \cdot C_L \cdot U^2
 <span class="boring">}</span></code></pre></pre>
 <h2 id="optional-corrections"><a class="header" href="#optional-corrections">Optional corrections</a></h2>
 <p>Sometimes, there might be noise in the estimated circulation strength, which might cause instabilities and errors in the estimated forces. A typical examples is lifting line simulations of stalled wings - especially when the lift coefficient is very large.</p>
-<p>To handle such cases in a practical manner, there are optional <em>corrections methods</em> that can be used when estimating the circulation strength. These methods are controlled through a <code>CirculationCorrection</code> enum that is specified for the line force model. The variants in the enum is given below:</p>
+<p>To handle such cases in a practical manner, there are optional <em>corrections methods</em> that can be used when estimating the circulation strength. These methods are controlled through a <code>CirculationCorrection</code> enum that is specified for the line force model. To set up different types of corrections, a <code>CirculationCorrectionBuilder</code> is used, which has the following structure:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub enum CirculationCorrection {
-    None, // The default
-    PrescribedCirculation(PrescribedCirculationShape),
-    GaussianSmoothing(GaussianSmoothing),
+</span>pub enum CirculationCorrectionBuilder {
+    None,
+    Prescribed(PrescribedCirculation),
+    Smoothing(CirculationSmoothingBuilder),
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The default variant is <code>None</code>, which means that no corrections are applied. The effect of the other variants are explained below.</p>
-<h3 id="gaussian-smoothing"><a class="header" href="#gaussian-smoothing">Gaussian smoothing</a></h3>
-<p>The <code>GaussianSmoothingSettings</code> contains parameters used to apply a <a href="https://en.wikipedia.org/wiki/Kernel_smoother">Gaussian smoothing filter</a> to the estimated circulation distribution. The available fields are shown below:</p>
+<h3 id="smoothing"><a class="header" href="#smoothing">Smoothing</a></h3>
+<p>The smoothing correction applies different types of smoothing filters to the estimated circulation, controlled through the following structure:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct GaussianSmoothingSettings {
-    pub length_factor: f64,
+</span>pub struct CirculationSmoothingBuilder {
+    pub smoothing_type: SmoothingTypeBuilder,
+    pub prescribed_to_subtract_before_smoothing: Option&lt;PrescribedCirculation&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>The <code>length_factor</code> gives a factor used to calculated the smoothing length from the span of each wing in the line force model. That is, if the value is set to 0.01, the smoothing length will be 1% of the total span of each wing, independent of the value of the wing span or the number of sections.</p>
+<p>The option to add a <code>prescribed_to_subtract_before_smoothing</code> is currently. It subtracts a prescribed circulation distribution (see more about this below) from the estimated circulation before applying the smoothing filter. After the smoothing is applied, the prescribed distribution is added back to the smoothed result. The idea behind this is that it can avoid issues with smoothing the rapidly changing circulation at the wing tips. By subtracting a known distribution first, the smoothing filter only needs to handle the more noisy part of the circulation distribution. However, the this feature is still experimental, and should be used with care.</p>
+<p>The <code>smoothing_type</code> field specifies which type of smoothing filter should be applied. The available options are shown below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum SmoothingTypeBuilder {
+    Gaussian(GaussianSmoothingBuilder),
+    CubicPolynomial(CubicPolynomialSmoothingBuilder),
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The first smoothing type is <a href="https://en.wikipedia.org/wiki/Kernel_smoother">Gaussian smoothing filter</a>. The available fields are shown below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct GaussianSmoothingBuilder {
+    pub smoothing_length_factor: f64,
+    pub number_of_end_points_to_interpolate: usize
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The <code>smoothing_length_factor</code> gives a factor used to calculated the smoothing length from the span of each wing in the line force model. That is, if the value is set to 0.01, the smoothing length will be 1% of the total span of each wing, independent of the value of the wing span or the number of sections.</p>
+<p>The <code>number_of_end_points_to_interpolate</code> field specifies how many points at each end of the wing that should be inserted beyond the tips of the wings before applying the smoothing. Which values that are inserted beyond the tips are dependent on wether the circulation is expected to be zero or not, controller by the <code>non_zero_circulation_at_ends</code> field in the line force model. If the circulation is expected to have zero circulation, the additional points are set to zero. If not, the values are linearly extrapolated from the inner points. If this value is not set, the default will be to calculate the number of insertion points based on the smoothing length and the number of sections. This should be sufficient in most cases.</p>
 <p>An example of how this smoothing method affects the circulation distribution is illustrated in the figure below. <strong>Note</strong>: the example is with an excessive amount of noise, and is not representative of actual numerical noise from a lifting line simulation. Rather, it shows an example where an artificial elliptic circulation distribution was first generated, and then modified by adding random numerical noise. The plot then shows how the noise is reduced when the noisy circulation distribution is corrected using the Gaussian smoothing filer, with different values for the <code>gaussian_length_factor</code>.</p>
 <p><img src="line_model/figures/gaussian_smoothing_example.png" alt="Gaussian smoothing example" /></p>
 <p>As can bee seen, simple Gaussian smoothing introduces some errors towards the end of the wings if the smoothing length is too large, although the random noise is effectively reduced. It is therefore generally recommended to only apply as little smoothing as necessary to stabilize a solution.</p>
+<p>The second smoothing type is a cubic polynomial smoothing filter, which assumes that a cubic polynomial can be fitted to the points with a certain <code>window_size</code>. The larger the window size, the more smoothing is applied. The available fields are shown below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum WindowSize {
+    Five,
+    Seven,
+    Nine
+}
+
+pub struct CubicPolynomialSmoothingBuilder {
+    pub window_size: WindowSize,
+}
+<span class="boring">}</span></code></pre></pre>
 <h2 id="prescribed-distribution"><a class="header" href="#prescribed-distribution">Prescribed distribution</a></h2>
 <p>Predetermined circulation distributions are a special mode where the circulation is forces to always follow a simple mathematical shape. For instance, it is possible to force the distribution to always be elliptical. This gives very stable simulations, and sometimes results that are very close a <em>full simulation</em>. It is particular useful if the goal is only to estimate interaction effects between wings, but where the lift and drag for a single wing is already known from, for instance, experimental or CFD results.</p>
-<p>A view of the <code>PrescribedCirculationShape</code> structure:</p>
+<p>A view of the <code>PrescribedCirculation</code> structure:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct PrescribedCirculationShape {
-    pub inner_power: f64,
-    pub outer_power: f64,
+    pub inner_power: Float,
+    pub outer_power: Float,
+}
+
+pub struct PrescribedCirculation {
+    pub shape: PrescribedCirculationShape,
+    pub curve_fit_shape_parameters: bool,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>The parameters in the structure is used to force the circulation to always follow a mathematical shape that looks like the equation below, where \(s\) is the local non-dimensional span distance, varying from -0.5 to 0.5 along each wing:</p>
+<p>The option to <code>curve_fit_shape_parameters</code> is currently experimental. It will curve fit the shape parameters to the raw circulation distribution before applying the prescribed shape. However, it currently ends up with a relatively slow simulation, and the final results are not always better than just using default values for the shape parameters. It is set to false by default, and tuning it on should be used with care and testing.</p>
+<p>The <code>PrescribedCirculationShape</code> parameters in the structure is used to force the circulation to always follow a mathematical shape that looks like the equation below, where \(s\) is the local non-dimensional span distance, varying from -0.5 to 0.5 along each wing:</p>
 <p>\[
 \Gamma(s) = \Gamma_0 (1.0 - (2 s)^{\text{inner_power}})^{\text{outer_power}}
 \]</p>
@@ -606,10 +690,7 @@ simulation.set_section_models_internal_state(
 <p>The first, and usually most important, force component is the force that arise from the circulation on each line segment. The circulation strength is estimated directly from the local velocity and sectional model, as described <a href="line_model/./circulation_strength.html">here</a>. The direction of the force is always normal to the local velocity.</p>
 <p>The resulting force from the circulation strength is therefore just the "lift" on each line segment, but in the coordinate system of the local flow. Due to the presence of induced velocities, the sectional lift may cause both lift and drag relative to the incoming free stream. Circulation forces are, in other words, the combination of lift and lift-induced drag from the simulation.</p>
 <h3 id="2---sectional-drag"><a class="header" href="#2---sectional-drag">2 - Sectional drag</a></h3>
-<p>Sectional drag is, usually<sup class="footnote-reference"><a href="#sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="line_model/../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow.</p>
-<div class="footnote-definition" id="sectional_drag_note"><sup class="footnote-definition-label">1</sup>
-<p>It is perfectly fine to include more than the viscous drag in the sectional drag model, if, for instance, it is necessary to add some empirical corrections to the total drag estimate. What exactly the sectional drag represents from a purely physical point of view must be decided on when setting up the model by the user.</p>
-</div>
+<p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="line_model/../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow.</p>
 <h3 id="3---added-mass"><a class="header" href="#3---added-mass">3 - Added mass</a></h3>
 <p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the foil section. The magnitude of the force is determined by the added mass coefficients set in the sectional model and the acceleration. The foil-models only result in added mass forces due to acceleration in the direction normal to the chord vectors. For the rotating cylinder, the added</p>
 <p><strong>Note</strong>: for now, the default value of the added mass coefficient is set to zero. This is because the feature is currently lacking a proper test case. Must therefore be used with care!</p>
@@ -637,6 +718,26 @@ simulation.set_section_models_internal_state(
     pub total: SpatialVector&lt;3&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
+<hr>
+<ol class="footnote-definition"><li id="footnote-sectional_drag_note">
+<p>It is perfectly fine to include more than the viscous drag in the sectional drag model, if, for instance, it is necessary to add some empirical corrections to the total drag estimate. What exactly the sectional drag represents from a purely physical point of view must be decided on when setting up the model by the user. <a href="#fr-sectional_drag_note-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="input-power"><a class="header" href="#input-power">Input power</a></h1>
+<p>Some sail types, like rotor sail and suction sails require input power to operate. This is modeled entirely empirically in Stormbird. The structure that controls these models are shown below.</p>
+<p>MORE TO COME ON THIS LATER</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InputPowerData {
+    pub section_models_internal_state_data: Vec&lt;Float&gt;,
+    pub input_power_coefficient_data: Vec&lt;Float&gt;,
+}
+
+pub enum InputPowerModel {
+    NoPower,
+    FromInternalStateAlone(InputPowerData),
+    FromInternalStateAndVelocity(InputPowerData),
+}
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="section-models"><a class="header" href="#section-models">Section models</a></h1>
 <p>The primary purpose of the sectional models is to compute non-dimensional lift and drag as a function of the local flow velocity at each each line element. That is, they are two-dimensional models which is used together with the chord vector and local flow velocity to compute the total force on each line section. In both lifting line and actuator line simulations, three-dimensional effects are modeled by altering the effective velocity experienced by these two-dimensional models.</p>
 <p>Different sectional models are necessary for different sail types. This is handled by implementing the sectional model as an enum, with a definition as shown below:</p>
@@ -660,17 +761,15 @@ simulation.set_section_models_internal_state(
 <p>The <code>Foil</code> structure is a <em>parametric model</em> of a single element foil section. That is, it is defined using (relatively) few parameters that are later used in a simple mathematical model to compute lift and drag for arbitrary angles of attack.</p>
 <h2 id="why-a-parametric-model"><a class="header" href="#why-a-parametric-model">Why a parametric model?</a></h2>
 <p>Other implementations of lifting line and actuator line methods often use data based models for computing the lift and drag coefficients. That is, the user must supply data on how the lift and drag varies as a function of the angle attack, and then the solver can use this data together with interpolation or table look-up to compute force coefficients for arbitrary angles.</p>
-<p>A data based approach is often fine, and does have some benefits. For instance, it is the only way to make a truly general model where the user have full control over the behavior of the sectional model. For this reason, there might be implementations of pure data based models in Stormbird in the future. However, the choice of using a parametric model for now where based on two reasons.</p>
+<p>A data based approach is often fine, and does have some benefits. For instance, it is the only way to make a truly general model where the user have full control over the behavior of the sectional model. For this reason, there might be implementations of pure data based models in Stormbird in the future. However, the choice of using a parametric model for now where based on three reasons.</p>
 <p>First, it becomes easier to use a parametric model as a building block for more complex foil models, where the behavior depends on some internal state, such as flap angle or suction rate. This is because the model parameters can be allowed to depend on the internal state through interpolation. See the <a href="sectional_models/./varying_foil_model.html">varying foil sub chapter</a> for more on this.</p>
 <p>Second, a parametric model ensures smoothness, which is beneficial when using the model together with gradient based optimization algorithms. For instance, such a method might be used to optimize the angle of attack for wing sails at a given wind direction. The smoothness is in particular practical when the expected optimal point is close to the stall angle - which it often is.</p>
-<p>The downside of a parametric model is believed to be small, as long as the model can represent typical foil section behavior without too many simplifications. The design of the <code>Foil</code> model is intended to achieve this as best as possible<sup class="footnote-reference"><a href="#update_to_model_note">1</a></sup>.</p>
-<div class="footnote-definition" id="update_to_model_note"><sup class="footnote-definition-label">1</sup>
-<p>The design of the <code>Foil</code> model is open for changes, and may be updated when a need is discovered. The goal is to find the right balance between simplicity and flexibility.</p>
-</div>
+<p>Third, tuning a parametric models is generally believed to be easier than a data based model. For instance, lets say you want to adjust the exact stall characteristics of a 2D model, to make a simplified lifting line model better fit with high-fidelity experimental data; this would not be straightforward with a data based model, but should be fairly easy if the parametric model of the lift has good parameters to control the stall behavior.</p>
+<p>The downside of a parametric model is believed to be small, as long as the model can represent typical foil section behavior without too many simplifications. The design of the <code>Foil</code> model is intended to achieve this as best as possible<sup class="footnote-reference" id="fr-update_to_model_note-1"><a href="#footnote-update_to_model_note">1</a></sup>.</p>
 <h2 id="model-overview"><a class="header" href="#model-overview">Model overview</a></h2>
 <p>The model is divided in two core sub-models, labeled <em>pre-stall</em> and <em>post-stall</em>, respectively representing the behavior before and after the foil has stalled due to too high angle of attack.</p>
 <p>For angles of attack below stall, it is assumed that both lift and drag can be represented accurately with simple polynomials. The lift is linear by default, but can also have an optional high-order term where both the factor and power of the term is adjustable. The high order term is meant to capture slowly developing separations, which might occur at low Reynolds numbers. The drag is assumed to be represented as a second order polynomial. For a wing sail operating below stall, the drag will mostly be dominated by lift-induced drag forces. The viscous drag can therefore be kept simple, as the importance to the total force is relatively low.</p>
-<p>For angles of attack above stall, both the lift and drag are assumed to be harmonic functions which primarily is adjusted by setting the <em>max value</em> after stall. This is a rough model which might not be perfect for all angles of attack, but is assumed to be close enough. Wing sails will most often operate below stall.</p>
+<p>For angles of attack above stall, both the lift and drag are assumed to be harmonic functions which primarily is adjusted by setting the <em>max value</em> after stall. This is a rough model which might not be perfect for all angles of attack, but is assumed to be close enough. A rough and approximate model for the post-stall behavior is assumed to be OK as wing sails and suction sails will most often operate below stall.</p>
 <p>The transit between the two models is done using a <a href="https://en.wikipedia.org/wiki/Sigmoid_function">sigmoid function</a>, where both the transition point and the width of the transition can be adjusted.</p>
 <p>In addition, there factors in the model to account for added mass and lift due to the time derivative of the angle of attack. Both these effects are assumed to be linear for simplicity.</p>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
@@ -681,16 +780,19 @@ simulation.set_section_models_internal_state(
     pub cl_zero_angle: f64,
     pub cl_initial_slope: f64,
     pub cl_high_order_factor: f64,
-    pub cl_high_order_power: f64, 
+    pub cl_high_order_power: f64,
     pub cl_max_after_stall: f64,
-    pub cd_zero_angle: f64,
+    pub cd_min: f64,
+    pub angle_cd_min: f64,
     pub cd_second_order_factor: f64,
     pub cd_max_after_stall: f64,
     pub cd_power_after_stall: f64,
+    pub cdi_correction_factor: f64,
     pub mean_positive_stall_angle: f64,.
     pub mean_negative_stall_angle: f64,
     pub stall_range: f64,
-    pub cl_changing_aoa_factor: f64,
+    pub cd_bump_during_stall: f64,
+    pub cd_stall_angle_offset: f64,
     pub added_mass_factor: f64,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -701,14 +803,17 @@ simulation.set_section_models_internal_state(
 <li><code>cl_high_order_factor</code>: Optional proportionality factor for adding higher order terms to the lift. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
 <li><code>cl_high_order_power</code>: Option power for adding higher order terms to the lift. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
 <li><code>cl_max_after_stall</code>: The maximum lift coefficient after stall.</li>
-<li><code>cd_zero_angle</code>: Drag coefficient at zero angle of attack</li>
+<li><code>cd_min</code>: Minimum drag coefficient when the angle of attack is equal to the <code>angle_cd_min</code>.</li>
+<li><code>angle_cd_min</code>: The angle where the the minimum drag coefficient is reached.</li>
 <li><code>cd_second_order_factor</code>: Factor to give the drag coefficient a second order term. This is zero by default.</li>
 <li><code>cd_max_after_stall</code>: The maximum drag coefficient after stall.</li>
 <li><code>cd_power_after_stall</code>: Power factor for the harmonic dependency of the drag coefficient after stall. Set to 1.6 by default.</li>
+<li><code>cdi_correction_factor</code>: factor that can be used to correct for numerical errors in the lift-induced drag. Set to a positive value to increase the drag, and a negative value to decrease the drag. The default is zero, which means no correction.</li>
 <li><code>mean_positive_stall_angle</code>: The mean stall angle for positive angles of attack, which is the mean angle where the model transitions from pre-stall to post-stall behavior. The default value is 20 degrees.</li>
 <li><code>mean_negative_stall_angle</code>: The mean stall angle for negative angles of attack, which is the mean angle where the model transitions from pre-stall to post-stall behavior. The default value is 20 degrees.</li>
 <li><code>stall_range</code>: The range of the stall transition. The default value is 6 degrees.</li>
-<li><code>cl_changing_aoa_factor</code>: Factor to model lift due to the time derivative of the angle of attack. This is zero by default, and therefore not used.</li>
+<li><code>cd_bump_during_stall</code>: Factor to model additional drag when the foil is stalling, but that is not included in the pre- and post-stall drag models. Set to zero by default.</li>
+<li><code>cd_stall_angle_offset</code>: Optional offset to the stall angle for the drag coefficient. This can be used to tune the drag curve to better fit experimental data. The default is zero, which means that stall effects on the drag starts at the same angle of attack as for the lift. When the offset is set to any value, the "amount of stall" function is shifted by this value for the case of the drag coefficient only.</li>
 <li><code>added_mass_factor</code>: Factor to model added mass due to accelerating flow around the foil. Set to zero by default.</li>
 </ul>
 <h2 id="example"><a class="header" href="#example">Example</a></h2>
@@ -727,17 +832,18 @@ simulation.set_section_models_internal_state(
 
 <span class="boring">}</span></code></pre></pre>
 <p><img src="sectional_models/figures/foil_model_example.png" alt="Foil model example" /></p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="varying-foil-model"><a class="header" href="#varying-foil-model">Varying foil model</a></h1>
+<hr>
+<ol class="footnote-definition"><li id="footnote-update_to_model_note">
+<p>The design of the <code>Foil</code> model is open for changes, and may be updated when a need is discovered. The goal is to find the right balance between simplicity and flexibility. <a href="#fr-update_to_model_note-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="varying-foil-model"><a class="header" href="#varying-foil-model">Varying foil model</a></h1>
 <p>The <code>VaryingFoil</code> structure is a model of a foil where the output can be allowed to depend on some internal state. The typical example is a flap angle, for a two-element foil, or suction rate, for a suction sail. To achieve this, the varying foil model uses multiple <code>Foil</code> models, each belonging to a specific internal value. Linear interpolation is used for all <code>Foil</code> model parameters for each state between the input data. This interpolation is handled by the <code>VaryingFoil</code> structure whenever a new internal state is set.</p>
 <h2 id="how-to-setup-a-varyingfoil-structure"><a class="header" href="#how-to-setup-a-varyingfoil-structure">How to setup a VaryingFoil structure</a></h2>
 <p>As a general case, you need to tune several <code>Foil</code> models for multiple values of whatever you want to use as an internal state of the wing. If this is a flap angle, you would need data for the lift and drag coefficients as a function of angles of attack for multiple discrete flap angles. When a unique model is generated for each value of the flap angle, this can be given as input to the <code>VaryingFoil</code> structure, along with the flap angle data as <code>internal_state_data</code>. An example will come...</p>
 <h2 id="what-if-i-want-to-model-a-three-element-foil"><a class="header" href="#what-if-i-want-to-model-a-three-element-foil">What if I want to model a three-element foil?</a></h2>
 <p>More complex models with more internal variable might be added in the future. This will be done when the use case represent itself, and likely not before. However, it is still possible to use the <code>VaryingFoil</code> structure to model sails with more control parameters in a slightly simplified way.</p>
 <p>For instance, lets assume you want to model a three-element foil, where there is both a flap and a leading edge slot. Currently it is not possible to model changing values of the slot- and flap-angle independently directly in Stormbird. However, if you assume some relationship between the flap angle and the slot angle, the <code>VariableFoil</code> structure can still be used.</p>
-<p>This might not be such a large simplification for practical use cases<sup class="footnote-reference"><a href="#more_investigation_note">1</a></sup>. The point of a multi-element foil is both to create larger maximum lift forces and to reduce the drag force for a given lift force. In a lifting line model - and also mostly for wings in general - the lift-induced velocities are not very affected by <em>how</em> the lift is created. Rather, it is just the value of the lift-coefficient that matters. For a given <em>wanted lift coefficient</em> it seems reasonable that there is always a single optimum combination of flap- and slot-angle, which <em>probably</em> can be computed independently of three-dimensional effects. As such, reducing the model to a single internal variable <em>might</em> not be a big problem.</p>
-<div class="footnote-definition" id="more_investigation_note"><sup class="footnote-definition-label">1</sup>
-<p>This is currently a hypothesis which we hope to be able to explore more in the future...</p>
-</div>
+<p>This might not be such a large simplification for practical use cases<sup class="footnote-reference" id="fr-more_investigation_note-1"><a href="#footnote-more_investigation_note">1</a></sup>. The point of a multi-element foil is both to create larger maximum lift forces and to reduce the drag force for a given lift force. In a lifting line model - and also mostly for wings in general - the lift-induced velocities are not very affected by <em>how</em> the lift is created. Rather, it is just the value of the lift-coefficient that matters. For a given <em>wanted lift coefficient</em> it seems reasonable that there is always a single optimum combination of flap- and slot-angle, which <em>probably</em> can be computed independently of three-dimensional effects. As such, reducing the model to a single internal variable <em>might</em> not be a big problem.</p>
 <h2 id="available-parameters-1"><a class="header" href="#available-parameters-1">Available parameters</a></h2>
 <p>The available parameters in the structure is shown below.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -748,7 +854,11 @@ simulation.set_section_models_internal_state(
     pub current_internal_state: f64,
 }
 <span class="boring">}</span></code></pre></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="rotating-cylinder"><a class="header" href="#rotating-cylinder">Rotating cylinder</a></h1>
+<hr>
+<ol class="footnote-definition"><li id="footnote-more_investigation_note">
+<p>This is currently a hypothesis which we hope to be able to explore more in the future... <a href="#fr-more_investigation_note-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="rotating-cylinder"><a class="header" href="#rotating-cylinder">Rotating cylinder</a></h1>
 <p>Model representing a rotating cylinder, where the main intended use case is to model rotor sails. The purpose is to calculate lift, drag on a two-dimensional cylinder as a function of how fast the cylinder is spinning.</p>
 <p>The primary input variable to the model is the <em>spin ratio</em>, which is defined as the ratio of the velocity of the rotor to the wind velocity. The velocity of the rotor is defined as the circumference times the rotations per seconds.</p>
 <p>Unlike the <a href="sectional_models/foil_model.html">foil model</a>, the rotating cylinder model is entirely data based and not parametric. There are primary two reasons for this:</p>
@@ -773,35 +883,32 @@ simulation.set_section_models_internal_state(
 }
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="lifting-line-simulations"><a class="header" href="#lifting-line-simulations">Lifting line simulations</a></h1>
-<p>The basics of the lifting line simulations in Stormbird have a lot in common with the classical approaches made by Lanchester (1907) and Prandtl (1918) more than 100 years ago, and which are also often taught in many introduction courses for fluid dynamics and lifting surfaces (e.g., in text books like Anderson (2005)). That is, the overall concept and equations is the same. The wing geometry is reduced to vortex lines along the span, the lift and circulation on the line elements are estimated from the local velocity and angle of attack based on a two-dimensional sectional model, and the lift-induced velocities due to the estimated circulation is calculated based on a potential theory wake model.</p>
+<p>The basics of the lifting line simulations in Stormbird have a lot in common with the classical approaches made by Lanchester (1907) and Prandtl (1918) more than 100 years ago, and which are also often taught in many introduction courses for fluid dynamics and lifting surfaces (e.g., the text books in the <a href="lifting_line/../literature/simulation_methods.html">literature chapters</a>). That is, the overall concept and equations is the same. The wing geometry is reduced to vortex lines along the span, the lift and circulation on the line elements are estimated from the local velocity and angle of attack based on a two-dimensional sectional model, and the lift-induced velocities due to the estimated circulation is calculated based on a potential theory wake model.</p>
 <p>However, the Stormbird implementation also differs from the classical lifting line approach in at least three broad-stroke ways, explained further in the subsections below</p>
 <h2 id="non-linear-solver"><a class="header" href="#non-linear-solver">Non-linear solver</a></h2>
-<p>In the classical lifting line method, the circulation is found by solving a <em>simplfied linearized equation system</em>. The system is based on the assumptions that the lift-induced velocities are small and that there is a linear relationship between the lift and vertical induced velocities on the wing. As a consequence, only a single equations system must be solved for each free stream condition, which makes the solution fast and simple.</p>
+<p>In the classical lifting line method, the circulation is found by solving a <em>simplified linearized equation system</em>. The system is based on the assumptions that the lift-induced velocities are small and that there is a linear relationship between the lift and vertical induced velocities on the wing. As a consequence, only a single equations system must be solved for each free stream condition, which makes the solution fast and simple.</p>
 <p>The big problem with this type of solver in the context of wind propulsion devices is that the final solution does not include viscous effects on the lift. Viscous effects are, for instance, important when wing sails or suction sails are operated close to stall. In addition, the assumption about small lift-induced velocities may not be correct for high-lift wind propulsion types, such as rotor- and suction sails.</p>
 <p>Stormbird solves for the circulation strength in ways that attempt to capture the viscous effects in physical correct ways. That is, a stalled wing section affect both the forces and the lift-induced velocities from the wing. At the moment, there are two solvers. The first is based on the original linearized equations system, but with a post-solver empirical correction to account for viscose effects on each section. The second is a based on and iterative non-linear solver, which is mathematically more correct when the lift-induced velocities becomes large. However, with the right tuning of the model, both solvers can generally find a good solution.</p>
 <p>More details is given in the <a href="lifting_line/solver.html">solver chapter</a></p>
 <h2 id="arbitrary-shaped-wings"><a class="header" href="#arbitrary-shaped-wings">Arbitrary shaped wings</a></h2>
 <p>The classical methods assumes that both the wing and the wake is completely flat, and that the potential theory vortex wake extends indefinitely far downstream of the wing. These are necessary assumptions to develop an analytical equation system. However, they are not necessary when solving the equations numerically.</p>
 <p>As already explained in the <a href="lifting_line/./../line_model/line_model_intro.html">line model chapter</a>, simulation models are built up of several discrete line elements. This makes it possible to have arbitrary shaped wings, and have multiple wings together in the same simulations. To make this possible in a lifting line simulation, it is necessary with some way to calculate <em>induced velocities</em> from a line element. This is done by assuming that each line line element is a <em>constant strength vortex line</em>.</p>
-<p>Such vortex lines are also often used in panel methods or vortex lattice methods to represent <em>doublet panels</em>. See for instance Katz and Plotkin (2001) for more details of such methods.</p>
-<p>The exact formulation for the induced velocity as a function of line geometry and strength are taken from the <a href="https://ntrs.nasa.gov/api/citations/19900004884/downloads/19900004884.pdf">VSAERO theory document</a>, found in the link or in Maskew (1987)</p>
+<p>Such vortex lines are also often used in panel methods or vortex lattice methods to represent <em>doublet panels</em>. The exact formulation for the induced velocity as a function of line geometry and strength are taken from the <a href="lifting_line/../literature/simulation_methods.html#vsaero-theory-document-1987">VSAERO theory document</a></p>
 <h2 id="unsteady-simulations-and-dynamic-wakes"><a class="header" href="#unsteady-simulations-and-dynamic-wakes">Unsteady simulations and dynamic wakes</a></h2>
-<p>The final extension from the classical lifting line approach is the inclusion of dynamic wakes and unsteady modelling. This means that the wings can move during a simulation, and the velocity input can change as a function of time.</p>
-<p>Unsteady simulations comes in two flavours: 1) <strong>quasi-steady</strong> and 2) <strong>dynamic</strong>. In the quasi-steady case, the wake is as it is in a conventional lifting line simulation: It consist of <em>horseshoe</em> vortices that extend far downstream from the span lines of each wing for every time step. However, unsteady behavior is still modeled by changes in the <em>felt velocity</em> at the line elements due to the motion of the wings or changes in the freestream input.</p>
-<p>In the dynamic case, the wake modeled is extended to consist of many doublet panels, similar to how it would be in an unsteady panel- or vortex lattice method. Both the strength and the shape of the wake panels will vary as a function of time, which allows for proper dynamic modelling of the lift. That is, the lift-induced velocities depend not only on the current <em>state</em> of the line model, but also the history of previous states.</p>
-<p>For a single conventional wing, the shape of the vortex wake is typically not that important, which is why is often assumed to be flat in simplified methods. However, we have found that this is not necessarily the case when the lift coefficient becomes very high - such as for rotor sails - or when several sails are placed so close together at the wakes get strongly deformed by other wings. When running dynamic simulations, the shape of the wake can be modified by the induced velocities in the simulation<sup class="footnote-reference"><a href="#note">1</a></sup>. This can also be used to simulate steady cases where a detailed wake shape is of interest.</p>
-<div class="footnote-definition" id="note"><sup class="footnote-definition-label">1</sup>
-<p>It is also possible to turn this of to increase the computational speed. See the <a href="lifting_line/./wake_builders.html">wake builders section</a> for more</p>
-</div>
+<p>The final extension from the classical lifting line approach is the inclusion of dynamic wakes and unsteady modeling. This means that the wings can move during a simulation, and the velocity input can change as a function of time.</p>
+<p>Unsteady simulations comes in two flavors: 1) <strong>quasi-steady</strong> and 2) <strong>dynamic</strong>. In the quasi-steady case, the wake is as it is in a conventional lifting line simulation: It consist of <em>horseshoe</em> vortices that extend far downstream from the span lines of each wing for every time step. However, unsteady behavior is still modeled by changes in the <em>felt velocity</em> at the line elements due to the motion of the wings or changes in the freestream input.</p>
+<p>In the dynamic case, the wake modeled is extended to consist of many doublet panels, similar to how it would be in an unsteady panel- or vortex lattice method. Both the strength and the shape of the wake panels will vary as a function of time, which allows for proper dynamic modeling of the lift. That is, the lift-induced velocities depend not only on the current <em>state</em> of the line model, but also the history of previous states.</p>
+<p>For a single conventional wing, the shape of the vortex wake is typically not that important, which is why is often assumed to be flat in simplified methods. However, we have found that this is not necessarily the case when the lift coefficient becomes very high - such as for rotor sails - or when several sails are placed so close together at the wakes get strongly deformed by other wings. When running dynamic simulations, the shape of the wake can be modified by the induced velocities in the simulation<sup class="footnote-reference" id="fr-note-1"><a href="#footnote-note">1</a></sup>. This can also be used to simulate steady cases where a detailed wake shape is of interest.</p>
 <h2 id="references"><a class="header" href="#references">References</a></h2>
 <ul>
-<li>Anderson, J. D., 2005. Fundamentals of Aerodynamics. Fourth edition. McGraw hill</li>
-<li>Katz, J., Plotkin, A., 2001. Low-speed aerodynamics. Vol 13. Cambridge university press</li>
 <li>Lanchester, F. W., 1907. Aerodynamics: Constituting the First Volume of a Complete Work on Aerial Flight</li>
-<li>Maskew, B., 1987. Program VSAERO Theory Document. NASA technical report.</li>
 <li>Prandtl, L., 1918. Tragflügeltheorie. Königliche Gesellschaft der Wissenschaften zu Göttingen.</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="simulation-overview"><a class="header" href="#simulation-overview">Simulation overview</a></h1>
+<hr>
+<ol class="footnote-definition"><li id="footnote-note">
+<p>It is also possible to turn this of to increase the computational speed. See the <a href="lifting_line/./wake_builders.html">wake builders section</a> for more <a href="#fr-note-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="simulation-overview"><a class="header" href="#simulation-overview">Simulation overview</a></h1>
 <p>Lifting line simulations in Stormbird are managed and executed through a specialized <code>Simulation</code> structure. The responsibility of this structure is to store and update the data necessary for a simulation. It can be executed once, for steady-state conditions, or for many time steps, in dynamic conditions. When executed many times, the results from the previous time steps are used as initial conditions for the next time steps.</p>
 <h2 id="creating-a-simulation"><a class="header" href="#creating-a-simulation">Creating a simulation</a></h2>
 <p>To construct a <code>Simulation</code>, a <code>SimulationBuilder</code> is used. An overview of the fields in the builder is shown below:</p>
@@ -864,7 +971,7 @@ pub struct DynamicSettings {
 ) -&gt; SimulationResult
 <span class="boring">}</span></code></pre></pre>
 <p>The input is the current time, time step, and an a vector containing the freestream velocity at all relevant points for the model. See the <a href="lifting_line/./velocity_input.html">velocity input section</a> for more on how this vector is defined and how to generate it.</p>
-<p>On the Python side, the same function looks like this <sup class="footnote-reference"><a href="#note1">1</a></sup>:</p>
+<p>On the Python side, the same function looks like this <sup class="footnote-reference" id="fr-note1-1"><a href="#footnote-note1">1</a></sup>:</p>
 <pre><code class="language-python">def do_step(
     self,
     *,
@@ -874,30 +981,31 @@ pub struct DynamicSettings {
 ) -&gt; SimulationResult
 </code></pre>
 <p>That is, the python code takes in the same input as the Rust side, but with the equivalent Python data structures. The <code>SpatialVector</code> input is actually just a wrapper around an array with three elements, representing the velocity components in x, y, and z orientation. On the Python side, one can pass in a list with many three-elements sub-lists that will be converted to <code>SpatialVectors</code> inside the Python wrapper function before being passed to the Rust code.</p>
-<p>If the simulation is executed using the quasi-steady approach, the time step will not generally affect the results <sup class="footnote-reference"><a href="#note2">2</a></sup>. That means that a steady simulation can be executed by running a quasi-steady simulation only once.</p>
+<p>If the simulation is executed using the quasi-steady approach, the time step will not generally affect the results <sup class="footnote-reference" id="fr-note2-1"><a href="#footnote-note2">2</a></sup>. That means that a steady simulation can be executed by running a quasi-steady simulation only once.</p>
 <p>The return from each time step is a <a href="lifting_line/./../line_model/force_calculations.html">SimulationResult</a>. This structure has a Python implementation as well, with some minor helper methods to interpret the results.</p>
-<div class="footnote-definition" id="note1"><sup class="footnote-definition-label">1</sup>
-<p>The actual implementation is actually written slightly different as it is written in Rust and uses PyO3 to generate the Python interface. However, the code shown represents how it would have look like if it were written as Python code directly.</p>
-</div>
-<div class="footnote-definition" id="note2"><sup class="footnote-definition-label">2</sup>
-<p>This is only true for the first time step. It will never affect the circulatory lift, but it may add forces from added mass effects and dynamic rotation effects on the foil, if these effects are turned on. They are not turned on by default, though. In addition, these effects are always turned off for the first time step, as no motion history is available. That is, the acceleration and translation and rotation velocity is always assumed to be zero at the first time step.</p>
-</div>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="solver"><a class="header" href="#solver">Solver</a></h1>
+<hr>
+<ol class="footnote-definition"><li id="footnote-note1">
+<p>The actual implementation is actually written slightly different as it is written in Rust and uses PyO3 to generate the Python interface. However, the code shown represents how it would have look like if it were written as Python code directly. <a href="#fr-note1-1">↩</a></p>
+</li>
+<li id="footnote-note2">
+<p>This is only true for the first time step. It will never affect the circulatory lift, but it may add forces from added mass effects and dynamic rotation effects on the foil, if these effects are turned on. They are not turned on by default, though. In addition, these effects are always turned off for the first time step, as no motion history is available. That is, the acceleration and translation and rotation velocity is always assumed to be zero at the first time step. <a href="#fr-note2-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="solver"><a class="header" href="#solver">Solver</a></h1>
 <p>The job of the lifting line solver is to find the right circulation strength on the wing for the given state, i.e., the freestream velocity and the motion at the current time step. The challenge lies in the dependency between the circulation strength and the <em>induced velocities</em>. Changing the strength also changes the lift-induced velocities from the the potential theory wake, which means that the strength must be <em>solved for</em>, not just calculated.</p>
 <p>To solvers currently exists: a linearized solver with viscous corrections and a full non-linear solver based on dampened iterations.</p>
 <h2 id="linearized-solver-with-a-simple-viscous-correction"><a class="header" href="#linearized-solver-with-a-simple-viscous-correction">Linearized solver with a simple viscous correction</a></h2>
 <p>The linearized solver creates an equation system like the original lifting line method. The lift-induced velocities are assumed to only affect the angle of attack and the lift as a function of angle of attack is assumed to be linear. More in depth explanations may be found in text books like Anderson (2005).</p>
-<p>The result of applying the normal lifting line assumptions is a linear equation system that can be solved for using a conventional linear solver. This solver therefore works by first setting up the system as a matrix and a righ-hand side vector, before solving it using Gaussian elimination.</p>
-<p>However, due to the assumption of linear lift as a function of angle of attack, the resulting circulation that is returned from the solver is without any stall- or other non-linear effects on the lift. To correct for this in a simple viscous correction methods is applied. It consists of the following steps:</p>
+<p>The result of applying the normal lifting line assumptions is a linear equation system that can be solved using a conventional linear algebra solver. The linearized solver therefore works by first setting up the equation system as a matrix and a right-hand side vector, before solving it using conventional Gaussian elimination.</p>
+<p>However, the <strong>procedure above is only the first step</strong>. Due to the assumption of linear lift as a function of angle of attack, the resulting circulation that is returned from the solver is without any stall- or other non-linear effects on the lift. To account for this, a simplified viscous correction methods is applied after solving for the circulation strength using a linear solver. It consists of the following steps:</p>
 <ol>
 <li>Calculate the lift-induced velocities and resulting effective angle of attack with the solved circulation strength</li>
 <li>Calculate the lift both with a linearized sectional model and the full sectional model, including stall effects</li>
 <li>Correct the solved circulation strength by multiplying it with the full lift and dividing it by the linearized lift</li>
 <li>Recalculate lift-induced velocities and effective angles of attack for the final force calculations</li>
 </ol>
-<p>This solver is found to work fine for <strong>quasi-steady</strong> cases, but tend to predict <strong>stall at a larger angle of attack</strong> than the full non-linear solver below. However, the stall-issue can be handled by tuning the stall behavior of the sectional model to 3D data of a single sail. For quasi-steady cases it will be significantly faster than running the full non-linear solver described in the next section.</p>
+<p>This solver is found to work fine for <strong>quasi-steady</strong> cases, but do also tend to predict <strong>stall at a larger angle of attack</strong> than the full non-linear solver below. However, the stall-issue can be handled by tuning the stall behavior of the sectional model to 3D data of a single sail. For quasi-steady cases it will be significantly faster than running the full non-linear solver described in the next section, and is therefore set to the default solver for such cases.</p>
 <h2 id="non-linear-solver-using-damped-iterations"><a class="header" href="#non-linear-solver-using-damped-iterations">Non-linear solver using damped iterations</a></h2>
-<p>The second solver is inspired by a simple approach outlined in Anderson (2005), chapter 5.4. The basic principle is to start with a first guess of the circulation distribution and then slowly update the values based on iterative calculations of the lift-induced velocities. In short, for every iteration of a lifting line solver, the following is calculated:</p>
+<p>The second solver is inspired by a simple approach outlined in <a href="lifting_line/../literature/simulation_methods.html#fundamentals-of-aerodynamics-2005">Anderson (2005), chapter 5.4</a>. The basic principle is to start with a first guess of the circulation distribution and then slowly update the values based on iterative calculations of the lift-induced velocities. In short, for every iteration of a lifting line solver, the following is calculated:</p>
 <ol>
 <li>The lift-induced velocities from the <a href="lifting_line/wake.html">wake model</a>, where the circulation strength from the last iteration (or initial guess, if it is the first iteration) is used as input to the wake model.</li>
 <li>A new estimation of the <a href="lifting_line/./../line_model/circulation_strength.html">circulation strength on the line force model</a> with the current estimate of the lift-induced velocities as input.</li>
@@ -907,7 +1015,7 @@ pub struct DynamicSettings {
 <p>\[
 \Gamma_i = \Gamma_{i-1} + d (\Gamma_{i, estimated} - \Gamma_{i-1})
 \]</p>
-<p>The benefit of this solver is that it is simple, and generally robust <strong>if</strong> the damping factor is set low enough. More <em>fancy</em> solvers may produce quicker results, but can sometimes struggle with instabilities in very non-linear flow conditions. When running unsteady simulations, it is typically not necessary with many iterations for each time step, as the change in the circulation strength is small.</p>
+<p>The benefit of this solver is that it is simple and techncially more correct than the linearized solver, as there are no assumptions about small lift-induced velocities. It will also handle non-linear effects on the lift directly, without any post-solver corrections, like in the case for the linearized solver. It is generally robust <strong>if the damping factor is set low enough</strong>, but may also give noise in the final results right at the stall point in some cases. This is typically handled by applying some <a href="lifting_line/../line_model/circulation_strength.html">smoothing to the circulation strength</a> in the line force model. It is also the <strong>most suitable solver for unsteady simulations</strong>, which typically do not require many iterations for each time step, as the change in the circulation strength is small.</p>
 <h2 id="residual-damping-factor-and-convergence-testing"><a class="header" href="#residual-damping-factor-and-convergence-testing">Residual, damping factor, and convergence testing</a></h2>
 <p>The residual is a measure on how close the solver is to the <em>correct solution</em>. It is calculated from the difference in the lift coefficient on each line element with the current best guess of the circulation distribution, \( \Gamma_i \) from the equations above, and the lift coefficient directly from the <a href="lifting_line/./../sectional_models/sectional_models_intro.html">sectional model</a> using the current estimated lift-induced velocities. That is, this will also be the same as the lift coefficient calculated with the current estimated circulation distribution, or \( \Gamma_{i, estimated} \) from the equations above.</p>
 <p>As an equation, the residual, \(r\), for a line element is calculated as follows, where \(C_L(\Gamma) \) is the lift coefficient based on the induced velocities due to \( \Gamma \):</p>
@@ -964,7 +1072,7 @@ pub enum QuasiSteadySolverBuilder {
 <li><code>start_with_linearized_solution</code>: A boolean that can be set to true if you want the first iteration to estimate the circulation distribution using a linear solver. The rest of the iterations will then use the normal non-linear iterations to update from the linearized solver.</li>
 </ul>
 <h2 id="velocity-corrections"><a class="header" href="#velocity-corrections">Velocity corrections</a></h2>
-<p>Velocity corrections are special models that can be used to alter the resulting lift-induced velocities computed from the circualtion distributions in the solvers. The purpose is two-fold. For once, applying corrections to the lift-induced velocities may stabilize the solver. Second, the velocity corrections may be used to correct for physical effects that are not directly part of the line force model model such as end-disks. The drag on rotor sails, in particular, may be estimated to be too high compared to values estimated with high-fidelity CFD simualtions without some corrections applied to the lift-induced velocties, which is likely due to the presence of the large end-disks on such sails.</p>
+<p>Velocity corrections are special models that can be used to alter the resulting lift-induced velocities computed from the circulation distributions in the solvers. The purpose is two-fold. For one, applying corrections to the lift-induced velocities may stabilize the solver. Second, the velocity corrections may be used to correct for physical effects that are not directly part of the line force model model such as end-disks. The drag on rotor sails, in particular, may be estimated to be too high compared to values estimated with high-fidelity CFD simulations without some corrections applied to the lift-induced velocities, which is likely due to the presence of the large end-disks on such sails.</p>
 <p>The velocity corrections are represented by en enum that looks like the following:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -975,16 +1083,12 @@ pub enum QuasiSteadySolverBuilder {
     FixedMagnitudeEqualToFreestream,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>The default is to use no corrections, so that the lift-induced velocities from the solver is calculated based on the raw circualtion strength. Then there are two correction methods to chose from:</p>
+<p>The default is to use no corrections, so that the lift-induced velocities from the solver is calculated based on the raw circulation strength. Then there are two correction methods to chose from:</p>
 <ul>
-<li><code>MaxInducedVelocityMagnitudeRatio</code> makes sure the lift-induced velocity magnitude never exceeds a ratio of the freestream velocity. The ratio is supplied as an input. A typical value could to set the ratio to 1.0, which would be the same as saying that the lift-induced velocity should never exceed the freestream magnitude.</li>
-<li><code>FixedMagnitudeEqualToFreestream</code> computes a velocity vector based on the raw lift-induced velocity and the freestream that is limited in magnitude to the freestream velocity. That is, this correction allows the lif-induced velocity to change the orientation of the effective velocity at each line segmwent, but not the magnitude. This can, for instance, force the non-linear solver to behave more like a linear solver.</li>
+<li><code>MaxInducedVelocityMagnitudeRatio</code> makes sure the lift-induced velocity magnitude never exceeds a ratio of the freestream velocity. The ratio is supplied as an input. A typical value could be to set the ratio to 1.0, which would be the same as saying that the lift-induced velocity should never exceed the freestream magnitude.</li>
+<li><code>FixedMagnitudeEqualToFreestream</code> computes a velocity vector based on the raw lift-induced velocity and the freestream that is limited in magnitude to the freestream velocity but allowed to rotate freely. That is, this correction allows the lift-induced velocity to change the orientation of the effective velocity at each line segment, but not the magnitude. This can, for instance, be used to force the non-linear solver to behave more like a linear solver.</li>
 </ul>
-<h2 id="references-1"><a class="header" href="#references-1">References</a></h2>
-<ul>
-<li>Anderson, J. D., 2005. Fundamentals of Aerodynamics. Fourth edition. McGraw hill</li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="lifting-line-wake"><a class="header" href="#lifting-line-wake">Lifting line Wake</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="lifting-line-wake"><a class="header" href="#lifting-line-wake">Lifting line wake</a></h1>
 <p>The vortex wakes from the wings are the most important part of a lifting line simulation. They are responsible for modeling how the velocity is affected by the wings themselves. How the velocity should be calculated depends on a several settings variables. Setting up a wake model is therefore done using "wake builders" which both contain settings used directly by the final wake structures and settings used for initializing the wake structures. An overview of the fields available in the wake builders are given in this section.</p>
 <h2 id="internal-wake-data"><a class="header" href="#internal-wake-data">Internal wake data</a></h2>
 <p>Inside a simualtion structure, the wake is representing as a <code>WakeData</code> structure that looks like this:</p>
@@ -1049,20 +1153,17 @@ pub enum QuasiSteadySolverBuilder {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>All values have default values which should make sense in most situations. The most common variable to adjust will be <code>nr_panels_per_line_element</code>, the <code>write_wake_data_to_file</code>, and the <code>wake_files_folder_path</code>. The first determines the number of panels in the streamwise direction. The two second variables are used if you want to export the wake panels to a files for visualizations. If <code>write_wake_data_to_file</code> is set to true, the wake panels will be exported as <code>.vtk</code> files to the folder defined by the <code>wake_files_folder_path</code> string.</p>
-<p>For the rest of the variables, see the explanation in the code documentation [LINK TO COME]</p>
+<p>For the rest of the variables, see the explanation in the <a href="https://docs.rs/stormbird/0.7.0/stormbird/">code documentation</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="velocity-input"><a class="header" href="#velocity-input">Velocity input</a></h1>
 <p>As shown in the <a href="lifting_line/./simulation_overview.html">simulation overview section</a>, to simulate a single time step using the lifting line methods, it is necessary to call the <code>do_step</code> function with a vector (in Rust) or list (in Python) of three dimensional spatial vectors as input. This input is labeled the <code>freestream_velocity</code>, and represents the freestream velocity at all <strong>relevant points</strong> in the lifting line simulation.</p>
 <p>Which points this is depends on the type of simulation. For the quasi-steady cases, it is only the control points of the line force model, as the wake downstream of the wings are not affected by local velocities. For the dynamic simulation it is both the control points and the wake points, as the wake shape is integrated from the velocity field.</p>
 <h2 id="why-spatial-varying-input"><a class="header" href="#why-spatial-varying-input">Why spatial varying input?</a></h2>
 <p>The point of specifying the velocity at each of these points individually is that this opens up for models that supply spatially varying velocity fields to the simulations. This can for instance be used to incorporate the following things in the simulation:</p>
 <ul>
-<li><strong>Atmospheric boundary layers model:</strong> The wind speed - and potentially also direction - will vary depending on the height above the ocean. A simplified model of the atmospheric boundary layer can be used to generate different velocities for each relevant point. At the moment this must be specified by the user <sup class="footnote-reference"><a href="#model_note">1</a></sup>.</li>
-<li><strong>Simplified models of viscous wakes:</strong> The flow field on a ship will often be affected by separated flow from various superstructures and deck equipment. The flow might also be affected by separated flow from other sails. There exist simplified models to account for this<sup class="footnote-reference"><a href="#model_note">1</a></sup>. These models can be connected to the lifting line simulations by affecting the input freestream velocity. In that case, the position of each point in the simulation matter for how the velocity should be affected.</li>
+<li><strong>Atmospheric boundary layers model:</strong> The wind speed - and potentially also direction - will vary depending on the height above the ocean. A simplified model of the atmospheric boundary layer can be used to generate different velocities for each relevant point. At the moment this must be specified by the user <sup class="footnote-reference" id="fr-model_note-1"><a href="#footnote-model_note">1</a></sup>.</li>
+<li><strong>Simplified models of viscous wakes:</strong> The flow field on a ship will often be affected by separated flow from various superstructures and deck equipment. The flow might also be affected by separated flow from other sails. There exist simplified models to account for this<sup class="footnote-reference" id="fr-model_note-2"><a href="#footnote-model_note">1</a></sup>. These models can be connected to the lifting line simulations by affecting the input freestream velocity. In that case, the position of each point in the simulation matter for how the velocity should be affected.</li>
 <li><strong>CFD data as input:</strong> Using CFD data is a possible way to account for interactions with the rest of the ship. In that case, a velocity field from a simulation of the deck and superstructure can be used to generate an interpolation model, which later is used to specify a spatially varying velocity fields as input to the lifting line.</li>
 </ul>
-<div class="footnote-definition" id="model_note"><sup class="footnote-definition-label">1</sup>
-<p>There are actually implementations of atmospheric boundary layer (ABL) models and  viscous wake models on the Rust side of Stormbird. However, they are not yet exposed to the Python side. This will come soon. For now, custom Python implementations must be used. This is trivial for ABL models, but perhaps slightly more cumbersome for the viscous wake models.</p>
-</div>
 <h2 id="code-example"><a class="header" href="#code-example">Code example</a></h2>
 <p>Generating the right velocity input consists of two steps. First, the user must query the simulation model for the relevant points. This happens by calling the <code>get_freestream_velocity_points</code> method. The <code>Simulation</code> structure/class will then return the right points, which as already mentioned, depends on the method used. These points can then be processed by the suer to generate a vector/list of spatial vectors for each of the relevant points, which are later given as input to the <code>do_step</code> method. A slightly simplified example is shown below. See the <a href="lifting_line/./../tutorials.html">code examples</a> for more.</p>
 <pre><code class="language-python">from pystormbird.lifting_line import Simulation
@@ -1100,27 +1201,32 @@ while current_time &lt; end_time:
 
     current_time += time_step
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="actuator-line"><a class="header" href="#actuator-line">Actuator line</a></h1>
-<p>An actuator line model shares a lot of the same principles as a lifting line model; the wings are divided into line segments, and the forces on each line segment are dependent on the local velocity and the sectional models. However, unlike a lifting line simulation, there is no potential theory wake. The velocity at each control point is instead estimated directly from the velocity field in a CFD solver. The benefit of this is that other structures may influence the felt velocity at each control point. For the sake of sail simulations, this allows for modeling the interaction effects between the deck and superstructure and the sails.</p>
-<p>Lift-induced velocities due to the calculated forces on the sails are still included in the model. This happens through a force projection step, where the calculated forces on each line segment are projected back onto the CFD grid as body forces with a volumetric distribution. This creates a two-way coupling: the flow to the sails are affected by anything else in the CFD domain, and the flow over all other structures are affected by the forces from the sails.</p>
+<hr>
+<ol class="footnote-definition"><li id="footnote-model_note">
+<p>There are actually implementations of atmospheric boundary layer (ABL) models and  viscous wake models on the Rust side of Stormbird. However, they are not yet exposed to the Python side. This will come soon. For now, custom Python implementations must be used. This is trivial for ABL models, but perhaps slightly more cumbersome for the viscous wake models. <a href="#fr-model_note-1">↩</a> <a href="#fr-model_note-2">↩2</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="actuator-line"><a class="header" href="#actuator-line">Actuator line</a></h1>
+<p>An actuator line model shares a lot of the same principles as a lifting line model; the wings are divided into line segments, and the forces on each line segment are dependent on the local velocity and the output from the sectional models. However, unlike a lifting line simulation, there is no potential theory wake. The velocity at each control point is instead estimated directly from the velocity field in a CFD solver. The point of this is that other structures in the CFD domain will influence the felt velocity at each control point. For the sake of sail simulations, this allows for modeling the interaction effects between the deck and superstructure and the sails.</p>
+<p>Lift-induced velocities due to the calculated forces on the sails are still included in the model. This happens through a force projection step, where the calculated forces on each line segment are projected back onto the CFD grid as body forces with a volumetric distribution. This creates a two-way coupling: the flow to the sails are affected by everything else in the CFD domain, and the flow over all other structures are affected by the forces from the sails.</p>
 <figure>
     <img src="actuator_line/../static/actualtor_line_streamlines.png" alt="Actuator line streamlines">
     <figcaption>Figure 1: Examples of streamlines around wing sails on a ship that are simulated with the actuator line method. The interaction between the ship and the sails is in this case taken into account</figcaption>
 </figure>
 <h2 id="what-are-the-benefits"><a class="header" href="#what-are-the-benefits">What are the benefits?</a></h2>
-<p>An actuator line simulation is significantly slower than a lifting line simulation. In practical terms, what takes a few milliseconds with a lifting line model will take minutes for wings alone, and even hours if the superstructure is included, with an actuator line model. However, it is still significantly faster than a full CFD simulation where the wings are directly represented in the mesh. An example of the difference in mesh resolution can be seen in Figure 2, which comes from <a href="https://www.researchgate.net/publication/374976524_Actuator_Line_for_Wind_Propulsion_Modelling">this paper</a>. In general, an actuator line can represent the wings with an order of magnitude larger cells than a fully resolved wing. This comes from the fact that the boundary layer and geometry is not modeled directly. Rather, the forces on a section of the wing is simplified to mostly depend on the local velocity at each control point.</p>
+<p>The main benefit with an actuator line model, over a full conventional CFD simulation, is computational speed. This comes, primarily, from the fact that it is possible to use much coarser mesh resolution around the wings itself. This comes from the fact that the boundary layer and geometry is not modeled directly. Rather, the forces on a section of the wing is simplified to mostly depend on the local velocity at each control point, which does not require a very fine mesh. An example of the difference in mesh resolution can be seen in Figure 2, which comes from <a href="https://www.researchgate.net/publication/374976524_Actuator_Line_for_Wind_Propulsion_Modelling">this paper</a>. As a rough guideline, an actuator line can represent the wings with an order of magnitude larger cells than a fully resolved wing.</p>
 <figure>
     <img src="actuator_line/../static/al_mesh_resolution.png" alt="Actuator line mesh resolution">
     <figcaption>Figure 2: Examples of a convergence study done for both a fully resolved wing and for an actuator model of the same wing </figcaption>
 </figure>
 <h2 id="what-should-an-actuator-line-model-be-used-for"><a class="header" href="#what-should-an-actuator-line-model-be-used-for">What should an actuator line model be used for?</a></h2>
-<p>Since the computational speed is measured in terms of minutes to hours, it is generally not a method that is fast enough for running directly in a route simulation. The recommended work flow for setting up a complete model of a wind propulsion device is therefore to use a combination of methods.</p>
+<p>Although fats compared to conventional CFD simulations, an actuator line simulation is still significantly slower than a lifting line simulation. In practical terms, what takes a few milliseconds with a lifting line model will take a few minutes when simulating wings alone. Also, the point of using an actuator line model is generally to include the rest of the ship in the simulation. This will also significantly increase the computational time required for each case, depending on the mesh resolution around the rest of the ship and, often as important, how complex the flow becomes around the ship and therefore how long the simulation needs to run.</p>
+<p>Since the computational speed is measured in terms of minutes to a few hours, it is generally not a method that is fast enough for running directly in a route simulation. The recommended work flow for setting up a complete model of a wind propulsion device is therefore to use a combination of methods.</p>
 <p>More specifically, an actuator line model can be used to measure the interaction between the sails and the rest of the ship for a few different operational conditions. This data can then later be used to make correction factor for a lifting line model. One approach for doing this is explained later, for the <a href="actuator_line/../utils/wind_model.html">effective wind model</a> functionality of the library. The correction factors tuned based on actuator line simulations can then later be interpolated on for wind conditions not directly tested. As such, <strong>the main point of the actuator line model is to provide a computationally effective way to measure interaction effects between sails and the rest of the ship, which later can be used to tune correction factors for faster lifting line models</strong>.</p>
 <h2 id="why-not-just-measure-the-velocity-over-the-ship-without-any-sails-present"><a class="header" href="#why-not-just-measure-the-velocity-over-the-ship-without-any-sails-present">Why not just measure the velocity over the ship without any sails present?</a></h2>
 <p>The effective velocity over a ship superstructure can also be measured in a CFD simulation with the ship alone, without any sails. In this case, the measured velocity at the locations where the sails should stand can be used as input to  a lifting line model directly.</p>
 <p><strong>This type of simplified modeling is likely sufficient for many cases</strong>. However, one missing effect with this approach is the two-way coupling between the flow over the sails and the flow over the rest of the ship. The sails themselves might alter how the flow is separating and accelerated over the deck and past the superstructure. This effect should be captured better with an actuator line model due to the projection of the calculated forces back onto the CFD grid. Whether it is significant or not will likely depend on the specific ship, sail configuration, and sail type. However, an actuator line model is relatively cheap to add to a simulation that is anyhow simulating the rest of the ship. It is, therefore, not much added computational time to test the full two-way coupling.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="simulation-overview-1"><a class="header" href="#simulation-overview-1">Simulation overview</a></h1>
-<p>The actuator line model is mostly managed through the <code>ActuatorLine</code> structure, which is a pure Rust implementation of the <strong>most</strong> of the functionality needed for this medellin type. However, this model cannot execute a complete simulation alone; it needs to be <strong>combined with a CFD solver</strong>, and some of the functionality for the model is also necessary to implement directly in the interface with the CFD solver, rather than in the Stormbird library. In particular, this is the case for of the <a href="actuator_line/velocity_sampling.html">velocity sampling</a> functionality. See the <a href="actuator_line/cfd_interface.html">CFD interface chapter</a> for more details on how the coupling works in practice for the case of OpenFOAM.</p>
+<p>The actuator line model is mostly managed through the <code>ActuatorLine</code> structure, which is a pure Rust implementation of <strong>most</strong> of the functionality needed for this medellin type. However, this model cannot execute a complete simulation alone; it needs to be <strong>combined with a CFD solver</strong>, and some of the functionality for the model is also necessary to implement directly in the direct interface to the CFD solver, rather than in the Stormbird library itself. In particular, this is the case for of the <a href="actuator_line/velocity_sampling.html">velocity sampling</a> functionality. See also the <a href="actuator_line/cfd_interface.html">CFD interface chapter</a> for more details on how the coupling works in practice for the case of OpenFOAM.</p>
 <p>That being said, as much functionality as possible is still kept on the Stormbird side, to make it easier to use the same library across different CFD solvers.</p>
 <h2 id="creating-a-simulation-1"><a class="header" href="#creating-a-simulation-1">Creating a simulation</a></h2>
 <p>The builder pattern is used to create an actuator line simulation. The main structure for this is the <code>ActuatorLineBuilder</code>, where the available fields is shown below:</p>
@@ -1138,9 +1244,9 @@ while current_time &lt; end_time:
     pub empirical_circulation_correction: Option&lt;EmpiricalCirculationCorrection&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>In the same way as for the rest of the library, this structure can be automatically deserialized from a JSON input file. As such, to create a setup to be used withing a CFD solver, it is mostly a matter of creating the right setup.</p>
-<p>All settings have default values, so the only required field to get started is the <code>line_force_model</code>. This field specifies the sail geometry, using the exact same format as for lifting line simulations. See the <a href="actuator_line/../line_model/line_model_intro.html">line model chapter</a> for more details on how to create a line model.</p>
-<p>The other settings mainly control how the velocity is sampled from the CFD domain, how the forces are projected back, and what type of corrections to use. There are some details for all of these which can be important to know about. As a <strong>general warning</strong>, actuator line models have more details in the settings, which may also affect the final results more than, for instance, a lifting line simulation. As such, some care should be taken when setting up the model to ensure that the settings are appropriate for the specific case. More on this in the respective chapters for <a href="actuator_line/velocity_sampling.html">velocity sampling</a>, <a href="actuator_line/force_projection.html">force projection</a> and <a href="actuator_line/corrections.html">corrections</a>.</p>
+<p>In the same way as for the rest of the library, this structure can be automatically deserialized from a JSON input file. As such, to create a setup to be used within a CFD solver, it is mostly a matter of creating the right JSON string. This can be done directly, or through the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/stormbird_setup">stormbird_setup</a> Python library.</p>
+<p>All settings have default values, so the only required field to get started is the <code>line_force_model</code>. This field specifies the sail geometry, using the exact same format as for lifting line simulations. See the <a href="actuator_line/../line_model/line_model_intro.html">line model chapter</a> for more details on how to create a builder for the line force model.</p>
+<p>The other settings mainly control how the velocity is sampled from the CFD domain, how the forces are projected back, and what type of corrections to use. There are some details for all of these which can be important to know about. As a <strong>general warning</strong>, actuator line models can be said to be affected more by details in the settings than, for instance, a lifting line simulation. As such, some care should be taken when setting up the model to ensure that the settings are appropriate for the specific case. More on this in the respective chapters for <a href="actuator_line/velocity_sampling.html">velocity sampling</a>, <a href="actuator_line/force_projection.html">force projection</a> and <a href="actuator_line/corrections.html">corrections</a>.</p>
 <h2 id="running-a-simulation-1"><a class="header" href="#running-a-simulation-1">Running a simulation</a></h2>
 <p>The overall execution of an actuator line simulation is, necessarily, controller from the CFD solver. That is, the duration of the simulation, the time step, what type of disturbances to include, and the general freestream velocity must all be part of the CFD setup. For each time step, the following happens internally in code:</p>
 <ol>
@@ -1168,40 +1274,76 @@ while current_time &lt; end_time:
 <ul>
 <li><code>extrapolate_end_velocities</code>: If true, the velocities at the end control points are extrapolated from the inner control points to avoid edge effects. It is set to false by default.</li>
 <li><code>remove_span_velocity</code>: If true, the component of the velocity along the actuator line segment is removed from the sampled velocity. It is set to false by default.</li>
-<li><code>correction_factor</code>: A global correction factor applied to all sampled velocities, which can be used to either artificially increase or decrease the velocity magnitude. It is set to 1.0 by default.</li>
+<li><code>correction_factor</code>: A global correction factor applied to all sampled velocities, which can be used to either artificially increase or decrease the velocity magnitude. It is set to 1.0 by default, which means that it does not change the sampled velocities at all.</li>
 </ul>
-<h2 id="linear-interpolation"><a class="header" href="#linear-interpolation">Linear interpolation</a></h2>
-<p>The first and most direct method is to simply use interpolated velocities from the CFD grid at each control point. This method relies on the built in interpolation methods in the CFD solver. To active this method, simply set the <code>use_point_sampling</code> flag to true in the <code>SamplingSettings</code>.</p>
+<h2 id="direct-interpolation"><a class="header" href="#direct-interpolation">Direct interpolation</a></h2>
+<p>The first and most direct method is to simply use interpolated velocities from the CFD grid at each control point. This method relies on the built in interpolation methods in the CFD solver, which means that the order of the interpolation is also chosen by the CFD solver. For a second order unstructured CFD code, like OpenFOAM, the interpolation will often be linear. To active this method, simply set the <code>use_point_sampling</code> flag to true in the <code>SamplingSettings</code>.</p>
 <h2 id="body-force-weighted-estimate"><a class="header" href="#body-force-weighted-estimate">Body force weighted estimate</a></h2>
-<p>The second method for velocity sampling is implemented based on the explanation in <a href="https://www.nrel.gov/docs/fy17osti/67611.pdf">this paper</a>. Rather than using a direct interpolation, the velocity at each control point is estimated using a Gaussian weighted average of the velocities in the CFD cells around each control point. The weighting is set to be identical to the kernel used to <a href="actuator_line/force_projection.html">project the force</a> back into the CFD domain, along the two dimensions normal to the span line.</p>
+<p>The second method for velocity sampling is implemented based on the explanation in the paper by <a href="actuator_line/../literature/simulation_methods.html#an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017">Churchfield et al., 2017</a>. Rather than using a direct interpolation, the velocity at each control point is estimated using a Gaussian weighted average of the velocities in the CFD cells around each control point. The weighting is set to be identical to the kernel used to <a href="actuator_line/force_projection.html">project the force</a> back into the CFD domain, along the two dimensions normal to the span line.</p>
 <p>The additional settings variables for this sampling method are generally connected to how the Gaussian kernel should be along the spanwise direction for each line segment. There are two variables controlling this:</p>
 <ul>
-<li><code>span_projection_factor</code>: This variable sets the width of the Gaussian kernel along the spanwise direction as a multiple of the local line segment length. The default value is 1.0.</li>
-<li><code>neglect_span_projection</code>: If this flag is set to true, the Gaussian kernel is assumed to be infinitely wide along the spanwise direction, effectively reducing the kernel to a 2D Gaussian in the plane normal to the line segment. The default value is false.</li>
+<li><code>span_projection_factor</code>: This variable sets the width of the Gaussian kernel along the spanwise direction as a multiple of the local line segment length. The default value is 0.5. That is, it is the cells closest to the control point that will influence the sampled velocity the most, also in the spanwise direction. The fall off in the spanwise direction is controller by this factor.</li>
+<li><code>neglect_span_projection</code>: If this flag is set to true, the Gaussian kernel is assumed to be infinitely wide along the spanwise direction, effectively reducing the kernel to a 2D Gaussian in the plane normal to the line segment. However, only cells that are normal to the span line is included in the weighted average; cells that are either <em>above</em> or <em>below</em> is neglected. The weight of each cell is still based on the 2D force projection kernel, just no longer any spanwise distribution. The default value is false.</li>
 </ul>
 <p>This method is claimed to be more robust against numerical noise, in particular when using coarse grids. It also has the benefit that the interpolation method itself is not dependent on the CFD solver so that it is easy to use with any solver.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="force-projection"><a class="header" href="#force-projection">Force projection</a></h1>
-<p>The forces calculated on each line segment need to be projected back onto the CFD grid as body force to deflect the flow in as similar way as possible to a real wing. In other words, lift-induced velocities in an actuator line model is modeled through these body forces.</p>
+<p>The forces calculated on each line segment need to be projected back onto the CFD grid as body force to deflect the flow in as similar way as possible to a real wing. In other words, the force projection step is a requirement for actually introducing lift-induced velocities in the simulation. Without it, the force on each sail will not be affected by neither itself or other sails in the simulation. The force projection step is therefore a crucial part of the actuator line method.</p>
 <p>There are a few different ways to project these forces, and the choice of method can have a significant effect on the final results.</p>
-<p>MORE TO COME...</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct ProjectionSettings {
-    pub projection_function: Gaussian,
-    pub project_normal_to_velocity: bool,
-    pub weight_limit: f64,
-    pub project_sectional_drag: bool,
-}
-<span class="boring">}</span></code></pre></pre>
+<h2 id="basic-principle"><a class="header" href="#basic-principle">Basic principle</a></h2>
+<p>For each line segment in the line force model, there are force vectors representing different <a href="actuator_line/../line_model/force_calculations.html">force types</a>. When running an actuator line simulation, it is only the <strong>circulatory force</strong> that is projected by default. The other force types are still modeled, but not projected back to the CFD grid.</p>
+<p>The force on each line segment is assumed to act at the control points, or the middle of each line segment. However, it is not possible to simply add a single force vector for each point back to the CFD domain. If, lets say, each force where added to the cell closest to each control point, the resulting force field would be very extreme, and cause instabilities in the flow domain. As such, the force on each line segment needs to be distributed over a volume around each control point.</p>
+<p>The goal with the force projection logic, then, is to find a way to distribute the calculated forces on each line segment in a way that is both <strong>smooth</strong> AND than creates a <strong>flow deflection that is as close as possible to the one created by a real wing</strong>.</p>
+<h2 id="background-for-the-choice-of-force-projection-method"><a class="header" href="#background-for-the-choice-of-force-projection-method">Background for the choice of force projection method</a></h2>
+<p>The method implemented in Stormbird is based on a combination of techniques from the literature. It can be summarized as a two-dimensional Gaussian kernel in the plane normal to each line segment, but with anisotropic widths in the chord direction and the direction normal to both the chord and span directions. The last direction is also referred to as the "thickness direction".</p>
+<p>Below is a short summary of how three different papers have influenced the final choice of method.</p>
+<h3 id="original-method"><a class="header" href="#original-method">Original method</a></h3>
+<p>The original, and still most common, method for force projection, as for instance explain in the paper by <a href="actuator_line/../literature/simulation_methods.html#numerical-modeling-of-wind-turbine-wakes-2002">Sørensen et. al (2002)</a>, uses a uniform Gaussian kernel. That is, the width of the kernel is identical in all directions. This creates a volumetric distribution that is smooth everywhere and easy to implement. As such, it is still a common choice in many papers describing actuator line methods.</p>
+<p>However, this method was thought to have a few practical issues. The biggest one is that it may result in forces being projected significantly far outside the tip and root regions of the wing, as the width of the Gaussian kernel is, necessarily, not directly dependent on the length of the line segment. This creates situations where the width of the Gaussian kernel should really be tuned very carefully to the number of line segments in the model, or one risks having an effective span length that is larger than the real wing. In addition, it might create non-physical circulation distribution if the Gaussian kernel width is set too small, compared to length of the line segment.</p>
+<h3 id="introduction-of-the-two-dimensional-kernel"><a class="header" href="#introduction-of-the-two-dimensional-kernel">Introduction of the two-dimensional kernel</a></h3>
+<p>An simple solution to the issues described above was introduced in the PhD-thesis by <a href="actuator_line/../literature/simulation_methods.html#actuator-disc-methods-applied-to-wind-turbines-2004">Mikkelsen, 2004</a>. Rather than using the simple uniform kernel, he suggested a 2D kernel, where the force is smoothed only in the directions normal to the line segment, while being kept constant in strength along the spanwise direction of each line segment. Outside the line segment, the volume force is set to zero. This allows the force projection width to be set independently of the length of each line segment. The resulting force distribution is, also, more similar to how it would be in a discrete lifting line method with constant strength vortex elements.</p>
+<p><strong>Stormbird therefore uses a two-dimensional Gaussian kernel for the force projection</strong>, rather than the conventional 3D kernel.</p>
+<h3 id="anisotropic-kernel"><a class="header" href="#anisotropic-kernel">Anisotropic kernel</a></h3>
+<p>A final improvement available in the Stormbird library, relative to the original method, was inspired by the suggested force distribution in the paper by <a href="actuator_line/../literature/simulation_methods.html#an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017">Churchfield et al., 2017</a>. They tested an anisotropic Gaussian distribution, where the width of the kernel could be set independently in the chordwise, thickness, and spanwise directions. The idea was that most wings have a thickness that is significantly smaller than the chord length. By distributing the force more narrowly in the thickness direction, the resulting flow deflection could, perhaps, be more similar to a real wing. They show results that indicate that an anisotropic kernel can provide better results in terms of measured lift and drag forces than an isotropic one.</p>
+<p><strong>Stormbird therefore allows for setting different widths in the chord and thickness directions</strong>. The distribution in the spanwise direction still follows the same logic as for the unfiform two-dimensional kernel suggested by <a href="actuator_line/../literature/simulation_methods.html#actuator-disc-methods-applied-to-wind-turbines-2004">Mikkelsen, 2004</a>.</p>
+<h2 id="input-structures"><a class="header" href="#input-structures">Input structures</a></h2>
+<p>The force distribution in Stormbird is controlled through the <code>ProjectionSettings</code> and <code>Gaussian</code> structures, shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct Gaussian {
     pub chord_factor: f64,
     pub thickness_factor: f64,
 }
+
+pub struct ProjectionSettings {
+    pub projection_function: Gaussian,
+    pub project_normal_to_velocity: bool,
+    pub weight_limit: f64,
+    pub project_sectional_drag: bool,
+}
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>Gaussian</code> structure controls the width of the Gaussian kernel in the chord and thickness directions. The width in each direction is set as a multiple of the local chord length. For instance, if the <code>chord_factor</code> is set to 0.25, the width of the Gaussian kernel in the chord direction will be equal to a quarter of the chord length.</p>
+<p>The <code>ProjectionSettings</code> structure contains some additional settings for the force projection step. The most important ones are described below:</p>
+<ul>
+<li><code>project_normal_to_velocity</code>: If true, the force vector on each line segment is projected onto the plane normal to the local velocity vector before being distributed to the CFD grid. This is mostly a feature implemented for testing purposes. It is set to false as default, which is also the recommended setting.</li>
+<li><code>weight_limit</code>: This variable sets a lower limit for the weight of each CFD cell in the force projection step. Cells with a weight lower than this limit will not receive any force contribution from the line segment. This is mainly used in the CFD interface to determine which cells that needs to be looped over or not during the force projection step. The default value is 0.001.</li>
+<li><code>project_sectional_drag</code>: If true, the sectional drag force on each line segment is also projected back to the CFD grid, in addition to the circulatory force. It is set to false as default, which is also the recommended setting.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="corrections"><a class="header" href="#corrections">Corrections</a></h1>
+<p>The accuracy of an actuator line model is sensitive to both the force projection (shape and width), the mesh resolution in the CFD simulation, and the velocity sampling method. First, just to clarify, it is generally thought that wings will be simulated with a similar accuracy as a lifting line model IF the projection width is set to be sufficiently small, AND the mesh resolution is sufficiently high to allow for a small projection width. That is, an <strong>actuator line model should converge towards a lifting line model</strong> when the projection width is reduced.</p>
+<p>However, at least when using isotropic force projections, it is often impractical to have a small enough force projection width to allow for this. This is especially the case as the whole point of using an actuator line model, rather than a direct CFD simulation, is to significantly reduce the number of cells used in a simulation. As such, it is fairly <strong>common to combine an actuator line model with some form of correction</strong> to the <em>raw circulation distribution</em>, to achieve better accuracy at coarse meshes. In particular, the main issue with an actuator line model is typically that the <strong>tip circulation is predicted to be too large</strong>. Or, in other words, the lift-induced velocities on the tip is too small.</p>
+<p>As explored in the paper by <a href="actuator_line/../literature/simulation_methods.html#an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017">Churchfield et al., 2017</a>, this is an issue that might be also be solved by using force projection shapes that are more physically representative of a real wing, i.e. like with anisotropic kernels. However, other techniques are also often used, and the exact effect of the anisotropic force projection width deserves more investigation.</p>
+<p>The Stormbird  library currently implements two different correction methods based on suggestions from the literature.</p>
 <h2 id="lifting-line-correction-for-the-induced-velocity"><a class="header" href="#lifting-line-correction-for-the-induced-velocity">Lifting line correction for the induced velocity</a></h2>
+<h3 id="background"><a class="header" href="#background">Background</a></h3>
+<p>The first, and perhaps most promising, correction technique comes from the paper by <a href="actuator_line/../literature/simulation_methods.html#a-new-tip-correction-for-actuator-line-computations-2020">Dag and Sørensen, 2020</a>. The idea is based on an important observation: the lift-induced velocities from an actuator line model with a certain projection width, and an isotropic force projection kernel, seem to almost perfectly match the lift-induced velocity from a lifting line model with the same circulation distribution and a <strong>viscous core length equal to the projection width</strong>. That is, the vortices created by an actuator line model is like a smoothed, viscous, version of a pure potential theory vortex. The solution from this observation, suggested by Dag and Sørensen, is then to compute the error in the velocity field explicitly using a simple lifting line model, that directly quantify the effect of the viscous core.</p>
+<p>For each time step in the simulation, the circulation strength from the previous time step is known. These strength values are also the values used when projecting the forces at the previous time step, and the strength that was active when the velocity from the CFD domain was sampled. A correction to the sampled velocity can then be computed based on the difference in the induced velocity from a lifting line model with and without a viscous core.</p>
+<p>This is done by first computing the lift-induced velocities from a lifting line wake model with a viscous core equal to the projection width, and then doing the same calculation with very small core length. The difference in the induced velocity between the two wake models at each control point can then be used to correct the sampled velocity from the CFD grid.</p>
+<h3 id="wake-shape"><a class="header" href="#wake-shape">Wake shape</a></h3>
+<p>One challenge with such an approach is that the shape of the wake must be assumed somehow. This is a trivial task if there is only a single wing, but more difficult if there are multiple wings in close proximity OR wings standing on a ship superstructure. However, the point of the lifting line corrections is <strong>only to compute the error due to a too large projection width</strong>. The effect of a viscous core on the induced velocities are most significant from the wake close to the wing. The effect from the vortices far downstream should be small. The exact wake shape for the correction may, therefore, not be that important.</p>
+<p>As a simple solution to this, the lifting line correction in Stormbird assumes a steady wake shape, with a direction equal to the average sampled velocity over each wing. The correction for each wing is also simulated independently. That is, <strong>the correction should NOT affect interaction effects between wings in any way</strong>, only errors due to a too large viscous core on the wings own wake. This is choice is made to keep the correction method local to a single wing. In other words, the lifting line correction only correct for errors in the <em>self-induced</em> velocities, and not interaction effects.</p>
+<p>The actual code used to calculate the correction for a given time step is the same as the steady <a href="actuator_line/../lifting_line/wake.html">wake models</a> used in the lifting line methods.</p>
+<h3 id="input-structure"><a class="header" href="#input-structure">Input structure</a></h3>
+<p>To activate the lifting line correction, set the a value for <code>lifting_line_correction</code> in the <code>ActuatorLineBuilder</code>. The available options are shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct LiftingLineCorrectionBuilder {
@@ -1209,7 +1351,20 @@ while current_time &lt; end_time:
     pub symmetry_condition: SymmetryCondition
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>wake_length_factor</code> is set to 100.0 by default, which means that the wake used for computing lift-induced velocities is assumed to extend 100 chord lengths downstream. The <code>symmetry_condition</code> is set to <code>NoSymmetry</code> by default. The symmetry condition should generally reflect the same symmetry condition as used in the CFD simulation. For instance, if the bottom of the domain is at the lowest z-coordinate, the symmetry condition should be set to <code>Z</code>.</p>
+<p>Experience from this correction technique is that it works very well for actuator line simulations that only includes wings. Even with a <strong>large isotropic projection width</strong>, the result from an actuator line simulation will match the lifting line model almost perfectly. However, it can also create instabilities when combined with complex ship geometries. <strong>The hope is to find a solution to this in the future</strong>, as this type of correction is believed to be very general and promising for practical use cases.</p>
 <h2 id="empirical-circulation-correction"><a class="header" href="#empirical-circulation-correction">Empirical circulation correction</a></h2>
+<p>A more classical correction technique for actuator line simulations is to use an empirical correction factor to the calculated circulation on each wing. As mentioned, the <em>raw circulation at the tips</em> is often predicted to be too large. A simple solution is, then, to artificially reduce it based on a analytical correction. There are many small variations in how this is done. A recent discussion about the topic can be found in the paper by <a href="actuator_line/../literature/simulation_methods.html#spanwise-flow-corrections-for-tidal-turbines-2018">Wimshurst and Willden, 2018</a>. The correction in Stormbird follows the following principle:</p>
+<p>The raw circulation distribution, \( \Gamma_{raw} \), estimated directly from the sampled velocity, is multiplied by a correction function, \( f_{cor}(s) \), that takes the non-dimensional span distance at each wing, \( s \) as input, as well as a shape parameter \( \beta \). The function has the following shape:</p>
+<p>\[
+f_{cor}(s) = \frac{2.0}{\pi}\cos^{-1}(e^{-\beta (0.5 - |s|)})
+\]</p>
+<p>The plot below shows how the correction function looks for different values of \( \beta \). In general, any value of \( \beta \) will force the circulation towards zero at the tips. However, the larger the value, the steeper the reduction towards the tip, and the less effect it has on the inner part of the wing.</p>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<div id="circulation-correction-plot"></div>
+<script src="plot_scripts/circulation-correction-plot.js"></script>
+<h3 id="input-structure-1"><a class="header" href="#input-structure-1">Input structure</a></h3>
+<p>To active this correction, the <code>EmpiricalCirculationCorrection</code> structure must be set in the <code>ActuatorLineBuilder</code>, as shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct EmpiricalCirculationCorrection {
@@ -1217,57 +1372,246 @@ while current_time &lt; end_time:
     pub overall_correction: f64,
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>exp_factor</code> corresponds to the \( \beta \) variable in the equation above. It is set to 10.0 by default, but should ideally always be tuned for the specific case. The idea with this type of correction is to first tune the shape parameter based on simulation of a single wing, and then assume that it can remain constant also when simulating multiple wings or wings on a ship.</p>
+<p>The <code>overall_correction</code> is a global correction factor applied to the entire circulation distribution, that can be used to either increase or decrease the overall circulation level. It is set to 1.0 by default.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="openfoam-interface"><a class="header" href="#openfoam-interface">OpenFOAM interface</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="other-functionalities"><a class="header" href="#other-functionalities">Other functionalities</a></h1>
-<p>Intro about other functionalities in the Stormbird library</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="wind-model"><a class="header" href="#wind-model">Wind model</a></h1>
-<p>About how wind conditions can be modeled</p>
+<p>The actuator line functionality in the core Stormbird library is written in a general way, and could be coupled to any CFD solver. However, at the moment, the only interface made is towards the open-source CFD solver <a href="https://openfoam.com/">OpenFOAM</a>. This chapter describes how the coupling works in practice, and what is necessary to set up a simulation using OpenFOAM together with Stormbird.</p>
+<h2 id="cfd-interfaces"><a class="header" href="#cfd-interfaces">CFD interfaces</a></h2>
+<p>The general source code for interfaces towards CFD solver is located in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces">cfd_interfaces folder</a> on Github. OpenFOAM is a c++ library, which is also a common language for other CFD codes. In an attempt to generalize as much as possible, the interface between Stormbird and OpenFOAM is divided in two parts.</p>
+<p>The first part is a general C++ interface to the actuator line functionality in Stormbird. This source code is found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/cpp_actuator_line">cpp_actuator_line</a> folder on Github. It contains functionality to set up and call the Rust code from C++. The interface is made using the <a href="https://cxx.rs/">cxx crate</a>. It function names and data structures follows the Rust side as much as possible.</p>
+<p>The second part is specific to OpenFOAM. This source code is found the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/openfoam">openfoam</a> folder on Github. It implements a class called <code>ActuatorLine</code> that inherits from the standard <code>cellSetOption</code> class in OpenFOAM. The <code>cellSetOption</code> base class is used to implement volume forces that are added to the momentum equations for a variety of functionalities in the OpenFOAM library. The connection logic behind this class and the other OpenFOAM solvers therefore follows the same principle as any other <code>fvOption</code> source in OpenFOAM.</p>
+<p>The responsibility of the OpenFOAM interface is mainly to extract information from the CFD domain, such as the velocity field, pass it to the Stormbird library, and the project the resulting forces back to the CFD grid.</p>
+<h2 id="installing-the-openfoam-interface"><a class="header" href="#installing-the-openfoam-interface">Installing the OpenFOAM interface</a></h2>
+<p>Instructions for how to install the OpenFOAM interface can be found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/openfoam">README file</a> at the OpenFOAM interface Github page.</p>
+<h2 id="setting-up-an-openfoam-simulation"><a class="header" href="#setting-up-an-openfoam-simulation">Setting up an OpenFOAM simulation</a></h2>
+<p>Examples of how to use the OpenFOAM interface can be found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/openfoam/examples">examples folder</a> on GitHub.</p>
+<p>As with any other <code>fvOption</code> model in OpenFOAM, the actuator line model is activated by specifying it in the <code>fvOptions</code> file in the <code>system</code> folder. However, unlike native OpenFOAM models, the general setup is not defined directly in the <code>fvOption</code> file. Rather, the only thing that is necessary to specify in the <code>fvOptions</code> file is the following <sup class="footnote-reference" id="fr-interface_note-1"><a href="#footnote-interface_note">1</a></sup>:</p>
+<pre><code class="language-c++">FoamFile
+{
+    version    2.0;
+    format    ascii;
+    class     dictionary;
+    object    fvOptions;
+}
+
+actuatorLine
+{
+    type actuatorLine;
+    selectionMode   all;
+    fields (U);
+    name actuatorLine;
+}
+</code></pre>
+<p>This activates the actuator line functionality. The <code>ActuatorLine</code> class will then look for a JSON input file in the <code>system</code> folder called <code>stormbird_actuator_line.json</code>. The content of this file is a JSON representation of the <code>ActuatorLineBuilder</code> structure. If the file does not exists, or contains invalid settings, the OpenFOAM simulation will crash. The error message from OpenFOAM is messy in general, but there should be instructions from the Rust side within the crash log, typically on the top, explaining what went wrong.</p>
+<h2 id="results"><a class="header" href="#results">Results</a></h2>
+<p>Results from the simulation will be placed in the <code>postProcessing</code> folder in the case directory, like other post-processing data in OpenFOAM. There will be two types of result files:</p>
+<ul>
+<li><strong>The first is a simple csv file with forces</strong> as a function of time. This file will be called <code>stormbird_forces.csv</code>. The forces are written for every time step. The point of this file is to have a simple representation of the most important values from a simulation</li>
+<li><strong>The second is folder with full simulation result data</strong>. How often this data is written is controlled by the <code>write_iterations_full_result</code> parameter in the <a href="actuator_line/simulation_overview.html">ActuatorLineBuilder</a> structure. If this value is set 100, the full results will be written every 100 time step. The folder is called <code>stormbird_full_results</code> and will contain several JSON files with <a href="actuator_line/../line_model/force_calculations.html">SimulationResult</a> data. This data is useful for looking more detailed into the results, such as the circulation distribution and the angles of attack on each line segment.</li>
+</ul>
+<hr>
+<ol class="footnote-definition"><li id="footnote-interface_note">
+<p>The interface for the setup kept simple, but might also probably a bit too basic to cover all situations at the moment. It might therefore be extended with more options in the future, depending on what is needed. <a href="#fr-interface_note-1">↩</a></p>
+</li>
+</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="other-functionalities"><a class="header" href="#other-functionalities">Other functionalities</a></h1>
+<p>The library also contains several helper functionalities that model things that are useful for wind propulsion simulations, but that, technically speaking, is not parts of either the lifting line or actuator line methods. These functionalities are described in this chapter.</p>
+<p>This chapters is, however, still under construction. The plan is to extend the sub-chapters with <strong>more details "soon"</strong>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="wind-environment"><a class="header" href="#wind-environment">Wind environment</a></h1>
+<p>DESCRIPTION TO BE EXTENDED LATER. AlSO, THE EXACT SHAPE OF THE DATA STRUCTURE STILL UNDER DEVELOPMENT.</p>
+<p>The Stormbird library contains a data structure for representing the wind environment in different situations. The main point of this structure is to be able to provide spatially varying inflow conditions at all relevant points in a simulation. This fits most naturally with the lifting line simulations, but the wind model is kept separate so that it can, potentially, also be used with other simplified models of wind propulsion devices if needed.</p>
+<p>The basic structure for the wind environment is given below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct WindEnvironment {
+    pub height_variation_model: Option&lt;HeightVariationModel&gt;,
+    pub up_direction: SpatialVector,
+    pub wind_rotation_axis: SpatialVector,
+    pub zero_direction_vector: SpatialVector,
+    pub water_plane_height: f64,
+    pub inflow_corrections: Option&lt;InflowCorrections&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The fields in the structure are described below:</p>
+<ul>
+<li><code>height_variation_model</code>: An optional model for how the wind speed varies with height above the water surface. If this is not specified, the wind speed is assumed to be constant with height.</li>
+<li><code>up_direction</code>: A vector defining the "up" direction in the simulation. This is used to determine the height above the water surface.</li>
+<li><code>wind_rotation_axis</code>: A vector defining the axis where the wind direction is rotated around when changing wind direction.</li>
+<li><code>zero_direction_vector</code>: A vector defining the reference direction for the wind. The wind will point along this vector when the wind direction angle is zero.</li>
+<li><code>water_plane_height</code>: A scalar defining the height of the water plane in the simulation.</li>
+<li><code>inflow_corrections</code>: An optional structure containing corrections to be applied to the inflow velocity, which is primarily intended for modeling disturbances due to the rest of the ship. See more about this correction model below.</li>
+</ul>
+<h2 id="height-variation-models"><a class="header" href="#height-variation-models">Height variation models</a></h2>
+<p>The height variation models can be set with the following Enum:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum HeightVariationModel {
+    PowerModel(PowerModel),
+    LogarithmicModel(LogarithmicModel),
+}
+<span class="boring">}</span></code></pre></pre>
+<p>That is, one can choose between a power law model and a logarithmic model for the wind speed variation with height. The input structures for the two models are shown below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct PowerModel {
+    pub reference_height: f64,
+    pub power_factor: f64,
+}
+
+pub struct LogarithmicModel {
+    pub reference_height: f64,
+    pub surface_roughness: f64,
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="inflow-corrections"><a class="header" href="#inflow-corrections">Inflow corrections</a></h2>
+<p>NOTE: These structures, in particular, have room for improvements. Might therefore change in future versions. MORE TO COME LATER.</p>
+<p>The <code>inflow_corrections</code> variable is a data structure used to store corrections to the freestream velocity due to anything that might disturb the inflow. That is, it is primarily intended to model the wind disturbances caused by the ship itself. The data structure is set up such that the correction can depend on both the spanwise position along each sail and the apparent wind direction.</p>
+<p>The correction factors themselves consist of two parts: A magnitude factor that scales the local inflow velocity, and an angle correction that modifies the local apparent wind angle.</p>
+<p>The data structures to set this up is shown below. In practice, these structures are just used to do linear interpolation on the correction factors as needed during the simulation.:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InflowCorrectionSingleSailSingleDirection {
+    pub non_dimensional_span_distances: Vec&lt;f64&gt;,
+    pub wake_factors_magnitude: Vec&lt;f64&gt;,
+    pub angle_corrections: Vec&lt;f64&gt;,
+}
+
+pub struct InflowCorrectionSingleSail {
+    pub apparent_wind_directions: Vec&lt;f64&gt;,
+    pub corrections: Vec&lt;InflowCorrectionSingleSailSingleDirection&gt;,
+}
+
+pub struct InflowCorrections {
+    pub individual_corrections: Vec&lt;InflowCorrectionSingleSail&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="tuning-the-inflow-corrections"><a class="header" href="#tuning-the-inflow-corrections">Tuning the inflow corrections</a></h3>
+<p>TO COME</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="control-system"><a class="header" href="#control-system">Control system</a></h1>
-<p>About the control systems available</p>
+<p>NOTE: the control system functionality is planned to be changed in version 0.8.0. Right now, the same control logic must be applied for all sails in the simulation, which is an necessary limitation. This will therefore be changed soon! More detailed documentation for the control system logic will therefore come later.</p>
+<p>The library contain different control system that can be used to automatically adjust the sail settings for different wind conditions. The goal is to have a system that covers most uses cases. The controller can automatically be activated for different versions of the Stormbird library. However, it is also usually possible to run custom control systems in various ways with the different APIs.</p>
+<p>The structures used to set up a control system is shown below:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ControllerBuilder {
+    pub logic: ControllerLogic,
+    pub flow_measurement_settings: FlowMeasurementSettings,
+    pub time_steps_between_updates: usize,
+    pub start_time: Float,
+    pub max_local_wing_angle_change_rate: Option&lt;f64&gt;,
+    pub max_internal_section_state_change_rate: Option&lt;f64&gt;,
+    pub moving_average_window_size: Option&lt;usize&gt;,
+    pub use_input_velocity_for_apparent_wind_direction: bool,
+}
+
+pub struct ControllerLogic {
+    pub apparent_wind_directions_data: Vec&lt;f64&gt;,
+    pub angle_of_attack_set_points_data: Option&lt;Vec&lt;f64&gt;&gt;,
+    pub section_model_internal_state_set_points_data: Option&lt;Vec&lt;f64&gt;&gt;,
+    pub internal_state_type: InternalStateType,
+    pub use_effective_angle_of_attack: bool,
+}
+
+pub enum InternalStateType {
+    Generic,
+    SpinRatio(SpinRatioConversion),
+}
+
+pub struct SpinRatioConversion {
+    diameter: f64,
+    max_rps: f64,
+}
+
+pub struct FlowMeasurementSettings {
+    pub angle_of_attack: MeasurementSettings,
+    pub wind_direction: MeasurementSettings,
+    pub wind_velocity: MeasurementSettings,
+}
+
+pub struct MeasurementSettings {
+    pub measurement_type: MeasurementType,
+    pub start_index: usize,
+    pub end_offset: usize,
+}
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="empirical-models"><a class="header" href="#empirical-models">Empirical models</a></h1>
-<p>About empirical models, such as superstructure forces</p>
+<p>Pure empirical models that may be used on combination with other models in the library.</p>
+<h2 id="parametric-model-for-wind-loads-on-a-ship-superstructure"><a class="header" href="#parametric-model-for-wind-loads-on-a-ship-superstructure">Parametric model for wind loads on a ship superstructure</a></h2>
+<p>An empirical model for the forces acting on a superstructure. Included in the library to be able to make a "complete" model of the aerodynamics on a ship. The current method is very basic and consists of a slightly simplified version the <a href="https://doi.org/10.1016/0167-6105(94)90067-1">Blendermann model</a>.</p>
+<p>MORE TO COME</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct BlendermannSuperstructureForces {
+    pub frontal_area: f64,
+    pub side_area: f64,
+    pub center_of_effort: SpatialVector,
+    pub resistance_coefficient: f64,
+    pub side_force_coefficient: f64,
+    pub coupling_factor: f64,
+    pub density: f64,
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="literature"><a class="header" href="#literature">Literature</a></h1>
-<p>This chapter gives references to relevant literature that can serve as useful additional reading when working with Stormbird models.</p>
+<p>This chapter gives references to relevant literature that can serve as useful additional reading when working with the Stormbird models.</p>
 <p>The chapter is divided into two sub-chapters:</p>
 <ol>
 <li><a href="literature/similar_simulation_methods.html">Simulation methods</a> contains references to papers that cover similar or identical methods as the ones implemented in Stormbird. That is, papers covering lifting line and actuator line methods.</li>
-<li><a href="literature/validation_data.html">Validation data</a> contains references to papers that provide data that can be used to validate the output from Stormbird simulations.</li>
+<li><a href="literature/validation_data.html">Validation data</a> contains references to papers that provide data that can be used to validate the output from Stormbird simulations. That is, generally experimental data or high-fidelity CFD simulations of wind propulsion devices.</li>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="simulation-methods"><a class="header" href="#simulation-methods">Simulation methods</a></h1>
 <p>This chapter gives references to papers and other literature that use similar or identical methods as the ones implemented in Stormbird. These can be read to gain better understanding of the underlying methods, or to find alternative implementations to the Stormbird library.</p>
 <h2 id="publications-using-stormbird"><a class="header" href="#publications-using-stormbird">Publications using Stormbird</a></h2>
 <p>Articles that use the Stormbird library directly is shown in the sub sections below.</p>
-<ul>
-<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0029801822010447">Sail-induced resistance on a wind-powered cargo ship</a></strong> (2022), by J. V. Kramer and S. Steen. A larger article that was really about the hydrodynamic modelling of wind-powered ships. However, an early version of the lifting line method implemented in Stormbird was used for the sail modelling. It also contains a simple validation experiment that compares lifting line simulations against CFD.</li>
-<li><strong><a href="https://www.researchgate.net/publication/374976524_Actuator_Line_for_Wind_Propulsion_Modelling">Actuator line for wind propulsion modelling</a></strong> (2023), by J. V. Kramer and S. Steen. Compares CFD, lifting line and actuator line simulations against each other for a case that includes two wing sails in close proximity. The actuator line simulations also contains the effect of a superstructure.</li>
-</ul>
+<h4 id="sail-induced-resistance-on-a-wind-powered-cargo-ship-2022"><a class="header" href="#sail-induced-resistance-on-a-wind-powered-cargo-ship-2022">Sail-induced resistance on a wind-powered cargo ship, 2022</a></h4>
+<p>By J. V. Kramer and S. Steen. A larger article that was really about the hydrodynamic modeling of wind-powered ships. However, an early version of the lifting line method implemented in Stormbird was used for the sail modeling. It also contains a simple validation experiment that compares lifting line simulations against CFD. Can be downloaded <a href="https://doi.org/10.1016/j.oceaneng.2022.111688">here</a>.</p>
+<h4 id="actuator-line-for-wind-propulsion-modelling-2023"><a class="header" href="#actuator-line-for-wind-propulsion-modelling-2023">Actuator line for wind propulsion modelling, 2023</a></h4>
+<p>By J. V. Kramer and S. Steen. Compares CFD, lifting line and actuator line simulations against each other for a case that includes two wing sails in close proximity. The actuator line simulations also contains the effect of a superstructure.Can be downloaded <a href="https://www.researchgate.net/publication/374976524_Actuator_Line_for_Wind_Propulsion_Modelling">here</a>.</p>
+<h4 id="optimizing-wing-sails-with-actuator-line-simulations-and-an-effective-angle-of-attack-controller-2025"><a class="header" href="#optimizing-wing-sails-with-actuator-line-simulations-and-an-effective-angle-of-attack-controller-2025">Optimizing Wing Sails with Actuator Line Simulations and an Effective Angle of Attack Controller, 2025</a></h4>
+<p>By J. V. Kramer. Further testing of the actuator line model, as well as a first test of a simple controller for the angle of attack for a wing sail. Can be downloaded <a href="https://www.researchgate.net/publication/396775692_Optimizing_Wing_Sails_with_Actuator_Line_Simulations_and_an_Effective_Angle_of_Attack_Controller">here</a>.</p>
 <h2 id="lifting-line"><a class="header" href="#lifting-line">Lifting line</a></h2>
 <h3 id="open-source-projects"><a class="header" href="#open-source-projects">Open source projects</a></h3>
 <p>Below is a list of other open source lifting line implementations that have similar functionality as Stormbird</p>
-<ul>
-<li><strong><a href="https://gitlab.com/lheea/CN-AeroModels">CN-AeroModels</a></strong>. An open source implementation of a discrete static lifting line, intended for wind propulsion modelling. The capabilities of this software are very similar to the static lifting line implementation in Stormbird.</li>
-<li><strong><a href="https://github.com/usuaero/MachUpX">MachUpX</a></strong>. An open source implementation of a discrete static lifting line, intended for wings with and without sweep.</li>
-</ul>
+<h4 id="cn-aeromodels"><a class="header" href="#cn-aeromodels">CN-AeroModels</a></h4>
+<p>An open source implementation of a discrete static lifting line, intended for wind propulsion modeling. The capabilities of this software are very similar to the static lifting line implementation in Stormbird. Can be found <a href="https://gitlab.com/lheea/CN-AeroModels">here</a>.</p>
+<h4 id="machupx"><a class="header" href="#machupx">MachUpX</a></h4>
+<p>An open source implementation of a discrete static lifting line, intended for wings with and without sweep. Can be found <a href="https://github.com/usuaero/MachUpX">here</a>.</p>
+<h3 id="books"><a class="header" href="#books">Books</a></h3>
+<p>Some books that might be useful for those interested in learning more about the fundamentals of the lifting line method.</p>
+<h4 id="low-speed-aerodynamics-2001"><a class="header" href="#low-speed-aerodynamics-2001">Low-Speed Aerodynamics, 2001</a></h4>
+<p>By J. Katz and A. Plotkin. A book that focuses very much on potential theory for air craft applications. Includes a many details about lifting line theory.</p>
+<h4 id="fundamentals-of-aerodynamics-2005"><a class="header" href="#fundamentals-of-aerodynamics-2005">Fundamentals of Aerodynamics, 2005</a></h4>
+<p>By J.D Anderson. A book about many things within aerodynamics, especially for airplanes, that also have an excellent chapter about the lifting line method and how to implement a basic straight forward version of it.</p>
 <h3 id="papers"><a class="header" href="#papers">Papers</a></h3>
 <p>Below is a list of papers that either use lifting line methods for sail modeling or serves as direct inspiration for the lifting line method implemented in Stormbird.</p>
-<ul>
-<li><strong><a href="https://arc.aiaa.org/doi/abs/10.2514/2.2649?journalCode=ja">Modern Adaptation of Prandtl's Classic Lifting-Line Theory</a></strong> (2000) by W. F. Phillips and more. First known example of a discrete lifting line, as in, capable of modelling multiple wings in the same simulation.</li>
-<li><strong><a href="https://digitalcommons.usu.edu/spacegrant/2011/Session1/4/">A Numerical Lifting-Line Method Using Horseshoe Vortex Sheets</a></strong> (2011) by W. F. Phillips. Another example of a discrete lifting line implementation.</li>
-<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0045793013001606">Numerical analysis of multiple, thin-sail geometries based on Prandtl’s lifting-line theory</a></strong> (2013) by R. E. Spall and more. A paper about modeling sails using lifting line theory. The output is compared against other potential theory methods with good results.</li>
-<li><strong><a href="https://www.researchgate.net/profile/Kostia-Roncin/publication/330114548_Local_Results_Verification_of_a_3D_Non-Linear_Lifting_Line_Method_for_Fluid-Structure_Interactions_Simulation_on_a_Towing_Kite_for_Vessels/links/5c2e2f41299bf12be3ab2165/Local-Results-Verification-of-a-3D-Non-Linear-Lifting-Line-Method-for-Fluid-Structure-Interactions-Simulation-on-a-Towing-Kite-for-Vessels.pdf">Local Results Verification of a 3D Non-Linear Lifting Line Method for Fluid-Structure Interactions Simulation on a Towing Kite for Vessels</a></strong> (2017) by C. Duport and more. Example of a discrete lifting line being used for towing kite modelling.</li>
-<li><strong><a href="https://www.researchgate.net/publication/348240031_Practical_Implementation_of_a_General_Numerical_Lifting-Line_Method">Practical Implementation of a General Numerical Lifting-Line Method</a></strong> (2021) by C. Goates. Another discrete lifting line method, with particular focus on how to deal with swept wings.</li>
-<li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0029801823029803?via%3Dihub">Rapid aerodynamic method for predicting the performance of interacting wing sails</a></strong> (2023) by K. Malmek and more. About a lifting line method that employs a practical simplification; rather than solving for the vortex strength on the individual line elements, the lift and drag on a single sail is computed directly from the simplified elliptic wing equations for 3D effects, as a function of the local angle of attack. Interaction effects between multiple sails are still computed using a discrete lifting line approach, but with where the circulation distribution is assumed to be elliptic. This allows for a quicker solution, but still with good results. A similar simulation type is possible in Stormbird, by using a "prescribed circulation" with an elliptical shape.</li>
-</ul>
+<h4 id="vsaero-theory-document-1987"><a class="header" href="#vsaero-theory-document-1987">VSAERO theory document, 1987</a></h4>
+<p>By B. Maskew. A detailed description of the theory behind the panel code VSAERO. This includes detailed formulations for how to compute lift-induced velocities for discrete vortex lines. Can be downloaded <a href="https://ntrs.nasa.gov/api/citations/19900004884/downloads/19900004884.pdf">here</a></p>
+<h4 id="modern-adaptation-of-prandtls-classic-lifting-line-theory-2000"><a class="header" href="#modern-adaptation-of-prandtls-classic-lifting-line-theory-2000">Modern Adaptation of Prandtl's Classic Lifting-Line Theory, 2000</a></h4>
+<p>By W. F. Phillips et al. First known example of a discrete lifting line, as in, capable of modeling multiple wings in the same simulation. Can be downloaded <a href="https://arc.aiaa.org/doi/abs/10.2514/2.2649?journalCode=ja">here</a>.</p>
+<h4 id="a-numerical-lifting-line-method-using-horseshoe-vortex-sheets-2011"><a class="header" href="#a-numerical-lifting-line-method-using-horseshoe-vortex-sheets-2011">A Numerical Lifting-Line Method Using Horseshoe Vortex Sheets, 2011</a></h4>
+<p>By W. F. Phillips. Another example of a discrete lifting line implementation. Can be downloaded <a href="https://digitalcommons.usu.edu/spacegrant/2011/Session1/4/">here</a>.</p>
+<h4 id="numerical-analysis-of-multiple-thin-sail-geometries-based-on-prandtls-lifting-line-theory-2013"><a class="header" href="#numerical-analysis-of-multiple-thin-sail-geometries-based-on-prandtls-lifting-line-theory-2013">Numerical analysis of multiple, thin-sail geometries based on Prandtl’s lifting-line theory, 2013</a></h4>
+<p>By R. E. Spall et al. A paper about modeling sails using lifting line theory. The output is compared against other potential theory methods with good results. Can be downloaded <a href="https://www.sciencedirect.com/science/article/pii/S0045793013001606">here</a>.</p>
+<h4 id="local-results-verification-of-a-3d-non-linear-lifting-line-method-for-fluid-structure-interactions-simulation-on-a-towing-kite-for-vessels-2017"><a class="header" href="#local-results-verification-of-a-3d-non-linear-lifting-line-method-for-fluid-structure-interactions-simulation-on-a-towing-kite-for-vessels-2017">Local Results Verification of a 3D Non-Linear Lifting Line Method for Fluid-Structure Interactions Simulation on a Towing Kite for Vessels, 2017</a></h4>
+<p>By C. Duport et al. Example of a discrete lifting line being used for towing kite modeling. Can be downloaded <a href="https://www.researchgate.net/profile/Kostia-Roncin/publication/330114548_Local_Results_Verification_of_a_3D_Non-Linear_Lifting_Line_Method_for_Fluid-Structure_Interactions_Simulation_on_a_Towing_Kite_for_Vessels/links/5c2e2f41299bf12be3ab2165/Local-Results-Verification-of-a-3D-Non-Linear-Lifting-Line-Method-for-Fluid-Structure-Interactions-Simulation-on-a-Towing-Kite-for-Vessels.pdf">here</a>.</p>
+<h4 id="practical-implementation-of-a-general-numerical-lifting-line-method-2021"><a class="header" href="#practical-implementation-of-a-general-numerical-lifting-line-method-2021">Practical Implementation of a General Numerical Lifting-Line Method, 2021</a></h4>
+<p>By C. Goates. Another discrete lifting line method, with particular focus on how to deal with swept wings. Can be downloaded <a href="https://www.researchgate.net/publication/348240031_Practical_Implementation_of_a_General_Numerical_Lifting-Line_Method">here</a>.</p>
+<h4 id="rapid-aerodynamic-method-for-predicting-the-performance-of-interacting-wing-sails-2023"><a class="header" href="#rapid-aerodynamic-method-for-predicting-the-performance-of-interacting-wing-sails-2023">Rapid aerodynamic method for predicting the performance of interacting wing sails, 2023</a></h4>
+<p>By K. Malmek et al. About a lifting line method that employs a practical simplification; rather than solving for the vortex strength on the individual line elements, the lift and drag on a single sail is computed directly from the simplified elliptic wing equations for 3D effects, as a function of the local angle of attack. Interaction effects between multiple sails are still computed using a discrete lifting line approach, but with where the circulation distribution is assumed to be elliptic. This allows for a quicker solution, but still with good results. A similar simulation type is possible in Stormbird, by using a "prescribed circulation" with an elliptical shape. Can be downloaded <a href="https://www.sciencedirect.com/science/article/pii/S0029801823029803?via%3Dihub">here</a>.</p>
 <h2 id="actuator-line-1"><a class="header" href="#actuator-line-1">Actuator line</a></h2>
 <h3 id="papers-1"><a class="header" href="#papers-1">Papers</a></h3>
-<ul>
-<li><strong><a href="https://asmedigitalcollection.asme.org/fluidsengineering/article/124/2/393/444521/Numerical-Modeling-of-Wind-Turbine-Wakes">Numerical Modeling of Wind Turbine Wakes </a></strong> (2002) by J. N. Sørrensen and more. As far as we know, the first paper about actuator line modelling.</li>
-<li><strong><a href="https://backend.orbit.dtu.dk/ws/portalfiles/portal/5452244/Robert.PDF">Actuator Disc Methods Applied to Wind Turbines</a></strong> (2004) by R. F. Mikkelsen. A PhD thesis that include investigations of actuator line modelling. The thesis introduces the concept of using a 'planar force distribution' that is constant along a line section. The same principle is used in Stormbird.</li>
-<li><strong><a href="https://www.researchgate.net/publication/271374677_A_Comparison_of_Actuator_Disk_and_Actuator_Line_Wind_Turbine_Models_and_Best_Practices_for_Their_Use">A Comparison of Actuator Disk and Actuator Line Wind Turbine Models and Best Practices for Their Use</a></strong> (2012) by L A. Martinez and more. A paper that tests different settings for actuator line simulations.</li>
-<li><strong><a href="https://www.nrel.gov/docs/fy17osti/67611.pdf">An Advanced Actuator Line Method for Wind Energy Applications and Beyond</a></strong> (2017) by M. Churchfield and more. Introduces two "advanced" functionalities for actuator line simulations (both of which are also available in Stormbird): the concept of an anisotropic force distribution and weighted integral sampling of the control point velocity.</li>
-<li><strong><a href="https://www.researchgate.net/publication/350027407_A_RANS-BEM_Method_to_Efficiently_Include_Appendage_Effects_in_RANS-Based_Hull_Shape_Evaluation">A RANS-BEM Method to Efficiently Include Appendage Effects in RANS-Based Hull Shape Evaluation</a></strong> (2021) by H. Renzsch and more. A paper about the use of actuator lines to model a sail boat keel.</li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<h4 id="numerical-modeling-of-wind-turbine-wakes-2002"><a class="header" href="#numerical-modeling-of-wind-turbine-wakes-2002">Numerical Modeling of Wind Turbine Wakes, 2002</a></h4>
+<p>By J. N. Sørensen and W. Z. Shen. As far as we know, the first paper about actuator line modeling. Introduces the method in a general sense. Can be downloaded <a href="https://asmedigitalcollection.asme.org/fluidsengineering/article/124/2/393/444521/Numerical-Modeling-of-Wind-Turbine-Wakes">here</a>.</p>
+<h4 id="actuator-disc-methods-applied-to-wind-turbines-2004"><a class="header" href="#actuator-disc-methods-applied-to-wind-turbines-2004">Actuator Disc Methods Applied to Wind Turbines, 2004</a></h4>
+<p>By R. F. Mikkelsen. A PhD thesis that include investigations of actuator line modeling. The thesis introduces the concept of using a 'planar force distribution' that is constant along a line section. The same principle is used in Stormbird. Can be downloaded <a href="https://backend.orbit.dtu.dk/ws/portalfiles/portal/5452244/Robert.PDF">here</a>.</p>
+<h4 id="a-comparison-of-actuator-disk-and-actuator-line-wind-turbine-models-and-best-practices-for-their-use-2012"><a class="header" href="#a-comparison-of-actuator-disk-and-actuator-line-wind-turbine-models-and-best-practices-for-their-use-2012">A Comparison of Actuator Disk and Actuator Line Wind Turbine Models and Best Practices for Their Use, 2012</a></h4>
+<p>By L A. Martinez et al. A paper that tests different settings for actuator line simulations. Can be downloaded <a href="https://www.researchgate.net/publication/271374677_A_Comparison_of_Actuator_Disk_and_Actuator_Line_Wind_Turbine_Models_and_Best_Practices_for_Their_Use">here</a>.</p>
+<h4 id="an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017"><a class="header" href="#an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017">An Advanced Actuator Line Method for Wind Energy Applications and Beyond, 2017</a></h4>
+<p>By M. Churchfield et al. Introduces two "advanced" functionalities for actuator line simulations (both of which are also available in Stormbird): the concept of an anisotropic force distribution and weighted integral sampling of the control point velocity. Results from this paper suggest that the shape of the force projection can have a large influence on the accuracy, and that an anisotropic force projection is more correct than an isotropic one. Can be downloaded <a href="https://www.nrel.gov/docs/fy17osti/67611.pdf">here</a>.</p>
+<h4 id="spanwise-flow-corrections-for-tidal-turbines-2018"><a class="header" href="#spanwise-flow-corrections-for-tidal-turbines-2018">Spanwise Flow Corrections for Tidal Turbines, 2018</a></h4>
+<p>By A. Wimshurst and R. Willden. A paper that discusses different spanwise flow corrections in the context of using actuator line models for tidal turbines. Can be downloaded <a href="https://www.researchgate.net/publication/336979652_Spanwise_flow_corrections_for_tidal_turbines">here</a>.</p>
+<h4 id="a-new-tip-correction-for-actuator-line-computations-2020"><a class="header" href="#a-new-tip-correction-for-actuator-line-computations-2020">A new tip correction for actuator line computations, 2020</a></h4>
+<p>By K. O. Dag and J. N. Sørensen. A paper that introduces a new tip correction method for actuator line simulations based on lifting line theory. They suggest to run to lifting line calculations in parallel with the actuator line simulation; one with a viscous core length equal to the force projection width, and one with a very small core length. The difference in velocity can then be used to correct the raw sampled velocity from the CFD grid. The same method is available in Stormbird. Can be downloaded <a href="https://onlinelibrary.wiley.com/doi/epdf/10.1002/we.2419">here</a>.</p>
+<h4 id="a-rans-bem-method-to-efficiently-include-appendage-effects-in-rans-based-hull-shape-evaluation-2021"><a class="header" href="#a-rans-bem-method-to-efficiently-include-appendage-effects-in-rans-based-hull-shape-evaluation-2021">A RANS-BEM Method to Efficiently Include Appendage Effects in RANS-Based Hull Shape Evaluation, 2021</a></h4>
+<p>By H. Renzsch et al. A paper about the use of actuator lines to model a sail boat keel.Can be downloaded <a href="https://www.researchgate.net/publication/350027407_A_RANS-BEM_Method_to_Efficiently_Include_Appendage_Effects_in_RANS-Based_Hull_Shape_Evaluation">here</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script src="plot_scripts/plot_settings.js"></script>
 <h1 id="validation-data"><a class="header" href="#validation-data">Validation data</a></h1>
 <p>This chapter contains useful references for extracting data about the lift and drag on different wind propulsion devices, that, for instance, can be used to validate a simulation setup. The most relevant comparison data are from methods that can be considered to be <em>higher fidelity</em> than the methods in Stormbird. In other words, the articles below mostly contain data from either CFD, experiments, or some type of processing of full-scale measurements.</p>
@@ -1286,7 +1630,7 @@ while current_time &lt; end_time:
 <ul>
 <li><strong><a href="https://ntrs.nasa.gov/citations/19930090695">Application of the Magnus effect to the wind propulsion of ships</a></strong> (1926), by L. Prandtl. One of the first papers about rotor sails. The text mainly consists of a general discussion about the concept and the history of the first ship using rotor sails for propulsion, namely the <em>The Buckau</em>. However, there is also results from one of the first experiments of rotor sails in the appendix of the paper.</li>
 <li><strong><a href="https://www.sciencedirect.com/science/article/pii/S0167610518307396">Experiments on a Flettner rotor at critical and supercritical Reynolds numbers</a></strong> (2019), by G. Bordogna and more. Contains results from experiments where lift, drag and power coefficients on rotor sails where measured at different Reynolds numbers and spin ratios. <strong>Note</strong>: the experiments are performed in a wind tunnel where the rotor extends from the floor to the roof, which indicate that the force measurements should be interpreted as two-dimensional. However, it is mentioned in the article that there might be three-dimensional effects due to the boundary layer along the walls. The measured drag is also so large that there seem to be some three-dimensional effects present. The results are therefore probably most useful as a comparison for lift and power, while the drag values are a bit hard to interpret.</li>
-<li><strong><a href="https://doi.org/10.1016/j.oceaneng.2020.107603">Design, operation and analysis of wind-assisted cargo ships</a></strong> (2020), by F. Tillig and more. A paper about methods to set up empirical modelling of wind powered ships. One of the empirical methods presented is for the lift, drag and power consumption of rotor sails, tuned based on full-scale measurements.</li>
+<li><strong><a href="https://doi.org/10.1016/j.oceaneng.2020.107603">Design, operation and analysis of wind-assisted cargo ships</a></strong> (2020), by F. Tillig and more. A paper about methods to set up empirical modeling of wind powered ships. One of the empirical methods presented is for the lift, drag and power consumption of rotor sails, tuned based on full-scale measurements.</li>
 <li><strong><a href="https://www.intmaritimeengineering.org/index.php/ijme/article/view/1146/356">Retrofitting of Flettner Rotors – Results From Sea Trials of the General Cargo Ship "Fehn Pollux</a></strong> (2020), by M. Vahs. A paper that really is about the how to analyze sea-trail data from a ship equipped with rotor sails. A part of the paper also contain wind tunnel measurements that originates from a bachelor thesis (original source not found), which gives lift and drag as a function of spin ratio.</li>
 <li><strong><a href="http://data.hiper-conf.info/Hiper2022_Cortona.pdf">Levelling the Playing Field: A Numerical Platform for the Fair Comparison of Wind Propulsion Systems</a></strong> (2022), by F. C. Gerhardt and more. A paper mostly about the need to have independent analysis of wind propulsion devices. As part of explaining the rotor sail models, CFD results of lift and drag as a function of spin ratio are presented. This presentation also includes a comparison against other available data sources.</li>
 <li><strong><a href="https://blueoasis.pt/wp-content/uploads/2023/10/Nutts2023_proceedings_v4.pdf">Calculation of Flettner rotor forces using lifting line and CFD methods</a></strong> (2023), by A. Östman and more. A paper that compares lifting line simulations against CFD simulations for rotor sails. As part of this, there is both two- and three-dimensional data for lift and drag. The two-dimensional data from this paper is used as the default values in the rotating cylinder sectional model in Stormbird.</li>
@@ -1310,7 +1654,7 @@ while current_time &lt; end_time:
 <ul>
 <li><strong><a href="https://www.jmwe.org/uploads/1/0/6/4/106473271/aa_suction_sails_turbosail_ventifoil_cousteau_report.pdf">Fondation Cousteau and windship propulsion - 1980 - 1985 - System Cousteau - Pechiney</a></strong> (1985), by B. Charrier and more. A paper about the original suction sail concept, known as turbo sails. Part of the presentation is lift and drag data from the sail for different suction rates based on wind tunnel measurements.</li>
 <li><strong><a href="https://repository.tudelft.nl/record/uuid:a681c8e6-552e-45a1-8657-893123a8e06b">Wind Propulsion for Merchant Vessels</a></strong> (2017). A master thesis about how to model ships with wind propulsion, that also contains CFD simulations of suction sails, compared against experimental data from the original Turbosail.</li>
-<li><strong><a href="https://www.researchgate.net/publication/355675684_A_CFD_Study_on_Wind_Assisted_Propulsion_Technology_for_Commercial_Shipping">A CFD Study on Wind Assisted Propulsion Technology for Commercial Shipping</a></strong> (2021), by W. Hopes and more. A paper about CFD modelling of suction sails, which includes data on lift and drag.</li>
+<li><strong><a href="https://www.researchgate.net/publication/355675684_A_CFD_Study_on_Wind_Assisted_Propulsion_Technology_for_Commercial_Shipping">A CFD Study on Wind Assisted Propulsion Technology for Commercial Shipping</a></strong> (2021), by W. Hopes and more. A paper about CFD modeling of suction sails, which includes data on lift and drag.</li>
 <li><strong><a href="http://data.hiper-conf.info/Hiper2022_Cortona.pdf">Levelling the Playing Field: A Numerical Platform for the Fair Comparison of Wind Propulsion Systems</a></strong> (2022), by F. C. Gerhardt and more. A paper mostly about the need to have independent analysis of wind propulsion devices. As part of explaining the suction sail model, CFD results of lift and drag for different suction rates and angles of attack is presented.</li>
 </ul>
 <p>Data from the original <a href="https://en.wikipedia.org/wiki/Turbosail">Turbosail</a> from Charrier et al. (1985) seem to still be the primary data source used in open research. The other papers above typically try to reproduce the same values, only with CFD. That is, the references mentioned do not provide new insight into the performance of the suction sail directly, but attempts reproduce the same values using CFD.  <strong>Important note</strong>: newer producers of suctions sails, such as <a href="https://bound4blue.com/">Bound4Blue</a>, <a href="https://econowind.nl/">Econowind</a> and <a href="https://gtwings.com/">GT Wings</a> uses different designs than the Turbosail, and claim better performance. The Turbosail data should therefore be interpreted as a <em>lower-estimate</em> on the performance of a modern suction sail. However, at the moment, we don't know about any <em>openly available source</em> that document this directly.</p>

@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -160,13 +164,10 @@
 <h2 id="why-spatial-varying-input"><a class="header" href="#why-spatial-varying-input">Why spatial varying input?</a></h2>
 <p>The point of specifying the velocity at each of these points individually is that this opens up for models that supply spatially varying velocity fields to the simulations. This can for instance be used to incorporate the following things in the simulation:</p>
 <ul>
-<li><strong>Atmospheric boundary layers model:</strong> The wind speed - and potentially also direction - will vary depending on the height above the ocean. A simplified model of the atmospheric boundary layer can be used to generate different velocities for each relevant point. At the moment this must be specified by the user <sup class="footnote-reference"><a href="#model_note">1</a></sup>.</li>
-<li><strong>Simplified models of viscous wakes:</strong> The flow field on a ship will often be affected by separated flow from various superstructures and deck equipment. The flow might also be affected by separated flow from other sails. There exist simplified models to account for this<sup class="footnote-reference"><a href="#model_note">1</a></sup>. These models can be connected to the lifting line simulations by affecting the input freestream velocity. In that case, the position of each point in the simulation matter for how the velocity should be affected.</li>
+<li><strong>Atmospheric boundary layers model:</strong> The wind speed - and potentially also direction - will vary depending on the height above the ocean. A simplified model of the atmospheric boundary layer can be used to generate different velocities for each relevant point. At the moment this must be specified by the user <sup class="footnote-reference" id="fr-model_note-1"><a href="#footnote-model_note">1</a></sup>.</li>
+<li><strong>Simplified models of viscous wakes:</strong> The flow field on a ship will often be affected by separated flow from various superstructures and deck equipment. The flow might also be affected by separated flow from other sails. There exist simplified models to account for this<sup class="footnote-reference" id="fr-model_note-2"><a href="#footnote-model_note">1</a></sup>. These models can be connected to the lifting line simulations by affecting the input freestream velocity. In that case, the position of each point in the simulation matter for how the velocity should be affected.</li>
 <li><strong>CFD data as input:</strong> Using CFD data is a possible way to account for interactions with the rest of the ship. In that case, a velocity field from a simulation of the deck and superstructure can be used to generate an interpolation model, which later is used to specify a spatially varying velocity fields as input to the lifting line.</li>
 </ul>
-<div class="footnote-definition" id="model_note"><sup class="footnote-definition-label">1</sup>
-<p>There are actually implementations of atmospheric boundary layer (ABL) models and  viscous wake models on the Rust side of Stormbird. However, they are not yet exposed to the Python side. This will come soon. For now, custom Python implementations must be used. This is trivial for ABL models, but perhaps slightly more cumbersome for the viscous wake models.</p>
-</div>
 <h2 id="code-example"><a class="header" href="#code-example">Code example</a></h2>
 <p>Generating the right velocity input consists of two steps. First, the user must query the simulation model for the relevant points. This happens by calling the <code>get_freestream_velocity_points</code> method. The <code>Simulation</code> structure/class will then return the right points, which as already mentioned, depends on the method used. These points can then be processed by the suer to generate a vector/list of spatial vectors for each of the relevant points, which are later given as input to the <code>do_step</code> method. A slightly simplified example is shown below. See the <a href="./../tutorials.html">code examples</a> for more.</p>
 <pre><code class="language-python">from pystormbird.lifting_line import Simulation
@@ -204,7 +205,11 @@ while current_time &lt; end_time:
 
     current_time += time_step
 </code></pre>
-
+<hr>
+<ol class="footnote-definition"><li id="footnote-model_note">
+<p>There are actually implementations of atmospheric boundary layer (ABL) models and  viscous wake models on the Rust side of Stormbird. However, they are not yet exposed to the Python side. This will come soon. For now, custom Python implementations must be used. This is trivial for ABL models, but perhaps slightly more cumbersome for the viscous wake models. <a href="#fr-model_note-1">↩</a> <a href="#fr-model_note-2">↩2</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

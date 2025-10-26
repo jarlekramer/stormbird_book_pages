@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -183,13 +187,13 @@
 </ol>
 <p>The library is developed as part of the research project <a href="https://www.sintef.no/en/projects/2023/wind-enabling-zero-emission-shipping-with-wind-assisted-propulsion/">KSP WIND</a> by the Department of Marine Technology at the <a href="https://www.ntnu.edu/">Norwegian University of Science and Technology</a>. The main developer is Jarle Vinje Kramer.</p>
 <h2 id="who-the-book-is-for"><a class="header" href="#who-the-book-is-for">Who the Book is for</a></h2>
-<p>You should read this if you are interested in using Stormbird to run lifting line or actuator line simulations, or if you just want more information on the theory behind each method. The book is intended to introduce the theory, available models, and overall concepts in the implementation. In other words, the goal is to give a bird' s-eye view of the library and its functionality. When appropriate, other literature will be referenced for more details. That is, it is written primarily for <em>users</em>, and are therefore not focused directly on the underlying source code. However, there will often be examples from the source code when that is the easiest way to illustrate functionality. For instance, data structures will often be shown directly source code to illustrate what fields and settings that are available.</p>
-<h2 id="don-forget-to-also-look-at-the-code"><a class="header" href="#don-forget-to-also-look-at-the-code">Don forget to also look at the code!</a></h2>
+<p>You should read this if you are interested in using Stormbird to run lifting line or actuator line simulations, or if you just want more information on the theory behind each method. The book is intended to introduce the theory, available models, and overall concepts in the implementation. In other words, the goal is to give a bird's-eye view of the library and its functionality. When appropriate, other literature will be referenced for more details. That is, it is written primarily for <em>users</em>, and are therefore not focused directly on the underlying source code. However, there will often be examples from the source code when that is the easiest way to illustrate functionality. For instance, data structures will often be shown directly source code to illustrate what fields and settings that are available.</p>
+<h2 id="dont-forget-to-also-look-at-the-code"><a class="header" href="#dont-forget-to-also-look-at-the-code">Don't forget to also look at the code!</a></h2>
 <p>The text in this book will not cover everything! It may also, at times, be outdated relative to the latest version of the library. The only way to get a full insight into the inner workings is, therefore, to look at the source code itself and the examples of how to use the code. Below is some relevant links for this purpose</p>
 <ul>
-<li>The Stormbird guthub page can be found <a href="https://github.com/NTNU-IMT/stormbird">here</a>. It contains the core library, utility functionality, interfaces and examples.</li>
+<li>The Stormbird GitHub page can be found <a href="https://github.com/NTNU-IMT/stormbird">here</a>. It contains the core library, utility functionality, interfaces and examples.</li>
 <li>More specifically, examples of how to use the Python interface of the code can be found <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/pystormbird/examples">here</a>.</li>
-<li>Automated code documentation can be found <a href="https://docs.rs/stormbird/0.6.0/stormbird/">here</a> for the core Stormbird library and <a href="https://docs.rs/stormath/0.1.1/stormath/">here</a> for the Stormath library, which contains mathematical utility functionality written for Stormbird.</li>
+<li>Automated code documentation can be found <a href="https://docs.rs/stormbird/0.7.0/stormbird/">here</a> for the core Stormbird library and <a href="https://docs.rs/stormath/0.1.1/stormath/">here</a> for the Stormath library, which contains mathematical utility functionality written for Stormbird.</li>
 </ul>
 
                     </main>

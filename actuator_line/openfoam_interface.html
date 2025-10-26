@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -155,7 +159,45 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="openfoam-interface"><a class="header" href="#openfoam-interface">OpenFOAM interface</a></h1>
+<p>The actuator line functionality in the core Stormbird library is written in a general way, and could be coupled to any CFD solver. However, at the moment, the only interface made is towards the open-source CFD solver <a href="https://openfoam.com/">OpenFOAM</a>. This chapter describes how the coupling works in practice, and what is necessary to set up a simulation using OpenFOAM together with Stormbird.</p>
+<h2 id="cfd-interfaces"><a class="header" href="#cfd-interfaces">CFD interfaces</a></h2>
+<p>The general source code for interfaces towards CFD solver is located in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces">cfd_interfaces folder</a> on Github. OpenFOAM is a c++ library, which is also a common language for other CFD codes. In an attempt to generalize as much as possible, the interface between Stormbird and OpenFOAM is divided in two parts.</p>
+<p>The first part is a general C++ interface to the actuator line functionality in Stormbird. This source code is found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/cpp_actuator_line">cpp_actuator_line</a> folder on Github. It contains functionality to set up and call the Rust code from C++. The interface is made using the <a href="https://cxx.rs/">cxx crate</a>. It function names and data structures follows the Rust side as much as possible.</p>
+<p>The second part is specific to OpenFOAM. This source code is found the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/openfoam">openfoam</a> folder on Github. It implements a class called <code>ActuatorLine</code> that inherits from the standard <code>cellSetOption</code> class in OpenFOAM. The <code>cellSetOption</code> base class is used to implement volume forces that are added to the momentum equations for a variety of functionalities in the OpenFOAM library. The connection logic behind this class and the other OpenFOAM solvers therefore follows the same principle as any other <code>fvOption</code> source in OpenFOAM.</p>
+<p>The responsibility of the OpenFOAM interface is mainly to extract information from the CFD domain, such as the velocity field, pass it to the Stormbird library, and the project the resulting forces back to the CFD grid.</p>
+<h2 id="installing-the-openfoam-interface"><a class="header" href="#installing-the-openfoam-interface">Installing the OpenFOAM interface</a></h2>
+<p>Instructions for how to install the OpenFOAM interface can be found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/openfoam">README file</a> at the OpenFOAM interface Github page.</p>
+<h2 id="setting-up-an-openfoam-simulation"><a class="header" href="#setting-up-an-openfoam-simulation">Setting up an OpenFOAM simulation</a></h2>
+<p>Examples of how to use the OpenFOAM interface can be found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cfd_interfaces/openfoam/examples">examples folder</a> on GitHub.</p>
+<p>As with any other <code>fvOption</code> model in OpenFOAM, the actuator line model is activated by specifying it in the <code>fvOptions</code> file in the <code>system</code> folder. However, unlike native OpenFOAM models, the general setup is not defined directly in the <code>fvOption</code> file. Rather, the only thing that is necessary to specify in the <code>fvOptions</code> file is the following <sup class="footnote-reference" id="fr-interface_note-1"><a href="#footnote-interface_note">1</a></sup>:</p>
+<pre><code class="language-c++">FoamFile
+{
+    version    2.0;
+    format    ascii;
+    class     dictionary;
+    object    fvOptions;
+}
 
+actuatorLine
+{
+    type actuatorLine;
+    selectionMode   all;
+    fields (U);
+    name actuatorLine;
+}
+</code></pre>
+<p>This activates the actuator line functionality. The <code>ActuatorLine</code> class will then look for a JSON input file in the <code>system</code> folder called <code>stormbird_actuator_line.json</code>. The content of this file is a JSON representation of the <code>ActuatorLineBuilder</code> structure. If the file does not exists, or contains invalid settings, the OpenFOAM simulation will crash. The error message from OpenFOAM is messy in general, but there should be instructions from the Rust side within the crash log, typically on the top, explaining what went wrong.</p>
+<h2 id="results"><a class="header" href="#results">Results</a></h2>
+<p>Results from the simulation will be placed in the <code>postProcessing</code> folder in the case directory, like other post-processing data in OpenFOAM. There will be two types of result files:</p>
+<ul>
+<li><strong>The first is a simple csv file with forces</strong> as a function of time. This file will be called <code>stormbird_forces.csv</code>. The forces are written for every time step. The point of this file is to have a simple representation of the most important values from a simulation</li>
+<li><strong>The second is folder with full simulation result data</strong>. How often this data is written is controlled by the <code>write_iterations_full_result</code> parameter in the <a href="simulation_overview.html">ActuatorLineBuilder</a> structure. If this value is set 100, the full results will be written every 100 time step. The folder is called <code>stormbird_full_results</code> and will contain several JSON files with <a href="../line_model/force_calculations.html">SimulationResult</a> data. This data is useful for looking more detailed into the results, such as the circulation distribution and the angles of attack on each line segment.</li>
+</ul>
+<hr>
+<ol class="footnote-definition"><li id="footnote-interface_note">
+<p>The interface for the setup kept simple, but might also probably a bit too basic to cover all situations at the moment. It might therefore be extended with more options in the future, depending on what is needed. <a href="#fr-interface_note-1">↩</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

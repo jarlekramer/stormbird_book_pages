@@ -24,19 +24,21 @@
         <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-        <!-- Provide site root to javascript -->
+        <!-- Provide site root and default themes to javascript -->
         <script>
-            var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -46,8 +48,8 @@
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -61,7 +63,8 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             const html = document.documentElement;
@@ -74,8 +77,8 @@
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -111,6 +114,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
@@ -175,13 +179,10 @@
     pub translation: SpatialVector,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>The only required input is the vector containing  <code>WingBuilder</code> structures and the <code>nr_sections</code> <sup class="footnote-reference"><a href="#nr_sections_note">1</a></sup>. The nr sections should be tested for each project, and will affect both the accuracy and the computational speed. Typical values range between 10-50. The <code>density</code> is set to the <a href="https://en.wikipedia.org/wiki/Density_of_air">standard air density for 15 degrees Celsius</a> by default ( which = 1.225 kg / m^3).</p>
+<p>The only required input is the vector containing  <code>WingBuilder</code> structures and the <code>nr_sections</code> <sup class="footnote-reference" id="fr-nr_sections_note-1"><a href="#footnote-nr_sections_note">1</a></sup>. The nr sections should be tested for each project, and will affect both the accuracy and the computational speed. Typical values range between 10-50. The <code>density</code> is set to the <a href="https://en.wikipedia.org/wiki/Density_of_air">standard air density for 15 degrees Celsius</a> by default ( which = 1.225 kg / m^3).</p>
 <p>The <code>circulation_corrections</code> is an enum, where the default variant is <code>None</code>, and therefore not used by default. There will be more on the circulation corrections option <a href="./circulation_strength.html">later</a>. This is only used in special circumstances, for instance when a pure lifting line simulation might fail due to numerical issues.</p>
 <p>The <code>output_coordinate_system</code> is an enum that specifies how the forces and moments from the line force model should be calculated. The default is <code>Global</code>, which means all values are in a global coordinate system. That is, the coordinate system for the forces are not moved even if the wings are moved during a simulation. The other option is to set it to <code>Body</code>. In this case, the coordinate system of the forces will always follow the wings when they are moved.</p>
 <p>The <code>local_wing_angles</code>, <code>rotation</code>, and <code>translation</code> specifies the initial values for the local rotation of the wing angles as well as the global rotation and translation of the whole line force model. See the <a href="/line_model/move_line_models.html">move line models chapter</a> for more.</p>
-<div class="footnote-definition" id="nr_sections_note"><sup class="footnote-definition-label">1</sup>
-<p>The number of sections for set in the <code>LineForceModelBuilder</code> is used as default, except when another value is defined in the <code>WingBuilder</code> below.</p>
-</div>
 <h3 id="wing-builder"><a class="header" href="#wing-builder">Wing builder</a></h3>
 <p>A wing builder contain data to build line segments for a single wing. When a vector (or list) of wing builders are provided, the <code>LineForceModelBuilder</code> will automatically keep track of which line segment belong to each wing. The fields in a <code>WingBuilder</code> structure is as shown as Rust code below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -199,14 +200,18 @@
 <p>Each wing also needs a <a href="./../sectional_models/sectional_models_intro.html">sectional model</a>. The sectional model can differ between different wings given to the <code>LineForceModelBuilder</code>, which is useful for cases where different sail types are installed on the same ship (uncommon today, but might happen in the future).</p>
 <p>The <code>non_zero_circulation_at_ends</code> is boolean values that specifies the expected behavior of the circulation distribution at the ends of the wing. It is used when initializing the circulation distribution before a simulation, and when applying corrections to the circulation distribution. In most cases, the expected value of the circulation strength at the ends is zero, and the value of this variable should be <code>[false, false]</code>. However, if, for instance, the wing is standing directly on a symmetry plane, or is directly coupled to another wing, the circulation distribution will typically not be zero. If an end is coupled to <em>something</em> that might give a non-zero circulation, then that end should then get a <code>true</code> value. For instance, if the first end is standing on a symmetry plane, the value of this variable should be <code>[true, false]</code>.</p>
 <p>The <code>nr_sections</code> variable is optional but can be set for each wing to override the default parameters in the <code>LineForceModelBuilder</code>. Typically, it will not be used, as the most common scenario is to have the same number of sections for each wing.</p>
-<p>When building a line force model from a wing builder, the wings are divided into multiple line segments based on the data in the <code>WingBuilder</code> structure. Each point in between the specified points are linearly interpolated <sup class="footnote-reference"><a href="#interpolation_note">2</a></sup></p>
-<div class="footnote-definition" id="interpolation_note"><sup class="footnote-definition-label">2</sup>
-<p>The interpolation method is possible to change or update to something that can handle non-linear changes between section points. This is, however, so far not prioritized as most sail types tend to use fairly simple geometrical structures. This might change in the future if there is a need to do so.</p>
-</div>
+<p>When building a line force model from a wing builder, the wings are divided into multiple line segments based on the data in the <code>WingBuilder</code> structure. Each point in between the specified points are linearly interpolated <sup class="footnote-reference" id="fr-interpolation_note-1"><a href="#footnote-interpolation_note">2</a></sup></p>
 <h2 id="input-to-methods"><a class="header" href="#input-to-methods">Input to methods</a></h2>
 <p>In many cases, the methods in Stormbird will handle the actual building of the line force models automatically, using a builder structure as input. That is, the input to some function is often the builder and not the line force model itself. For instance, when setting up a lifting line simulation in Python, you only have to supply the builder data, and the line force model will be built automatically internally.</p>
 <p>However, it is also possible to convert a builder into a line force model. This happens by calling the <code>build()</code> method, as usual for Rust builder structures.</p>
-
+<hr>
+<ol class="footnote-definition"><li id="footnote-nr_sections_note">
+<p>The number of sections for set in the <code>LineForceModelBuilder</code> is used as default, except when another value is defined in the <code>WingBuilder</code> below. <a href="#fr-nr_sections_note-1">↩</a></p>
+</li>
+<li id="footnote-interpolation_note">
+<p>The interpolation method is possible to change or update to something that can handle non-linear changes between section points. This is, however, so far not prioritized as most sail types tend to use fairly simple geometrical structures. This might change in the future if there is a need to do so. <a href="#fr-interpolation_note-1">↩</a></p>
+</li>
+</ol>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">

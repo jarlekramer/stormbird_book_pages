@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Force calculations - Stormbird</title>
+        <title>Wind environment - Stormbird</title>
 
 
         <!-- Custom HTML head -->
@@ -158,70 +158,86 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="force-calculations"><a class="header" href="#force-calculations">Force calculations</a></h1>
-<p>An important job for the line force model is to compute forces on each line element, as a function of the local flow variables. The results from these calculations are available in the result-structures from a simulation. A view of the result structure is shown as Rust code below. There is also a Python interface to this structure where the same fields are available.</p>
+                        <h1 id="wind-environment"><a class="header" href="#wind-environment">Wind environment</a></h1>
+<p>DESCRIPTION TO BE EXTENDED LATER. AlSO, THE EXACT SHAPE OF THE DATA STRUCTURE STILL UNDER DEVELOPMENT.</p>
+<p>The Stormbird library contains a data structure for representing the wind environment in different situations. The main point of this structure is to be able to provide spatially varying inflow conditions at all relevant points in a simulation. This fits most naturally with the lifting line simulations, but the wind model is kept separate so that it can, potentially, also be used with other simplified models of wind propulsion devices if needed.</p>
+<p>The basic structure for the wind environment is given below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct SimulationResult {
-    pub ctrl_points: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub force_input: SectionalForcesInput,
-    pub sectional_forces: SectionalForces,
-    pub integrated_forces: Vec&lt;IntegratedValues&gt;,
-    pub integrated_moments: Vec&lt;IntegratedValues&gt;,
-    pub iterations: usize,
-    pub residual: f64,
+</span>pub struct WindEnvironment {
+    pub height_variation_model: Option&lt;HeightVariationModel&gt;,
+    pub up_direction: SpatialVector,
+    pub wind_rotation_axis: SpatialVector,
+    pub zero_direction_vector: SpatialVector,
+    pub water_plane_height: f64,
+    pub inflow_corrections: Option&lt;InflowCorrections&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<h2 id="sectional-vs-integrated"><a class="header" href="#sectional-vs-integrated">Sectional vs integrated</a></h2>
-<p>The forces on a line force model is specified both as <em>sectional values</em> and as <em>integrated values</em>. As the name suggest, the sectional forces are forces acting on each individual section in the line force model. That is, the force acting on a single line element. The integrated forces and moments are the sum of sectional forces for each wing in the line force model. That is, the length of the integrated forces and moments vectors will be equal to the number of wings.</p>
-<h2 id="force-types"><a class="header" href="#force-types">Force types</a></h2>
-<p>There are four different force types in Stormbird, which are estimated from different methods. Each force type has a dedicated section below</p>
-<h3 id="1---circulation-forces"><a class="header" href="#1---circulation-forces">1 - Circulation forces</a></h3>
-<p>The first, and usually most important, force component is the force that arise from the circulation on each line segment. The circulation strength is estimated directly from the local velocity and sectional model, as described <a href="./circulation_strength.html">here</a>. The direction of the force is always normal to the local velocity.</p>
-<p>The resulting force from the circulation strength is therefore just the "lift" on each line segment, but in the coordinate system of the local flow. Due to the presence of induced velocities, the sectional lift may cause both lift and drag relative to the incoming free stream. Circulation forces are, in other words, the combination of lift and lift-induced drag from the simulation.</p>
-<h3 id="2---sectional-drag"><a class="header" href="#2---sectional-drag">2 - Sectional drag</a></h3>
-<p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow.</p>
-<h3 id="3---added-mass"><a class="header" href="#3---added-mass">3 - Added mass</a></h3>
-<p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the foil section. The magnitude of the force is determined by the added mass coefficients set in the sectional model and the acceleration. The foil-models only result in added mass forces due to acceleration in the direction normal to the chord vectors. For the rotating cylinder, the added</p>
-<p><strong>Note</strong>: for now, the default value of the added mass coefficient is set to zero. This is because the feature is currently lacking a proper test case. Must therefore be used with care!</p>
-<h3 id="4---gyroscopic"><a class="header" href="#4---gyroscopic">4 - Gyroscopic</a></h3>
-<p>The gyroscopic force/moment is only applicable to rotor sails. It is the <a href="https://en.wikipedia.org/wiki/Precession">gyroscopic precision</a> due to the rotation of the cylinders. It is dependent on the 2D moment of inertia, which needs to be specified for the sectional model in order to make this force non-zero.</p>
-<h2 id="force-results-structures"><a class="header" href="#force-results-structures">Force results structures</a></h2>
-<p>To allow for a comparison between the force types - for instance in debugging situations - each force type is stored separately, in addition to the total force / moment. The structures used to store this data is shown below:</p>
+<p>The fields in the structure are described below:</p>
+<ul>
+<li><code>height_variation_model</code>: An optional model for how the wind speed varies with height above the water surface. If this is not specified, the wind speed is assumed to be constant with height.</li>
+<li><code>up_direction</code>: A vector defining the "up" direction in the simulation. This is used to determine the height above the water surface.</li>
+<li><code>wind_rotation_axis</code>: A vector defining the axis where the wind direction is rotated around when changing wind direction.</li>
+<li><code>zero_direction_vector</code>: A vector defining the reference direction for the wind. The wind will point along this vector when the wind direction angle is zero.</li>
+<li><code>water_plane_height</code>: A scalar defining the height of the water plane in the simulation.</li>
+<li><code>inflow_corrections</code>: An optional structure containing corrections to be applied to the inflow velocity, which is primarily intended for modeling disturbances due to the rest of the ship. See more about this correction model below.</li>
+</ul>
+<h2 id="height-variation-models"><a class="header" href="#height-variation-models">Height variation models</a></h2>
+<p>The height variation models can be set with the following Enum:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct SectionalForces {
-    pub circulatory: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub sectional_drag: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub added_mass: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub gyroscopic: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub total: Vec&lt;SpatialVector&lt;3&gt;&gt;,
+</span>pub enum HeightVariationModel {
+    PowerModel(PowerModel),
+    LogarithmicModel(LogarithmicModel),
 }
 <span class="boring">}</span></code></pre></pre>
+<p>That is, one can choose between a power law model and a logarithmic model for the wind speed variation with height. The input structures for the two models are shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct IntegratedValues {
-    pub circulatory: SpatialVector&lt;3&gt;,
-    pub sectional_drag: SpatialVector&lt;3&gt;,
-    pub added_mass: SpatialVector&lt;3&gt;,
-    pub gyroscopic: SpatialVector&lt;3&gt;,
-    pub total: SpatialVector&lt;3&gt;,
+</span>pub struct PowerModel {
+    pub reference_height: f64,
+    pub power_factor: f64,
+}
+
+pub struct LogarithmicModel {
+    pub reference_height: f64,
+    pub surface_roughness: f64,
 }
 <span class="boring">}</span></code></pre></pre>
-<hr>
-<ol class="footnote-definition"><li id="footnote-sectional_drag_note">
-<p>It is perfectly fine to include more than the viscous drag in the sectional drag model, if, for instance, it is necessary to add some empirical corrections to the total drag estimate. What exactly the sectional drag represents from a purely physical point of view must be decided on when setting up the model by the user. <a href="#fr-sectional_drag_note-1">↩</a></p>
-</li>
-</ol>
+<h2 id="inflow-corrections"><a class="header" href="#inflow-corrections">Inflow corrections</a></h2>
+<p>NOTE: These structures, in particular, have room for improvements. Might therefore change in future versions. MORE TO COME LATER.</p>
+<p>The <code>inflow_corrections</code> variable is a data structure used to store corrections to the freestream velocity due to anything that might disturb the inflow. That is, it is primarily intended to model the wind disturbances caused by the ship itself. The data structure is set up such that the correction can depend on both the spanwise position along each sail and the apparent wind direction.</p>
+<p>The correction factors themselves consist of two parts: A magnitude factor that scales the local inflow velocity, and an angle correction that modifies the local apparent wind angle.</p>
+<p>The data structures to set this up is shown below. In practice, these structures are just used to do linear interpolation on the correction factors as needed during the simulation.:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InflowCorrectionSingleSailSingleDirection {
+    pub non_dimensional_span_distances: Vec&lt;f64&gt;,
+    pub wake_factors_magnitude: Vec&lt;f64&gt;,
+    pub angle_corrections: Vec&lt;f64&gt;,
+}
+
+pub struct InflowCorrectionSingleSail {
+    pub apparent_wind_directions: Vec&lt;f64&gt;,
+    pub corrections: Vec&lt;InflowCorrectionSingleSailSingleDirection&gt;,
+}
+
+pub struct InflowCorrections {
+    pub individual_corrections: Vec&lt;InflowCorrectionSingleSail&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="tuning-the-inflow-corrections"><a class="header" href="#tuning-the-inflow-corrections">Tuning the inflow corrections</a></h3>
+<p>TO COME</p>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../line_model/move_line_models.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../utils/utils_intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../line_model/input_power.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../utils/control_system.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -231,11 +247,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../line_model/move_line_models.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../utils/utils_intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../line_model/input_power.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../utils/control_system.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
