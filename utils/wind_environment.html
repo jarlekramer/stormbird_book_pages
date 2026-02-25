@@ -211,19 +211,16 @@ pub struct LogarithmicModel {
 <p>The data structures to set this up is shown below. In practice, these structures are just used to do linear interpolation on the correction factors as needed during the simulation.:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct InflowCorrectionSingleSailSingleDirection {
-    pub non_dimensional_span_distances: Vec&lt;f64&gt;,
-    pub wake_factors_magnitude: Vec&lt;f64&gt;,
-    pub angle_corrections: Vec&lt;f64&gt;,
-}
-
-pub struct InflowCorrectionSingleSail {
-    pub apparent_wind_directions: Vec&lt;f64&gt;,
-    pub corrections: Vec&lt;InflowCorrectionSingleSailSingleDirection&gt;,
+</span>pub struct InflowCorrectionsSingleDirection {
+    pub height_values: Vec&lt;Float&gt;,
+    pub magnitude_corrections: Vec&lt;Float&gt;,
+    pub angle_corrections: Vec&lt;Float&gt;, 
+    pub wing_indices: Vec&lt;Range&lt;usize&gt;&gt;,
 }
 
 pub struct InflowCorrections {
-    pub individual_corrections: Vec&lt;InflowCorrectionSingleSail&gt;,
+    pub apparent_wind_directions: Vec&lt;Float&gt;,
+    pub corrections: Vec&lt;InflowCorrectionsSingleDirection&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="tuning-the-inflow-corrections"><a class="header" href="#tuning-the-inflow-corrections">Tuning the inflow corrections</a></h3>
