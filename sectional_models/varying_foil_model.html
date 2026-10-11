@@ -160,22 +160,24 @@
                     <main>
                         <h1 id="varying-foil-model"><a class="header" href="#varying-foil-model">Varying foil model</a></h1>
 <p>The <code>VaryingFoil</code> structure is a model of a foil where the output can be allowed to depend on some internal state. The typical example is a flap angle, for a two-element foil, or suction rate, for a suction sail. To achieve this, the varying foil model uses multiple <code>Foil</code> models, each belonging to a specific internal value. Linear interpolation is used for all <code>Foil</code> model parameters for each state between the input data. This interpolation is handled by the <code>VaryingFoil</code> structure whenever a new internal state is set.</p>
-<h2 id="how-to-setup-a-varyingfoil-structure"><a class="header" href="#how-to-setup-a-varyingfoil-structure">How to setup a VaryingFoil structure</a></h2>
+<h2 id="how-to-set-up-a-varyingfoil-structure"><a class="header" href="#how-to-set-up-a-varyingfoil-structure">How to set up a VaryingFoil structure</a></h2>
 <p>As a general case, you need to tune several <code>Foil</code> models for multiple values of whatever you want to use as an internal state of the wing. If this is a flap angle, you would need data for the lift and drag coefficients as a function of angles of attack for multiple discrete flap angles. When a unique model is generated for each value of the flap angle, this can be given as input to the <code>VaryingFoil</code> structure, along with the flap angle data as <code>internal_state_data</code>. An example will come...</p>
 <h2 id="what-if-i-want-to-model-a-three-element-foil"><a class="header" href="#what-if-i-want-to-model-a-three-element-foil">What if I want to model a three-element foil?</a></h2>
-<p>More complex models with more internal variable might be added in the future. This will be done when the use case represent itself, and likely not before. However, it is still possible to use the <code>VaryingFoil</code> structure to model sails with more control parameters in a slightly simplified way.</p>
-<p>For instance, lets assume you want to model a three-element foil, where there is both a flap and a leading edge slot. Currently it is not possible to model changing values of the slot- and flap-angle independently directly in Stormbird. However, if you assume some relationship between the flap angle and the slot angle, the <code>VariableFoil</code> structure can still be used.</p>
+<p>More complex models with more internal variables might be added in the future. This will be done when the use case presents itself, and likely not before. However, it is still possible to use the <code>VaryingFoil</code> structure to model sails with more control parameters in a slightly simplified way.</p>
+<p>For instance, let's assume you want to model a three-element foil, where there is both a flap and a leading edge slot. Currently it is not possible to model changing values of the slot- and flap-angle independently directly in Stormbird. However, if you assume some relationship between the flap angle and the slot angle, the <code>VaryingFoil</code> structure can still be used.</p>
 <p>This might not be such a large simplification for practical use cases<sup class="footnote-reference" id="fr-more_investigation_note-1"><a href="#footnote-more_investigation_note">1</a></sup>. The point of a multi-element foil is both to create larger maximum lift forces and to reduce the drag force for a given lift force. In a lifting line model - and also mostly for wings in general - the lift-induced velocities are not very affected by <em>how</em> the lift is created. Rather, it is just the value of the lift-coefficient that matters. For a given <em>wanted lift coefficient</em> it seems reasonable that there is always a single optimum combination of flap- and slot-angle, which <em>probably</em> can be computed independently of three-dimensional effects. As such, reducing the model to a single internal variable <em>might</em> not be a big problem.</p>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
-<p>The available parameters in the structure is shown below.</p>
+<p>The available parameters in the structure are shown below.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct VaryingFoil {
     pub internal_state_data: Vec&lt;f64&gt;,
     pub foils_data: Vec&lt;Foil&gt;,
     pub current_internal_state: f64,
+    pub current_foil: Option&lt;Foil&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>current_foil</code> field is used internally to store the interpolated <code>Foil</code> model for the current internal state, and does not need to be specified as input.</p>
 <hr>
 <ol class="footnote-definition"><li id="footnote-more_investigation_note">
 <p>This is currently a hypothesis which we hope to be able to explore more in the future... <a href="#fr-more_investigation_note-1">↩</a></p>

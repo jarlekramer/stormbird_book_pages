@@ -163,49 +163,67 @@
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct SimulationResult {
-    pub ctrl_points: Vec&lt;SpatialVector&lt;3&gt;&gt;,
+    pub time: f64,
+    pub ctrl_points: Vec&lt;SpatialVector&gt;,
+    pub solver_input_ctrl_points_velocity: Vec&lt;SpatialVector&gt;,
     pub force_input: SectionalForcesInput,
     pub sectional_forces: SectionalForces,
     pub integrated_forces: Vec&lt;IntegratedValues&gt;,
     pub integrated_moments: Vec&lt;IntegratedValues&gt;,
+    pub input_power: Vec&lt;f64&gt;,
     pub iterations: usize,
     pub residual: f64,
+    pub wing_indices: Vec&lt;Range&lt;usize&gt;&gt;,
+    pub rigid_body_motion: RigidBodyMotion,
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="sectional-vs-integrated"><a class="header" href="#sectional-vs-integrated">Sectional vs integrated</a></h2>
-<p>The forces on a line force model is specified both as <em>sectional values</em> and as <em>integrated values</em>. As the name suggest, the sectional forces are forces acting on each individual section in the line force model. That is, the force acting on a single line element. The integrated forces and moments are the sum of sectional forces for each wing in the line force model. That is, the length of the integrated forces and moments vectors will be equal to the number of wings.</p>
+<p>The forces on a line force model are specified both as <em>sectional values</em> and as <em>integrated values</em>. As the name suggests, the sectional forces are forces acting on each individual section in the line force model. That is, the force acting on a single line element. The integrated forces and moments are the sum of sectional forces for each wing in the line force model. That is, the length of the integrated forces and moments vectors will be equal to the number of wings. Line elements that are marked as <em>virtual</em> in the <a href="./building_line_model.html">wing builder</a> are not included in the integrated values.</p>
 <h2 id="force-types"><a class="header" href="#force-types">Force types</a></h2>
-<p>There are four different force types in Stormbird, which are estimated from different methods. Each force type has a dedicated section below</p>
+<p>There are five different force types in Stormbird, which are estimated from different methods. Each force type has a dedicated section below.</p>
 <h3 id="1---circulation-forces"><a class="header" href="#1---circulation-forces">1 - Circulation forces</a></h3>
-<p>The first, and usually most important, force component is the force that arise from the circulation on each line segment. The circulation strength is estimated directly from the local velocity and sectional model, as described <a href="./circulation_strength.html">here</a>. The direction of the force is always normal to the local velocity.</p>
+<p>The first, and usually most important, force component is the force that arises from the circulation on each line segment. The circulation strength is estimated directly from the local velocity and sectional model, as described <a href="./circulation_strength.html">here</a>. The direction of the force is always normal to the local velocity.</p>
 <p>The resulting force from the circulation strength is therefore just the "lift" on each line segment, but in the coordinate system of the local flow. Due to the presence of induced velocities, the sectional lift may cause both lift and drag relative to the incoming free stream. Circulation forces are, in other words, the combination of lift and lift-induced drag from the simulation.</p>
-<h3 id="2---sectional-drag"><a class="header" href="#2---sectional-drag">2 - Sectional drag</a></h3>
+<h3 id="2---viscous-lift"><a class="header" href="#2---viscous-lift">2 - Viscous lift</a></h3>
+<p>The sectional models for foils divide the lift coefficient into a pre-stall part and a post-stall part, as explained in the <a href="../sectional_models/foil_model.html">foil model chapter</a>. By default, only the pre-stall part is used when calculating the circulation strength. The post-stall part is instead calculated as a separate force, labeled <em>viscous lift</em>, which acts normal to the local velocity, but which does not affect the lift-induced velocities. This force type is always zero for the rotating cylinder model.</p>
+<p>Whether the post-stall lift should be included in the circulation instead is controlled by the <code>ForceCalculationSettings</code> structure, which is set in the <a href="./building_line_model.html">line force model builder</a>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ForceCalculationSettings {
+    pub include_viscous_lift_in_the_circulation: bool
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The default value is <code>false</code>. If it is set to <code>true</code>, the post-stall lift is included in the circulation strength, and the viscous lift force will always be zero.</p>
+<h3 id="3---sectional-drag"><a class="header" href="#3---sectional-drag">3 - Sectional drag</a></h3>
 <p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow.</p>
-<h3 id="3---added-mass"><a class="header" href="#3---added-mass">3 - Added mass</a></h3>
-<p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the foil section. The magnitude of the force is determined by the added mass coefficients set in the sectional model and the acceleration. The foil-models only result in added mass forces due to acceleration in the direction normal to the chord vectors. For the rotating cylinder, the added</p>
+<h3 id="4---added-mass"><a class="header" href="#4---added-mass">4 - Added mass</a></h3>
+<p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the foil section. The magnitude of the force is determined by the added mass coefficients set in the sectional model and the acceleration. The foil-models only result in added mass forces due to acceleration in the direction normal to the chord vectors. For the rotating cylinder, the added mass forces are due to acceleration in all directions normal to the span line.</p>
 <p><strong>Note</strong>: for now, the default value of the added mass coefficient is set to zero. This is because the feature is currently lacking a proper test case. Must therefore be used with care!</p>
-<h3 id="4---gyroscopic"><a class="header" href="#4---gyroscopic">4 - Gyroscopic</a></h3>
-<p>The gyroscopic force/moment is only applicable to rotor sails. It is the <a href="https://en.wikipedia.org/wiki/Precession">gyroscopic precision</a> due to the rotation of the cylinders. It is dependent on the 2D moment of inertia, which needs to be specified for the sectional model in order to make this force non-zero.</p>
+<h3 id="5---gyroscopic"><a class="header" href="#5---gyroscopic">5 - Gyroscopic</a></h3>
+<p>The gyroscopic force/moment is only applicable to rotor sails. It is the <a href="https://en.wikipedia.org/wiki/Precession">gyroscopic precession</a> due to the rotation of the cylinders. It is dependent on the 2D moment of inertia, which needs to be specified for the sectional model in order to make this force non-zero.</p>
 <h2 id="force-results-structures"><a class="header" href="#force-results-structures">Force results structures</a></h2>
-<p>To allow for a comparison between the force types - for instance in debugging situations - each force type is stored separately, in addition to the total force / moment. The structures used to store this data is shown below:</p>
+<p>To allow for a comparison between the force types - for instance in debugging situations - each force type is stored separately, in addition to the total force / moment. The structures used to store this data are shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct SectionalForces {
-    pub circulatory: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub sectional_drag: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub added_mass: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub gyroscopic: Vec&lt;SpatialVector&lt;3&gt;&gt;,
-    pub total: Vec&lt;SpatialVector&lt;3&gt;&gt;,
+    pub circulatory: Vec&lt;SpatialVector&gt;,
+    pub viscous_lift: Vec&lt;SpatialVector&gt;,
+    pub sectional_drag: Vec&lt;SpatialVector&gt;,
+    pub added_mass: Vec&lt;SpatialVector&gt;,
+    pub gyroscopic: Vec&lt;SpatialVector&gt;,
+    pub total: Vec&lt;SpatialVector&gt;,
+    pub coordinate_system: CoordinateSystem,
 }
 <span class="boring">}</span></code></pre></pre>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct IntegratedValues {
-    pub circulatory: SpatialVector&lt;3&gt;,
-    pub sectional_drag: SpatialVector&lt;3&gt;,
-    pub added_mass: SpatialVector&lt;3&gt;,
-    pub gyroscopic: SpatialVector&lt;3&gt;,
-    pub total: SpatialVector&lt;3&gt;,
+    pub circulatory: SpatialVector,
+    pub viscous_lift: SpatialVector,
+    pub sectional_drag: SpatialVector,
+    pub added_mass: SpatialVector,
+    pub gyroscopic: SpatialVector,
+    pub total: SpatialVector,
 }
 <span class="boring">}</span></code></pre></pre>
 <hr>

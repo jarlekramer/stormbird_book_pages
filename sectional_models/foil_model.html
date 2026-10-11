@@ -161,18 +161,18 @@
                         <h1 id="foil-model"><a class="header" href="#foil-model">Foil model</a></h1>
 <p>The <code>Foil</code> structure is a <em>parametric model</em> of a single element foil section. That is, it is defined using (relatively) few parameters that are later used in a simple mathematical model to compute lift and drag for arbitrary angles of attack.</p>
 <h2 id="why-a-parametric-model"><a class="header" href="#why-a-parametric-model">Why a parametric model?</a></h2>
-<p>Other implementations of lifting line and actuator line methods often use data based models for computing the lift and drag coefficients. That is, the user must supply data on how the lift and drag varies as a function of the angle attack, and then the solver can use this data together with interpolation or table look-up to compute force coefficients for arbitrary angles.</p>
-<p>A data based approach is often fine, and does have some benefits. For instance, it is the only way to make a truly general model where the user have full control over the behavior of the sectional model. For this reason, there might be implementations of pure data based models in Stormbird in the future. However, the choice of using a parametric model for now where based on three reasons.</p>
+<p>Other implementations of lifting line and actuator line methods often use data based models for computing the lift and drag coefficients. That is, the user must supply data on how the lift and drag varies as a function of the angle of attack, and then the solver can use this data together with interpolation or table look-up to compute force coefficients for arbitrary angles.</p>
+<p>A data based approach is often fine, and does have some benefits. For instance, it is the only way to make a truly general model where the user has full control over the behavior of the sectional model. For this reason, there might be implementations of pure data based models in Stormbird in the future. However, the choice of using a parametric model for now was based on three reasons.</p>
 <p>First, it becomes easier to use a parametric model as a building block for more complex foil models, where the behavior depends on some internal state, such as flap angle or suction rate. This is because the model parameters can be allowed to depend on the internal state through interpolation. See the <a href="./varying_foil_model.html">varying foil sub chapter</a> for more on this.</p>
 <p>Second, a parametric model ensures smoothness, which is beneficial when using the model together with gradient based optimization algorithms. For instance, such a method might be used to optimize the angle of attack for wing sails at a given wind direction. The smoothness is in particular practical when the expected optimal point is close to the stall angle - which it often is.</p>
-<p>Third, tuning a parametric models is generally believed to be easier than a data based model. For instance, lets say you want to adjust the exact stall characteristics of a 2D model, to make a simplified lifting line model better fit with high-fidelity experimental data; this would not be straightforward with a data based model, but should be fairly easy if the parametric model of the lift has good parameters to control the stall behavior.</p>
+<p>Third, tuning a parametric model is generally believed to be easier than a data based model. For instance, let's say you want to adjust the exact stall characteristics of a 2D model, to make a simplified lifting line model better fit with high-fidelity experimental data; this would not be straightforward with a data based model, but should be fairly easy if the parametric model of the lift has good parameters to control the stall behavior.</p>
 <p>The downside of a parametric model is believed to be small, as long as the model can represent typical foil section behavior without too many simplifications. The design of the <code>Foil</code> model is intended to achieve this as best as possible<sup class="footnote-reference" id="fr-update_to_model_note-1"><a href="#footnote-update_to_model_note">1</a></sup>.</p>
 <h2 id="model-overview"><a class="header" href="#model-overview">Model overview</a></h2>
 <p>The model is divided in two core sub-models, labeled <em>pre-stall</em> and <em>post-stall</em>, respectively representing the behavior before and after the foil has stalled due to too high angle of attack.</p>
 <p>For angles of attack below stall, it is assumed that both lift and drag can be represented accurately with simple polynomials. The lift is linear by default, but can also have an optional high-order term where both the factor and power of the term is adjustable. The high order term is meant to capture slowly developing separations, which might occur at low Reynolds numbers. The drag is assumed to be represented as a second order polynomial. For a wing sail operating below stall, the drag will mostly be dominated by lift-induced drag forces. The viscous drag can therefore be kept simple, as the importance to the total force is relatively low.</p>
-<p>For angles of attack above stall, both the lift and drag are assumed to be harmonic functions which primarily is adjusted by setting the <em>max value</em> after stall. This is a rough model which might not be perfect for all angles of attack, but is assumed to be close enough. A rough and approximate model for the post-stall behavior is assumed to be OK as wing sails and suction sails will most often operate below stall.</p>
+<p>For angles of attack above stall, both the lift and drag are assumed to be harmonic functions which primarily are adjusted by setting the <em>max value</em> after stall. This is a rough model which might not be perfect for all angles of attack, but is assumed to be close enough. A rough and approximate model for the post-stall behavior is assumed to be OK as wing sails and suction sails will most often operate below stall.</p>
 <p>The transit between the two models is done using a <a href="https://en.wikipedia.org/wiki/Sigmoid_function">sigmoid function</a>, where both the transition point and the width of the transition can be adjusted.</p>
-<p>In addition, there factors in the model to account for added mass and lift due to the time derivative of the angle of attack. Both these effects are assumed to be linear for simplicity.</p>
+<p>In addition, there are factors in the model to account for added mass and lift due to the time derivative of the angle of attack. Both these effects are assumed to be linear for simplicity.</p>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
 <p>A view of the available fields in the <code>Foil</code> model is seen below, with further explanation of each parameter right after:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -190,7 +190,7 @@
     pub cd_max_after_stall: f64,
     pub cd_power_after_stall: f64,
     pub cdi_correction_factor: f64,
-    pub mean_positive_stall_angle: f64,.
+    pub mean_positive_stall_angle: f64,
     pub mean_negative_stall_angle: f64,
     pub stall_range: f64,
     pub cd_bump_during_stall: f64,
@@ -198,15 +198,15 @@
     pub added_mass_factor: f64,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>An explanation of the parameters are given below:</p>
+<p>An explanation of the parameters is given below:</p>
 <ul>
 <li><code>cl_zero_angle</code>: Lift coefficient at zero angle of attack. This is zero by default, but can be set to a non-zero value to account for camber, flap angle or boundary layer suction/blowing.</li>
-<li><code>cl_initial_slope</code>: How fast the lift coefficient increases with angle of attack, when the angle of attack is small. The default value is \( 2 \pi \) , which should always be the values used for a normal foil profile - with or without camber and flap - but it can also be set to different value for instance to account for boundary layer suction/blowing.</li>
+<li><code>cl_initial_slope</code>: How fast the lift coefficient increases with angle of attack, when the angle of attack is small. The default value is \( 2 \pi \) , which should always be the value used for a normal foil profile - with or without camber and flap - but it can also be set to a different value for instance to account for boundary layer suction/blowing.</li>
 <li><code>cl_high_order_factor_positive/negative</code>: Optional proportionality factor for adding higher order terms to the lift when the angle of attack is either positive or negative. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
-<li><code>cl_high_order_power</code>: Option power for adding higher order terms to the lift. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
+<li><code>cl_high_order_power</code>: Optional power for adding higher order terms to the lift. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
 <li><code>cl_max_after_stall</code>: The maximum lift coefficient after stall.</li>
 <li><code>cd_min</code>: Minimum drag coefficient when the angle of attack is equal to the <code>angle_cd_min</code>.</li>
-<li><code>angle_cd_min</code>: The angle where the the minimum drag coefficient is reached.</li>
+<li><code>angle_cd_min</code>: The angle where the minimum drag coefficient is reached.</li>
 <li><code>cd_second_order_factor</code>: Factor to give the drag coefficient a second order term. This is zero by default.</li>
 <li><code>cd_max_after_stall</code>: The maximum drag coefficient after stall.</li>
 <li><code>cd_power_after_stall</code>: Power factor for the harmonic dependency of the drag coefficient after stall. Set to 1.6 by default.</li>
@@ -223,14 +223,14 @@
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let foil = Foil {
-    cl_zero_angle = 0.5,
-    cl_max_after_stall = 0.9,
-    cd_max_after_stall = 1.2,
-    mean_positive_stall_angle = 20.0_f64.to_radians(),
-    mean_negative_stall_angle = 25.0_f64.to_radians(),
-    stall_range = 10.0_f64.to_radians(),
+    cl_zero_angle: 0.5,
+    cl_max_after_stall: 0.9,
+    cd_max_after_stall: 1.2,
+    mean_positive_stall_angle: 20.0_f64.to_radians(),
+    mean_negative_stall_angle: 25.0_f64.to_radians(),
+    stall_range: 10.0_f64.to_radians(),
     ..Default::default()
-}
+};
 
 <span class="boring">}</span></code></pre></pre>
 <p><img src="figures/foil_model_example.png" alt="Foil model example" /></p>

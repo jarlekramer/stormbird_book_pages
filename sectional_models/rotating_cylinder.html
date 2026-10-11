@@ -159,27 +159,39 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="rotating-cylinder"><a class="header" href="#rotating-cylinder">Rotating cylinder</a></h1>
-<p>Model representing a rotating cylinder, where the main intended use case is to model rotor sails. The purpose is to calculate lift, drag on a two-dimensional cylinder as a function of how fast the cylinder is spinning.</p>
-<p>The primary input variable to the model is the <em>spin ratio</em>, which is defined as the ratio of the velocity of the rotor to the wind velocity. The velocity of the rotor is defined as the circumference times the rotations per seconds.</p>
-<p>Unlike the <a href="foil_model.html">foil model</a>, the rotating cylinder model is entirely data based and not parametric. There are primary two reasons for this:</p>
+<p>Model representing a rotating cylinder, where the main intended use case is to model rotor sails. The purpose is to calculate lift and drag on a two-dimensional cylinder as a function of how fast the cylinder is spinning.</p>
+<p>The primary input variable to the model is the <em>spin ratio</em>, which is defined as the ratio of the velocity of the rotor to the wind velocity. The velocity of the rotor is defined as the circumference times the rotations per second.</p>
+<p>Unlike the <a href="foil_model.html">foil model</a>, the lift in the rotating cylinder model is data based and not parametric. There are primarily two reasons for this:</p>
 <ol>
 <li>The behavior of lift and drag on a spinning cylinder is, in some ways, simpler than a foil section. The lift will generally increase with increasing spin-ratios, and not experience stall in the same way as a foil. In addition, the two-dimensional drag is generally going from a high value at zero spin-ratio to a very low value at normal operating spin-ratios. A few data points are therefore often enough to capture the behavior of a rotating cylinder.</li>
-<li>It is not common, at least not yet, to combine a rotating cylinder with other control mechanism. For instance, for wing sails and suction sails it is common to control the sails with both a flap angle or suction rate, and the angle of attack. A rotor sail is only controlled through its rotational speed. A simple one dimensional data model is therefore assumed to be sufficient for rotor sails (lift and drag as function of spin ratio only)</li>
+<li>It is not common, at least not yet, to combine a rotating cylinder with other control mechanisms. For instance, for wing sails and suction sails it is common to control the sails with both a flap angle or suction rate, and the angle of attack. A rotor sail is only controlled through its rotational speed. A simple one dimensional data model is therefore assumed to be sufficient for rotor sails (lift and drag as function of spin ratio only).</li>
 </ol>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
 <p>The parameters in the rotating cylinder are listed below.</p>
-<p>The <code>cl_data</code>, <code>cd_data</code> and <code>spin_ratio_data</code> is the most important parts of the model. They specify how lift and drag is dependent on the spin ratio. All variables have default variables based on the results in the article "<a href="https://blueoasis.pt/wp-content/uploads/2023/10/Nutts2023_proceedings_v4.pdf">Calculation of Flettner rotor forces using lifting line and CFD methods</a>". See also the <a href="../literature/validation_data.html">validation data section</a> for more on this.</p>
-<p>The <code>added_mass_factor</code> and <code>moment_of_inertia</code> parameters can be used to estimate added mass forces and gyroscopic forces on the rotor. <strong>Note</strong>: more to come on these parameters later. They need further validation, and are therefore set to zero by default.</p>
-<p>The spin ratio for each section is calculated based on the <code>revolutions_per_second</code> value and the local chord length and velocity. Then, the lift and drag in 2D is interpolated from the input data values.</p>
+<p>The <code>cl_data</code> and <code>spin_ratio_data</code> are the most important parts of the model. They specify how the lift is dependent on the spin ratio. All variables have default values based on the results in the article "<a href="https://blueoasis.pt/wp-content/uploads/2023/10/Nutts2023_proceedings_v4.pdf">Calculation of Flettner rotor forces using lifting line and CFD methods</a>". See also the <a href="../literature/validation_data.html">validation data section</a> for more on this.</p>
+<p>The drag is modeled with a simple parametric curve that goes smoothly from a high value at zero spin ratio to a low value at higher spin ratios. The curve is controlled by the following parameters:</p>
+<ul>
+<li><code>cd_start</code>: The drag coefficient at zero spin ratio. The default value is 0.457.</li>
+<li><code>cd_end</code>: The drag coefficient at larger spin ratios. The default value is 0.05.</li>
+<li><code>cd_spin_ratio_low_drag</code>: The spin ratio where the drag coefficient reaches the <code>cd_end</code> value. The default value is 2.7.</li>
+<li><code>cd_angle_start</code>: An angle, in radians, that controls the slope of the drag curve at zero spin ratio. A higher value gives a steeper downwards slope. The default value is 5 degrees.</li>
+</ul>
+<p>The <code>cdi_correction_factor</code> can be used to correct for numerical errors in the lift-induced drag, in the same way as for the <a href="foil_model.html">foil model</a>. It adds a term to the drag coefficient that is equal to the factor times the lift coefficient squared. The default is zero, which means no correction.</p>
+<p>The <code>added_mass_factor</code> and <code>moment_of_inertia_2d</code> parameters can be used to estimate added mass forces and gyroscopic forces on the rotor. <strong>Note</strong>: more to come on these parameters later. They need further validation, and are therefore set to zero by default.</p>
+<p>The spin ratio for each section is calculated based on the <code>revolutions_per_second</code> value and the local chord length and velocity. Then, the lift in 2D is interpolated from the input data values, while the drag in 2D is calculated from the parametric drag curve.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct RotatingCylinder {
     pub revolutions_per_second: f64,
     pub spin_ratio_data: Vec&lt;f64&gt;,
     pub cl_data: Vec&lt;f64&gt;,
-    pub cd_data: Vec&lt;f64&gt;,
+    pub cd_start: f64,
+    pub cd_end: f64,
+    pub cd_angle_start: f64,
+    pub cd_spin_ratio_low_drag: f64,
     pub added_mass_factor: f64,
     pub moment_of_inertia_2d: f64,
+    pub cdi_correction_factor: f64,
 }
 <span class="boring">}</span></code></pre></pre>
 
