@@ -160,15 +160,70 @@
                     <main>
                         <h1 id="rotating-cylinder"><a class="header" href="#rotating-cylinder">Rotating cylinder</a></h1>
 <p>Model representing a rotating cylinder, where the main intended use case is to model rotor sails. The purpose is to calculate lift and drag on a two-dimensional cylinder as a function of how fast the cylinder is spinning.</p>
-<p>The primary input variable to the model is the <em>spin ratio</em>, which is defined as the ratio of the velocity of the rotor to the wind velocity. The velocity of the rotor is defined as the circumference times the rotations per second.</p>
-<p>Unlike the <a href="foil_model.html">foil model</a>, the lift in the rotating cylinder model is data based and not parametric. There are primarily two reasons for this:</p>
-<ol>
-<li>The behavior of lift and drag on a spinning cylinder is, in some ways, simpler than a foil section. The lift will generally increase with increasing spin-ratios, and not experience stall in the same way as a foil. In addition, the two-dimensional drag is generally going from a high value at zero spin-ratio to a very low value at normal operating spin-ratios. A few data points are therefore often enough to capture the behavior of a rotating cylinder.</li>
-<li>It is not common, at least not yet, to combine a rotating cylinder with other control mechanisms. For instance, for wing sails and suction sails it is common to control the sails with both a flap angle or suction rate, and the angle of attack. A rotor sail is only controlled through its rotational speed. A simple one dimensional data model is therefore assumed to be sufficient for rotor sails (lift and drag as function of spin ratio only).</li>
-</ol>
+<p>The primary input variable to the model is the <em>spin ratio</em>, \( \lambda \), which is defined as the ratio of the velocity of the rotor surface to the wind velocity. The velocity of the rotor surface is defined as the circumference times the revolutions per second. The revolutions per second is the internal state of a wing using this model, while the spin ratio is the internal state given to the model on each line element.</p>
+<p>Like the <a href="foil_model.html">foil model</a>, the rotating cylinder is a <em>parametric model</em>. That is, both the lift and the drag are computed from a few parameters, rather than interpolated from data. This gives smooth force coefficients for all spin ratios, and makes the model easy to tune to experimental or CFD data. The behavior of a rotating cylinder is, in some ways, simpler than for a foil section. The lift generally increases with increasing spin ratio, and does not stall in the same way as a foil, while the drag generally goes from a high value at zero spin ratio to a low value at normal operating spin ratios. A rotor sail is also only controlled through its rotational speed, so the lift and drag are functions of the spin ratio only.</p>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
-<p>The parameters in the rotating cylinder are listed below.</p>
-<p>The <code>cl_data</code> and <code>spin_ratio_data</code> are the most important parts of the model. They specify how the lift is dependent on the spin ratio. All variables have default values based on the results in the article "<a href="https://blueoasis.pt/wp-content/uploads/2023/10/Nutts2023_proceedings_v4.pdf">Calculation of Flettner rotor forces using lifting line and CFD methods</a>". See also the <a href="../literature/validation_data.html">validation data section</a> for more on this.</p>
+<p>The parameters in the rotating cylinder are shown below, with further explanation in the sections that follow.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct RotatingCylinder {
+    pub cl_initial_slope: f64,
+    pub cl_high_spin_ratio_slope: f64,
+    pub cl_slope_transition_spin_ratio: f64,
+    pub cl_slope_transition_range: f64,
+    pub cd_start: f64,
+    pub cd_end: f64,
+    pub cd_angle_start: f64,
+    pub cd_spin_ratio_low_drag: f64,
+    pub power_coefficient_polynomial: Vec&lt;f64&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li>
+<p><code>cl_initial_slope</code>: How fast the lift coefficient increases with the spin ratio, when the spin ratio is small. The default value is 3.0.</p>
+</li>
+<li>
+<p><code>cl_high_spin_ratio_slope</code>: How fast the lift coefficient increases with the spin ratio, when the spin ratio is well above the transition spin ratio. The default value is 1.5.</p>
+</li>
+<li>
+<p><code>cl_slope_transition_spin_ratio</code>: The spin ratio where the transition between the two slopes is half-way developed. Given as a positive value, which is used for both positive and negative spin ratios. The default value is 3.4.</p>
+</li>
+<li>
+<p><code>cl_slope_transition_range</code>: The range of the transition between the two slopes, with the same definition as the <code>stall_range</code> in the <a href="foil_model.html#stall-model">foil model</a>. The default value is 1.0.</p>
+</li>
+<li>
+<p><code>cd_start</code>, <code>cd_end</code>, <code>cd_angle_start</code> and <code>cd_spin_ratio_low_drag</code>: Parameters for the drag, as described in the <a href="#drag">drag</a> section below.</p>
+</li>
+<li>
+<p><code>power_coefficient_polynomial</code>: Model for the power needed to spin the cylinder, as described in the <a href="#power-coefficient">power coefficient</a> section below.</p>
+</li>
+</ul>
+<p>Added mass forces, the gyroscopic moment from the rotor, and empirical corrections of the lift-induced drag are not part of the section model, but are set for each wing in the <a href="../line_model/building_line_model.html">wing builder</a>. See the <a href="../line_model/force_calculations.html">force calculations chapter</a> for more.</p>
+<p>The default values for the lift and drag are based on the two-dimensional CFD results in the article "<a href="https://blueoasis.pt/wp-content/uploads/2023/10/Nutts2023_proceedings_v4.pdf">Calculation of Flettner rotor forces using lifting line and CFD methods</a>". The lift parameters are fitted to the lift coefficients for spin ratios between 0 and 8 in the article, with a maximum deviation of about 0.4 in the lift coefficient. See also the <a href="../literature/validation_data.html">validation data section</a> for more on this.</p>
+<h2 id="lift"><a class="header" href="#lift">Lift</a></h2>
+<p>The lift is modeled with an initial slope at low spin ratios, which changes smoothly to a different slope at high spin ratios. For most rotor sails, the slope at high spin ratios is lower than the initial slope, as the lift starts to level off. The model is built in the same way as the <a href="foil_model.html#slope-reduction">slope reduction</a> in the foil model. The slope of the lift with respect to the spin ratio is given as:</p>
+<p>\[
+\frac{d C_L}{d \lambda} = a_0 - (a_0 - a_\infty) \left( \sigma(\lambda) + \sigma(-\lambda) \right)
+\]</p>
+<p>where \( a_0 \) is <code>cl_initial_slope</code> and \( a_\infty \) is <code>cl_high_spin_ratio_slope</code>. The sigmoid function is the same as the one used in the <a href="foil_model.html#stall-model">stall model</a> of the foil:</p>
+<p>\[
+\sigma(\lambda) = \frac{1}{1 + e^{-k (\lambda - \lambda_t)}}, \quad k = \frac{4.595}{\Delta_t}
+\]</p>
+<p>where \( \lambda_t \) is <code>cl_slope_transition_spin_ratio</code> and \( \Delta_t \) is <code>cl_slope_transition_range</code>. With this definition, the sigmoid function is 0.01 at \( \lambda_t - \Delta_t \), 0.5 at \( \lambda_t \) and 0.99 at \( \lambda_t + \Delta_t \). The first sigmoid function gives the transition for positive spin ratios, while the second gives the transition for negative spin ratios.</p>
+<p>The lift is found by integrating the slope from zero spin ratio:</p>
+<p>\[
+C_L = a_0 \lambda - (a_0 - a_\infty) \left( R(\lambda) - R(-\lambda) \right)
+\]</p>
+<p>where \( R(\lambda) \) is the integral of the sigmoid function, which can be computed exactly, as described in the <a href="foil_model.html#slope-reduction">foil model</a>.</p>
+<p>The model has the following properties:</p>
+<ul>
+<li>The lift is an odd function of the spin ratio: \( C_L(-\lambda) = -C_L(\lambda) \). That is, the sign of the spin ratio only determines the direction of the lift, while the magnitude of the lift, and the spin ratio where the transition happens, is the same for both directions of rotation.</li>
+<li>Well below the transition spin ratio, the slope is \( a_0 \). Well above, the slope is \( a_\infty \). Setting the two slopes to the same value gives a lift that is linear in the spin ratio.</li>
+<li>The lift is smooth for all spin ratios, including at zero spin ratio, as both transitions are included for all spin ratios, rather than switching between them based on the sign of the spin ratio.</li>
+<li>The slope at zero spin ratio is only exactly equal to \( a_0 \) when the transition spin ratio is well above the transition range, as the sigmoid functions are then practically zero at zero spin ratio. This is the case for typical rotor sail parameters.</li>
+<li>A transition range of zero gives a sharp change between the two slopes at the transition spin ratio.</li>
+</ul>
+<h2 id="drag"><a class="header" href="#drag">Drag</a></h2>
 <p>The drag is modeled with a simple parametric curve that goes smoothly from a high value at zero spin ratio to a low value at higher spin ratios. The curve is controlled by the following parameters:</p>
 <ul>
 <li><code>cd_start</code>: The drag coefficient at zero spin ratio. The default value is 0.457.</li>
@@ -176,30 +231,36 @@
 <li><code>cd_spin_ratio_low_drag</code>: The spin ratio where the drag coefficient reaches the <code>cd_end</code> value. The default value is 2.7.</li>
 <li><code>cd_angle_start</code>: An angle, in radians, that controls the slope of the drag curve at zero spin ratio. A higher value gives a steeper downwards slope. The default value is 5 degrees.</li>
 </ul>
-<p>The <code>cdi_correction_factor</code> can be used to correct for numerical errors in the lift-induced drag, in the same way as for the <a href="foil_model.html">foil model</a>. It adds a term to the drag coefficient that is equal to the factor times the lift coefficient squared. The default is zero, which means no correction.</p>
-<p>The <code>added_mass_factor</code> and <code>moment_of_inertia_2d</code> parameters can be used to estimate added mass forces and gyroscopic forces on the rotor. <strong>Note</strong>: more to come on these parameters later. They need further validation, and are therefore set to zero by default.</p>
-<p>The spin ratio for each section is calculated based on the <code>revolutions_per_second</code> value and the local chord length and velocity. Then, the lift in 2D is interpolated from the input data values, while the drag in 2D is calculated from the parametric drag curve.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct RotatingCylinder {
-    pub revolutions_per_second: f64,
-    pub spin_ratio_data: Vec&lt;f64&gt;,
-    pub cl_data: Vec&lt;f64&gt;,
-    pub cd_start: f64,
-    pub cd_end: f64,
-    pub cd_angle_start: f64,
-    pub cd_spin_ratio_low_drag: f64,
-    pub added_mass_factor: f64,
-    pub moment_of_inertia_2d: f64,
-    pub cdi_correction_factor: f64,
-}
-<span class="boring">}</span></code></pre></pre>
+<p>The spin ratio for each line element is calculated from the internal state of the wing, which is the revolutions per second, and the local chord length and velocity. The chord length is used as the diameter of the cylinder.</p>
+<h2 id="power-coefficient"><a class="header" href="#power-coefficient">Power coefficient</a></h2>
+<p>The power needed to spin the cylinder is modeled with a power coefficient, as defined in the <a href="sectional_models_intro.html">section model overview</a>, which is a polynomial function of the absolute value of the spin ratio, \( SR \):</p>
+<p>\[
+C_P = \sum_i a_i |SR|^i
+\]</p>
+<p>The coefficients \( a_i \) are given in the <code>power_coefficient_polynomial</code> field, in increasing order, starting with the constant term. The absolute value of the spin ratio is used since the power does not depend on the direction of rotation.</p>
+<p>The default coefficients are taken from equation (9) in the article "<a href="https://doi.org/10.1016/j.oceaneng.2020.107603">Design, operation and analysis of wind-assisted cargo ships</a>", by Tillig and Ringsberg (2020):</p>
+<p>\[
+C_P = 0.0234 \, SR - 0.0168 \, SR^2 + 0.0143 \, SR^3 - 0.0004 \, SR^4 + 0.0001 \, SR^5
+\]</p>
+<p>The article states that the model is valid for rotors with an aspect ratio of 6 and an end disk diameter of two times the rotor diameter. In the article, the model is used for the whole rotor, together with the apparent wind velocity. In Stormbird, it is applied to each line element, with the local velocity, which is a strip theory assumption. Note also that the spin ratio is zero when the velocity is zero, so the model gives no power for a spinning rotor in still air.</p>
+<p>The power coefficient is used by the default <a href="../line_model/input_power.html">input power model</a>. Rotor sails can also use a power model that interpolates the power directly from the revolutions per second, which is independent of this coefficient.</p>
+<h2 id="interactive-example"><a class="header" href="#interactive-example">Interactive example</a></h2>
+<p>The plot below shows the output of the rotating cylinder model, and can be used to explore how the parameters affect the lift and drag. The parameters are adjusted with the sliders, or by typing in values, below the plot. The current parameters can be copied as JSON input from the bottom of the plot. The <code>cd_angle_start</code> is given in degrees in the slider, but must be given in radians in the actual input to Stormbird, which is also how it is given in the JSON output.</p>
+<p>The thin gray lines in the lift panel show the line with the initial slope, \( a_0 \lambda \), and the straight line the lift approaches well above the transition spin ratio, \( \text{sign}(\lambda) \left( a_\infty |\lambda| + (a_0 - a_\infty) \lambda_t \right) \). The second panel shows the slope of the lift with respect to the spin ratio. The plot is limited to spin ratios between -5 and 5, as higher values are typically not relevant for rotor sails. The parameters that are not available in the plot, such as <code>power_coefficient_polynomial</code>, are set to their default values.</p>
+<link rel="stylesheet" href="interactive/model_explorer.css">
+<div data-rotating-cylinder-model-explorer>
+    <noscript>The interactive plot requires JavaScript.</noscript>
+</div>
+<script src="interactive/rotating_cylinder_model.js"></script>
+<script src="interactive/model_explorer.js"></script>
+<script src="interactive/rotating_cylinder_model_explorer.js"></script>
+<p>The plot uses a JavaScript copy of the Rust implementation of the <code>RotatingCylinder</code> model, which can be found in <code>book/src/sectional_models/interactive/rotating_cylinder_model.js</code>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../sectional_models/varying_foil_model.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../sectional_models/active_air_flow_foil.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -213,7 +274,7 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../sectional_models/varying_foil_model.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../sectional_models/active_air_flow_foil.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

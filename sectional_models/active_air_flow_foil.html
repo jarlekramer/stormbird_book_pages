@@ -1,0 +1,482 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Active air flow foil - Stormbird</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Stormbird</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="active-air-flow-foil"><a class="header" href="#active-air-flow-foil">Active air flow foil</a></h1>
+<p>NOTE: THIS CHAPTER IS A DRAFT. THE MODEL IS NEW, AND BOTH THE MODEL AND THE TEXT MIGHT CHANGE.</p>
+<p>The <code>ActiveAirFlowFoil</code> structure is a model of a foil with active flow control, where the main intended use case is to model suction sails. On a suction sail, air is sucked into the foil through a porous surface on the suction side, using one or more fans. This keeps the boundary layer attached at higher angles of attack, which allows much larger lift coefficients than for a regular foil.</p>
+<p>The model consists of two parts:</p>
+<ol>
+<li>A <a href="varying_foil_model.html"><code>VaryingFoil</code></a> model, which gives the lift and drag as a function of the angle of attack and an internal state, such as the suction coefficient.</li>
+<li>An internal state conversion, which defines how the internal state set on the wing is converted to the internal state used by the <code>VaryingFoil</code> model on each line element.</li>
+</ol>
+<p>The reason for the second part is that the most practical way to control a suction sail is often not the same as the variable that the lift and drag depend on. For instance, a suction sail is controlled by the power or the rotational speed of the fans, while the lift and drag are better described as a function of the suction coefficient. The conversion between these depends on the local flow conditions, and can therefore vary along the span of the wing.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ActiveAirFlowFoil {
+    pub varying_foil: VaryingFoil,
+    pub internal_state_conversion: InternalStateConversion,
+}
+
+pub enum InternalStateConversion {
+    SuctionCoefficientDirect,
+    PowerToPowerCoefficient,
+    PowerToInternalFlow {
+        internal_flow: InternalFlow,
+        fan_efficiency: f64,
+    },
+    FanSpeedToInternalFlow {
+        internal_flow: InternalFlow,
+        fan: Fan,
+    },
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="internal-state-conversions"><a class="header" href="#internal-state-conversions">Internal state conversions</a></h2>
+<p>There are four different ways to convert the internal state, which have different levels of complexity. An important point to note is that the meaning of the <code>internal_state_data</code> in the <code>VaryingFoil</code> model depends on which conversion is used.</p>
+<ol>
+<li><code>SuctionCoefficientDirect</code>: The internal state of the wing is the suction coefficient, which is given directly to the <code>VaryingFoil</code> model on all line elements. The foil data must therefore be given as a function of the suction coefficient. This variant is mostly useful for testing, as it does not say anything about how much power is needed. The power is therefore set to zero.</li>
+<li><code>PowerToPowerCoefficient</code>: The internal state of the wing is the power. The power is converted to a power coefficient on each line element, which is given to the <code>VaryingFoil</code> model. The foil data must therefore be given as a function of the power coefficient. This is a simplified model, which is useful when data for the lift and drag is available as a function of the power coefficient, as for the <a href="../literature/validation_data.html">TurboSail data</a>.</li>
+<li><code>PowerToInternalFlow</code>: The internal state of the wing is the input power to the fans. The power is converted to a suction coefficient on each line element, using a model of the internal flow in the sail and a constant fan efficiency. The foil data must therefore be given as a function of the suction coefficient. This is expected to be the most used model, and is described in more detail below.</li>
+<li><code>FanSpeedToInternalFlow</code>: The internal state of the wing is the rotational speed of the fans, in revolutions per second. The suction coefficient on each line element is found from the same internal flow model, but the fans are modeled with fan curves rather than a constant efficiency. This is the most complete model, intended for cases where data for the fans is available. It is described in the <a href="#fan-model">fan model</a> section below.</li>
+</ol>
+<p>The suction coefficient, \( C_Q \), and the power coefficient, \( C_P \), are defined as:</p>
+<p>\[
+C_Q = \frac{Q}{U A}, \quad C_P = \frac{P}{0.5 \rho A U^3}
+\]</p>
+<p>where \( Q \) is the volume flow through the porous surface, \( P \) is the power, \( \rho \) is the density, \( A \) is the area and \( U \) is the velocity. In Stormbird, the area and velocity are always the local values on each line element, where the area is the chord length times the length of the line element. It is important that the data for the <code>VaryingFoil</code> model uses the same definitions.</p>
+<p>For the <code>PowerToPowerCoefficient</code> conversion, the power is distributed over the line elements proportional to their area. The power coefficient on each line element then becomes:</p>
+<p>\[
+C_{P, i} = \frac{P}{0.5 \rho A_{wing} U_i^3}
+\]</p>
+<p>where \( A_{wing} \) is the total area of the wing and \( U_i \) is the local velocity.</p>
+<h3 id="the-direction-of-the-suction"><a class="header" href="#the-direction-of-the-suction">The direction of the suction</a></h3>
+<p>The internal state of the wing can be both positive and negative for all conversions. The sign of the internal state is used to set the direction of the suction, i.e., which side of the foil is the suction side. The magnitude of the power, rotational speed or suction coefficient is given by the absolute value of the internal state. That is, setting a negative power does not mean that the fan <em>produces</em> power, but that the same amount of power is used to suck air in on the other side of the foil. The sign is kept in the internal state given to the <code>VaryingFoil</code> model, which should therefore contain mirrored foil data for the negative values.</p>
+<h3 id="span-varying-internal-states"><a class="header" href="#span-varying-internal-states">Span varying internal states</a></h3>
+<p>The internal state of the wing can also <a href="sectional_models_intro.html#constant-and-span-varying-internal-states">vary along the span</a>. For the power based conversions, a span varying internal state is interpreted as <em>power per span length</em>. For the <code>PowerToPowerCoefficient</code> conversion, the power on each line element is then the local power per span length times the length of the line element, and the power coefficient becomes:</p>
+<p>\[
+C_{P, i} = \frac{p'(y_i)}{0.5 \rho c_i U_i^3}
+\]</p>
+<p>where \( p'(y_i) \) is the power per span length at the control point and \( c_i \) is the chord length. For the conversions with an internal flow model, the internal state is applied to each <a href="#internal-compartments">internal compartment</a>, as described below.</p>
+<h2 id="the-internal-flow-model"><a class="header" href="#the-internal-flow-model">The internal flow model</a></h2>
+<p>The <code>PowerToInternalFlow</code> and <code>FanSpeedToInternalFlow</code> conversions use a simplified model of the flow through the porous surface of the sail. The model is based on a pressure balance between the outside and the inside of the sail, and the following assumptions:</p>
+<ul>
+<li>All line elements in the same internal compartment share the same internal volume, with a uniform internal pressure. By default, the whole wing is a single compartment.</li>
+<li>The external pressure on the porous surface depends only on the suction coefficient, and not on the angle of attack or the lift.</li>
+<li>The pressure loss through the porous surface is proportional to the velocity through the surface squared.</li>
+</ul>
+<p>The input parameters to the model are shown below. The model only describes the flow through the porous surface. The fans are part of the internal state conversion.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InternalFlow {
+    pub cp_no_suction: f64,
+    pub cp_suction_gradient: f64,
+    pub loss_coefficient: f64,
+    pub porous_fraction: f64,
+    pub solver_settings: InternalFlowSolverSettings,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="external-pressure"><a class="header" href="#external-pressure">External pressure</a></h3>
+<p>The external pressure coefficient on the porous surface is modeled as a linear function of the suction coefficient:</p>
+<p>\[
+C_{p, ext} = C_{p, 0} + \frac{d C_p}{d C_Q} C_Q
+\]</p>
+<p>where \( C_{p, 0} \) is the pressure coefficient without suction, given by <code>cp_no_suction</code>, and \( d C_p / d C_Q \) is given by <code>cp_suction_gradient</code>. Since the porous surface is on the suction side, both values will typically be negative. That is, the external pressure on the porous surface gets lower when the suction increases. The gradient must be zero or negative, which is checked when the model is set up. The reason for this requirement is explained <a href="#the-suction-coefficient-on-each-line-element">below</a>.</p>
+<h4 id="why-the-pressure-depends-on-the-suction-coefficient"><a class="header" href="#why-the-pressure-depends-on-the-suction-coefficient">Why the pressure depends on the suction coefficient</a></h4>
+<p>The external pressure is modeled as a function of the suction coefficient only, and not of the angle of attack or the lift coefficient. The reasoning behind this choice is as follows:</p>
+<ul>
+<li>The porous surface is typically located on the aft part of the suction side, where the flow would separate without suction.</li>
+<li>The part of the pressure distribution that is caused by the angle of attack is concentrated close to the leading edge. In thin airfoil theory, the loading due to the angle of attack is proportional to \( \sqrt{(1 - x) / x} \), where \( x \) is the non-dimensional chordwise position, which goes to zero at the trailing edge. A change in the angle of attack therefore mainly changes the suction peak at the leading edge, and has less effect on the pressure on the aft part of the foil.</li>
+<li>The suction, on the other hand, acts more like a change in camber, or a <em>virtual flap</em>, similar to how lift is controlled on circulation control airfoils. The suction controls how far the flow stays attached around the aft part of the foil. Without suction, the pressure on the porous surface is close to the base pressure of the separated flow. When the suction increases, the flow stays attached further around the aft part, and the pressure on the porous surface becomes much lower. The lift increases as a consequence, so the lift and the external pressure are correlated, but it is the suction that is the cause.</li>
+</ul>
+<p>This is also consistent with pressure distributions for foils with boundary layer suction, where the pressure on the aft part of the suction side varies much more with the suction rate than with the angle of attack.</p>
+<p>The model is still a simplification. The angle of attack will have some effect on the external pressure, especially close to and beyond the maximum lift for a given suction coefficient. The flow then separates upstream of the porous surface, and the pressure increases towards the base pressure. This is not captured by the model. The dependency on the suction coefficient is also likely to be nonlinear in reality, for instance by leveling off when the flow is fully attached, so the linear function should be seen as an approximation that is valid over a limited range of suction coefficients. The parameters depend on the geometry of the sail and the location of the porous surface, and must be tuned to experimental or CFD data.</p>
+<p>A practical consequence of the choice is that the internal flow model does not depend on the <code>VaryingFoil</code> model. The suction coefficient on each line element can therefore be computed directly, as explained below, without an iteration between the internal flow model and the lift and drag model.</p>
+<h3 id="flow-through-the-porous-surface"><a class="header" href="#flow-through-the-porous-surface">Flow through the porous surface</a></h3>
+<p>The fans create an internal suction, \( s \), which is the difference between the ambient pressure and the internal pressure in the sail. The pressure difference over the porous surface is then:</p>
+<p>\[
+\Delta p = C_{p, ext} \, 0.5 \rho U^2 + s
+\]</p>
+<p>The flow through the surface is driven by this pressure difference, and is modelled using a loss coefficient, \( K \), given by <code>loss_coefficient</code>:</p>
+<p>\[
+Q = \phi A \sqrt{\frac{2 \Delta p}{\rho K}}
+\]</p>
+<p>where \( \phi \) is the fraction of the area that is porous, given by <code>porous_fraction</code>. Both the porous fraction and the loss coefficient must be larger than zero. Note that only the ratio \( \phi / \sqrt{K} \) matters for the flow. The intention is that the porous fraction is set based on the geometry of the sail, while the loss coefficient is tuned to match experimental or CFD data.</p>
+<h3 id="the-suction-coefficient-on-each-line-element"><a class="header" href="#the-suction-coefficient-on-each-line-element">The suction coefficient on each line element</a></h3>
+<p>The internal suction is uniform within an <a href="#internal-compartments">internal compartment</a>, but the local velocity varies along the span, for instance due to the lift-induced velocities or a vertical wind gradient. It is therefore practical to use the non-dimensional internal suction for each line element, \( \sigma = s / (0.5 \rho U^2) \), which varies along the span. Combining the equations above, with \( Q = C_Q U A \), gives a quadratic equation for the suction coefficient on each line element:</p>
+<p>\[
+\frac{K}{\phi^2} C_Q^2 - \frac{d C_p}{d C_Q} C_Q - \left( C_{p, 0} + \sigma \right) = 0
+\]</p>
+<p>When the gradient is zero or negative, the equation has exactly one positive solution when \( C_{p, 0} + \sigma \) is positive, and no positive solution otherwise. The suction coefficient is therefore computed directly from the solution of the equation, without any iterations. The suction coefficient also increases monotonically with the internal suction, which makes the solution for the internal suction of the whole wing, described <a href="#solving-for-the-internal-suction">below</a>, robust. With a positive gradient, the equation could have two positive solutions or none, which is the reason why this is not allowed.</p>
+<p>The suction coefficient is lower on line elements with a high local velocity, as the same internal suction gives a lower value of \( \sigma \). A negative gradient acts as a negative feedback on the flow: more suction gives a lower external pressure, which counteracts the internal suction and reduces the pressure difference that drives the flow into the sail. The suction coefficient for a given value of \( \sigma \) is therefore lower than without the gradient. This feedback is also the reason why the solution is unique.</p>
+<p>If the internal suction is too small to overcome the external suction, i.e., if \( C_{p, 0} + \sigma \) is negative, the pressure difference becomes negative, which in reality means that air flows out of the sail. Since the sign of the internal state is used for the direction of the suction, such outflow is not represented in Stormbird. Line elements with outflow are instead assumed to have zero flow.</p>
+<h3 id="power-with-a-constant-fan-efficiency"><a class="header" href="#power-with-a-constant-fan-efficiency">Power with a constant fan efficiency</a></h3>
+<p>The power delivered to the flow is the internal suction times the total volume flow over the wing. For the <code>PowerToInternalFlow</code> conversion, the input power to the fans is found by dividing by a constant fan efficiency, \( \eta \), given by <code>fan_efficiency</code>:</p>
+<p>\[
+P = \frac{s \sum_i Q_i}{\eta}
+\]</p>
+<p>The default value of the fan efficiency is 1.0.</p>
+<h2 id="fan-model"><a class="header" href="#fan-model">Fan model</a></h2>
+<p>The <code>FanSpeedToInternalFlow</code> conversion replaces the constant fan efficiency with a model of the fans, based on fan curves. The fan curves give the pressure rise over a fan, \( \Delta p_{fan} \), and the input power to the fan, \( P_{fan} \), as a function of the volume flow and the rotational speed. The model is set up with the following structures:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct Fan {
+    pub curves: FanCurves,
+    pub number_of_fans: usize,          // Default: 1
+    pub duct_loss_coefficient: f64,     // Default: 0.0
+}
+
+pub enum FanCurves {
+    Dimensional {
+        reference_rotational_speed: f64,
+        reference_density: f64,
+        data: FanCurveData,
+    },
+    NonDimensional {
+        diameter: f64,
+        data: FanCurveData,
+    },
+}
+
+pub struct FanCurveData {
+    pub flow_data: Vec&lt;f64&gt;,
+    pub pressure_data: Vec&lt;f64&gt;,
+    pub power_data: Vec&lt;f64&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="fan-curves"><a class="header" href="#fan-curves">Fan curves</a></h3>
+<p>The fan curves can be given in two ways, depending on what data is available:</p>
+<ol>
+<li><code>Dimensional</code>: The data is given as volume flow in m³/s, pressure rise in Pa and power in W, measured at a reference rotational speed, \( n_{ref} \), and density, \( \rho_{ref} \). This is typically the format used in data sheets from fan manufacturers.</li>
+<li><code>NonDimensional</code>: The data is given as the flow coefficient, the pressure coefficient and the power coefficient, using the diameter of the fan, \( D \), and the rotational speed in revolutions per second, \( n \):</li>
+</ol>
+<p>\[
+\phi_{fan} = \frac{Q}{n D^3}, \quad \psi_{fan} = \frac{\Delta p_{fan}}{\rho n^2 D^2}, \quad \lambda_{fan} = \frac{P_{fan}}{\rho n^3 D^5}
+\]</p>
+<p>In both cases, the curves are scaled to other rotational speeds and densities using the fan affinity laws, which state that the flow scales with \( n \), the pressure rise with \( \rho n^2 \) and the power with \( \rho n^3 \). For the non-dimensional curves, this scaling is built into the definition of the coefficients. For the dimensional curves, the scaling is done relative to the reference values.</p>
+<p>The data must only cover the stable operating range of the fan, where the pressure rise decreases with increasing flow. Many fans have a region at low flow where this is not the case, which can give multiple possible operating points. This is checked when the model is set up, and data that does not satisfy this requirement is not accepted. Below the lowest flow in the data, the first data point is used. Above the highest flow, the curves are extrapolated linearly.</p>
+<h3 id="multiple-fans-and-duct-losses"><a class="header" href="#multiple-fans-and-duct-losses">Multiple fans and duct losses</a></h3>
+<p>The <code>number_of_fans</code> field specifies the number of identical fans in parallel, which share the total volume flow equally. The <code>duct_loss_coefficient</code>, \( k \), can be used to model the pressure loss in the ducts between the internal volume of the sail and the fans, as a function of the total volume flow:</p>
+<p>\[
+\Delta p_{duct} = k \left( \sum_i Q_i \right)^2
+\]</p>
+<h3 id="operating-point"><a class="header" href="#operating-point">Operating point</a></h3>
+<p>For a given rotational speed, the operating point of the fans is where the pressure rise over the fans balances the internal suction and the duct losses, at the total volume flow through the porous surface:</p>
+<p>\[
+\Delta p_{fan} \left(\sum_i Q_i(s), n \right) = s + \Delta p_{duct}
+\]</p>
+<p>The total volume flow increases with increasing internal suction, while the pressure rise over the fans decreases with increasing flow. There is therefore only one operating point. If the fans can not overcome the external suction on any of the line elements, there is no flow. When the operating point is found, the input power is given directly by the power curve of the fans. The efficiency of the fans is therefore a result of the model, rather than an input.</p>
+<h2 id="internal-compartments"><a class="header" href="#internal-compartments">Internal compartments</a></h2>
+<p>Most suction sails have a single fan, and a single internal volume. However, some have several fans along the span, where the internal volume is divided into separate compartments by bulkheads. This can be modeled by dividing the wing into <em>internal compartments</em>, through the <code>internal_compartment_boundaries</code> field in the <a href="../line_model/building_line_model.html">wing builder</a>. The compartments are defined on the wing, rather than in the section model, as they are a property of the layout of the wing, while the section model describes the flow through the porous surface and the type of fan.</p>
+<p>Each compartment is modeled as sealed from the others, with its own uniform internal pressure and its own fans. That is, each compartment is solved separately, in the same way as a whole wing with a single compartment. A line element belongs to the compartment that contains its control point. If a compartment boundary does not match the boundary between two line elements, the effective boundary will therefore be shifted to the closest line element boundary.</p>
+<p>The internal state of the wing is applied to each compartment as follows:</p>
+<ul>
+<li><code>PowerToInternalFlow</code>: A constant internal state is the total power for the wing, which is divided equally between the compartments. A span varying internal state is the power per span length, which is integrated over each compartment to give the power for the compartment.</li>
+<li><code>FanSpeedToInternalFlow</code>: The rotational speed of the fans in each compartment is the mean value of the internal state over the compartment. A constant internal state therefore gives the same rotational speed for all fans. All compartments use the same fan model.</li>
+</ul>
+<p>The sign of the internal state sets the direction of the suction for each compartment separately. A <code>PiecewiseConstant</code> span variation with the same boundaries as the compartments gives exactly one value per compartment, which is the most natural way to set the power or rotational speed of each fan individually.</p>
+<p>Note that, since the internal pressure is uniform within a compartment, it is only the total power for each compartment that matters for the <code>PowerToInternalFlow</code> conversion. A variation of the power per span length <em>within</em> a compartment does not affect the result, as the distribution of the flow, and therefore the power, along the span is given by the internal flow model.</p>
+<h2 id="virtual-line-elements"><a class="header" href="#virtual-line-elements">Virtual line elements</a></h2>
+<p><a href="../line_model/building_line_model.html">Virtual line elements</a>, for instance used to model end plates, get the same type of internal state as the rest of the wing. For instance, they get the suction coefficient that follows from the internal suction in the compartment they belong to. This keeps the circulation on the virtual line elements consistent with the rest of the wing. However, virtual line elements are not part of the sail itself, and are therefore not included in the flow through the sail or in the power.</p>
+<h2 id="solving-for-the-internal-suction"><a class="header" href="#solving-for-the-internal-suction">Solving for the internal suction</a></h2>
+<p>The internal suction is not known directly, and must be found from the internal state of the wing, for each compartment. For a given internal suction, the suction coefficient on each line element is found directly, as described <a href="#the-suction-coefficient-on-each-line-element">above</a>. The total volume flow through the compartment, and therefore the power, is a nonlinear function of the internal suction, which means that a solver is needed:</p>
+<ul>
+<li>For the <code>PowerToInternalFlow</code> conversion, the internal suction is the value where the power equals the power given as the internal state of the wing, found with the <a href="https://en.wikipedia.org/wiki/Secant_method">secant method</a>.</li>
+<li>For the <code>FanSpeedToInternalFlow</code> conversion, the internal suction is given by the operating point of the fans, found with <a href="https://en.wikipedia.org/wiki/Brent%27s_method">Brent's method</a>. Brent's method always keeps the solution within a bracket, which is known in this case: the internal suction is always between the value where the flow into the sail starts and the maximum pressure rise of the fans.</li>
+</ul>
+<p>The settings for the solver can be set through the <code>solver_settings</code> field, but the default values should normally be sufficient:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InternalFlowSolverSettings {
+    pub wing_tolerance: f64,            // Default: 1e-6, relative
+    pub wing_max_iterations: usize,     // Default: 50
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Note that the internal flow model is still coupled to the rest of the lifting line or actuator line simulation through the local velocity. The suction coefficient affects the lift, which affects the induced velocities, which again affect the local velocity, and therefore the suction coefficient. This coupling is handled by the iterations in the simulation, in the same way as for all other section models.</p>
+<h2 id="power-consumption-and-control"><a class="header" href="#power-consumption-and-control">Power consumption and control</a></h2>
+<p>The power needed to operate the sail is computed by the section model for the whole wing, as described in the <a href="sectional_models_intro.html">section model overview</a>. For the power based conversions, this is done by integrating a power coefficient over the wing, which means that the default <a href="../line_model/input_power.html">input power model</a> gives the same power as the internal state of the wing. For the <code>FanSpeedToInternalFlow</code> conversion, the efficiency of the fans depends on the operating point in each compartment. The power is therefore computed from the power curve of the fans, using the volume flow and the rotational speed in each compartment, and summed over the compartments.</p>
+<p>The <a href="../utils/control_system.html">controller</a> can be used to set the internal state of a suction sail in two ways. Either the set points can be given directly as the wing internal state, i.e., as the power or the rotational speed of the fans, or they can be given in the units of the section model, i.e., as the suction or power coefficient. In the latter case, the set points are converted to the wing internal state based on the measured velocity on the wing, assuming the same suction or power coefficient along the whole span. Since the internal flow model does not depend on the angle of attack, the measured angle of attack is not needed for this conversion. This is an open loop estimate, so the actual suction coefficient along the wing will only approximately match the set point. With several internal compartments, the area of the wing is assumed to be divided equally between them. The controller sets a constant internal state for the wing, so internal states that vary along the span must currently be <a href="../line_model/move_line_models.html#update-the-internal-state">set manually</a>.</p>
+<p>The maximum value of the internal state can be limited through the <code>wing_internal_state_max_value</code> setting in the controller. This is the maximum power for the power based conversions, and the maximum rotational speed of the fans for the <code>FanSpeedToInternalFlow</code> conversion.</p>
+<h2 id="assumptions-and-limitations"><a class="header" href="#assumptions-and-limitations">Assumptions and limitations</a></h2>
+<p>The internal flow model is simplified, and the empirical parameters must be tuned to experimental or CFD data to give accurate results. Some known simplifications are listed below:</p>
+<ul>
+<li>Reynolds number effects are not modeled, neither for the external flow nor for the flow through the porous surface. The quadratic loss model is typical for perforated surfaces with relatively high through-flow velocities, while the losses through fine porous materials can be closer to linear in the velocity.</li>
+<li>The <code>PowerToInternalFlow</code> conversion assumes a constant fan efficiency, while it will in reality depend on the operating point of the fans. The fans are also treated as a power source that can deliver any combination of suction and volume flow, which implicitly assumes fans with variable speed. The <code>FanSpeedToInternalFlow</code> conversion removes this simplification, if fan curves are available.</li>
+<li>The external pressure is assumed to depend linearly on the suction coefficient only, as discussed in the section on the <a href="#why-the-pressure-depends-on-the-suction-coefficient">external pressure</a>. The effect of the angle of attack is neglected, which is mainly valid when the flow is attached over the porous surface.</li>
+<li>The internal pressure is assumed to be uniform within each compartment. Losses in the ducts between the internal volume and the fans can be included in the fan model, but losses inside the internal volume itself are not modeled. Leakage between compartments is not modeled.</li>
+<li>Outflow through the porous surface is not modeled, as described above.</li>
+</ul>
+<p>Another point to be aware of is the drag due to the momentum of the air that is sucked into the sail, often called <em>sink drag</em>. In coefficient form, it is approximately \( 2 C_Q \). This drag is not part of the internal flow model, but should be part of the drag data in the <code>VaryingFoil</code> model. Drag data from integrating the pressure and friction on the surface of the sail, for instance from CFD, will typically include this effect. Drag data from wake measurements will not, and must then be corrected.</p>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<p>Below is an example of the input for a section model using the <code>PowerToInternalFlow</code> conversion, given as JSON. The foil data is simplified to only include three internal states, with mirrored data for the negative suction coefficient. The values for the internal flow model are only examples, and are not tuned to any data.</p>
+<pre><code class="language-json">{
+    "ActiveAirFlowFoil": {
+        "varying_foil": {
+            "internal_state_data": [-0.05, 0.0, 0.05],
+            "foils_data": [
+                { "cl_zero_angle": -1.0 },
+                { "cl_zero_angle": 0.0 },
+                { "cl_zero_angle": 1.0 }
+            ]
+        },
+        "internal_state_conversion": {
+            "PowerToInternalFlow": {
+                "internal_flow": {
+                    "cp_no_suction": -0.5,
+                    "cp_suction_gradient": -20.0,
+                    "loss_coefficient": 10.0,
+                    "porous_fraction": 0.3
+                },
+                "fan_efficiency": 0.7
+            }
+        }
+    }
+}
+</code></pre>
+<p>The same model with two fans, modeled with dimensional fan curves measured at 20 revolutions per second, is shown below. Again, the values are only examples.</p>
+<pre><code class="language-json">{
+    "ActiveAirFlowFoil": {
+        "varying_foil": {
+            "internal_state_data": [-0.05, 0.0, 0.05],
+            "foils_data": [
+                { "cl_zero_angle": -1.0 },
+                { "cl_zero_angle": 0.0 },
+                { "cl_zero_angle": 1.0 }
+            ]
+        },
+        "internal_state_conversion": {
+            "FanSpeedToInternalFlow": {
+                "internal_flow": {
+                    "cp_no_suction": -0.5,
+                    "cp_suction_gradient": -20.0,
+                    "loss_coefficient": 10.0,
+                    "porous_fraction": 0.3
+                },
+                "fan": {
+                    "curves": {
+                        "Dimensional": {
+                            "reference_rotational_speed": 20.0,
+                            "reference_density": 1.225,
+                            "data": {
+                                "flow_data": [0.0, 2.0, 4.0, 6.0, 8.0],
+                                "pressure_data": [600.0, 568.0, 472.0, 312.0, 88.0],
+                                "power_data": [400.0, 1800.0, 2900.0, 3100.0, 1600.0]
+                            }
+                        }
+                    },
+                    "number_of_fans": 2,
+                    "duct_loss_coefficient": 5.0
+                }
+            }
+        }
+    }
+}
+</code></pre>
+<p>The two simpler conversions do not need any input, and are given as strings. For instance: <code>"internal_state_conversion": "PowerToPowerCoefficient"</code>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../sectional_models/varying_foil_model.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../sectional_models/rotating_cylinder.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../sectional_models/varying_foil_model.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../sectional_models/rotating_cylinder.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

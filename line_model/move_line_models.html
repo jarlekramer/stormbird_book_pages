@@ -159,7 +159,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="move-and-modify-a-line-model"><a class="header" href="#move-and-modify-a-line-model">Move and modify a line model</a></h1>
-<p>In dynamic simulations, it will often be interesting to apply motion to the sails and dynamically change the angle of attack or internal state of a section model. This can, for instance, be done to simulate how the sails affect the seakeeping or maneuvering abilities of a ship or to allow the operational variables of the sails to be dependent on the current wind conditions. This chapter specifies how to apply motion data to the sails during a dynamic simulation and how to modify the operational variables for each sail.</p>
+<p>In dynamic simulations, it will often be interesting to apply motion to the sails and dynamically change the angle of attack or the internal state of the wings. This can, for instance, be done to simulate how the sails affect the seakeeping or maneuvering abilities of a ship or to allow the operational variables of the sails to be dependent on the current wind conditions. This chapter specifies how to apply motion data to the sails during a dynamic simulation and how to modify the operational variables for each sail.</p>
 <h2 id="motion-variables"><a class="header" href="#motion-variables">Motion variables</a></h2>
 <p>The motion of a line force model is specified by the <code>rigid_body_motion</code> field, which is of the <code>RigidBodyMotion</code> type. This structure looks like the following:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -180,16 +180,18 @@
     pub circulation_strength: Vec&lt;f64&gt;,
     pub velocity: Vec&lt;SpatialVector&gt;,
     pub angles_of_attack: Vec&lt;f64&gt;,
+    pub section_models_internal_state: Vec&lt;f64&gt;,
     pub acceleration: Vec&lt;SpatialVector&gt;,
     pub rotation_velocity: SpatialVector,
     pub coordinate_system: CoordinateSystem,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>Each element in the vectors in the <code>SectionalForcesInput</code> corresponds to a line element in the <code>LineForceModel</code>. Both the velocity and the acceleration are a combination of freestream conditions, induced velocities, and motion velocities. The motion velocities can either be automatically calculated based on finite difference and the time history of the motion or set manually if the variables are available from some other sources (e.g., a rigid body solver of a ship).</p>
+<p>Each element in the vectors in the <code>SectionalForcesInput</code> corresponds to a line element in the <code>LineForceModel</code>. Both the velocity and the acceleration are a combination of freestream conditions, induced velocities, and motion velocities.</p>
+<p>The <code>section_models_internal_state</code> is the internal state given to the section model on each line element, which is converted from the internal state set on the wing (see the <a href="#control-variables">control variables</a> below). For some section models, the conversion depends on the local velocity, which means that the motion can also affect the section internal states. For instance, the spin ratio of a rotor sail with a constant rotational speed changes when the felt velocity changes, and the suction coefficient of a suction sail with a constant fan power varies with the local flow conditions. The motion velocities can either be automatically calculated based on finite difference and the time history of the motion or set manually if the variables are available from some other sources (e.g., a rigid body solver of a ship).</p>
 <h2 id="control-variables"><a class="header" href="#control-variables">Control variables</a></h2>
 <p>Two types of control variables exist for the sails in a <code>LineForceModel</code>.</p>
 <p>The first is the <code>local_wing_angles</code>, which defines the rotation of the sails around its local axis. The local axis is defined as the axis of the first span line. If the sail is defined to be oriented in the z-direction as the span direction, a local wing angle value will then rotate all chord vectors around the z-axis.</p>
-<p>The second value is the internal state of the section model for each wing. This value can represent different things, depending on the sail type and how it is modeled. Typical values are flap angles, rotational speeds, and suction rates.</p>
+<p>The second is the internal state of each wing. This value can represent different things, depending on the sail type and how it is modeled. Typical values are flap angles, rotational speeds, fan power, and suction coefficients. The internal state of the wing is converted to the internal state of the section model on each line element, which can be different. For instance, the internal state of a rotor sail wing is the revolutions per second, while the section model uses the spin ratio. The internal state can also be constant along the span, which is the most common, or vary along the span. See the <a href="../sectional_models/sectional_models_intro.html#internal-states">section model chapter</a> for more on what the internal state means for each section model, and how it varies along the span.</p>
 <h2 id="updating-the-lineforcemodel"><a class="header" href="#updating-the-lineforcemodel">Updating the LineForceModel</a></h2>
 <p>When setting new values for either the motion variables or the control variables it is important to do it in a way that also updates all dependent internal variables. For instance, many of the variables that define the geometry of the wings are defined both with their local values and their global values (e.g., <code>chord_vectors_local</code> and <code>chord_vectors_global</code>). In general, the global version of a variable type is calculated from the local one, with the motion and wing angles applied to them. As such, updating the line force model should be done with <code>set</code> methods that also update the global representation of the line force model.</p>
 <p>The line force model has a general update function that should update all global geometry variables, and which should also be called after all <code>set</code> methods.</p>
@@ -237,15 +239,37 @@ simulation.set_local_wing_angles(
 )
 </code></pre>
 <h3 id="update-the-internal-state"><a class="header" href="#update-the-internal-state">Update the internal state</a></h3>
-<p>The internal state of the section models can be updated with a set method, similar to how the local wing angles can be updated. This is shown in the code example below:</p>
+<p>The internal state of the wings can be updated with a set method, similar to how the local wing angles can be updated. The input is a list with one value per wing, which sets an internal state that is constant along the span of each wing. This is the most common case, and is shown in the code example below for three sails with a flap angle as the internal state:</p>
 <pre><code class="language-python">import numpy as np
 
 # some code to set up the simulation, as above
 
-simulation.set_section_models_internal_state(
+simulation.set_internal_state(
     np.radians([10, 12.5, 15]).tolist()
 )
 </code></pre>
+<p>An internal state that varies along the span is set for one wing at a time. There are two functions for this, corresponding to the two ways of giving a span variation. The locations along the span are non-dimensional, running from -0.5 at one end of the wing to 0.5 at the other:</p>
+<pre><code class="language-python"># A flap angle that varies linearly from 10 degrees at one end of the first wing to 20 degrees at
+# the other end
+simulation.set_internal_state_linear(
+    wing_index = 0,
+    locations = [-0.5, 0.5],
+    values = np.radians([10.0, 20.0]).tolist()
+)
+
+# A suction sail with two internal compartments, with the boundary in the middle of the span. 
+# Using the same boundaries as the compartments gives one value per compartment, which, for 
+# instance, can be the rotational speed of the fan in each compartment
+simulation.set_internal_state_piecewise_constant(
+    wing_index = 1,
+    boundaries = [-0.5, 0.0, 0.5],
+    values = [15.0, 20.0]
+)
+</code></pre>
+<p>The internal compartments in the last example are part of the geometry of the wing, and are set when building the line force model, through the <code>internal_compartment_boundaries</code> in the <a href="building_line_model.html">wing builder</a>. They can not be changed during a simulation. See the <a href="../sectional_models/active_air_flow_foil.html#internal-compartments">active air flow foil chapter</a> for more on how the internal state is applied to each compartment.</p>
+<p>The current internal state of each wing can be read with the <code>internal_state</code> function, which returns one value per wing. For a wing with an internal state that varies along the span, the value is the mean over the span.</p>
+<p>In Rust, the corresponding functions on the <code>LineForceModel</code> are <code>set_internal_state</code>, for constant values for all wings, and <code>set_wing_internal_state</code> or <code>set_internal_state_span_variation</code>, for setting the internal state of a single wing as a <code>WingInternalState</code> or a <code>SpanVariation</code>. Unlike the motion and the local wing angles, the internal state does not affect the geometry of the wings, so no update of the global geometry is needed after setting it.</p>
+<p><strong>Note</strong>: if a <a href="../utils/control_system.html">controller</a> is used, it sets a constant internal state for all wings each time it updates, which overwrites internal states that are set manually, including those that vary along the span.</p>
 
                     </main>
 

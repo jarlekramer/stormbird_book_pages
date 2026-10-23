@@ -164,20 +164,64 @@
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub enum SectionModel {
-    Foil(Foil),
-    VaryingFoil(VaryingFoil),
+    SingleElementFoil(Foil),
+    MultiElementFoil(VaryingFoil),
+    ActiveAirFlowFoil(ActiveAirFlowFoil),
     RotatingCylinder(RotatingCylinder),
     EffectiveWindSensor,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>Each of the first three variants in this enum has its own sub-chapter for more details. A short overview is given below:</p>
+<p>The variants use four different underlying models, which each have their own sub-chapter for more details. A short overview is given below:</p>
 <ol>
-<li><code>Foil</code> represents a model for a single element foil profile, and is suitable for modelling single element wing sails.</li>
-<li><code>VaryingFoil</code> is a model that extends the <code>Foil</code> model to allow the output to be dependent on some internal variable. The internal variable can for instance be a flap angle, for a two-element foil, a combination of multiple element configurations, for instance to model a three-element foil, or suction rate when modelling a suction sail.</li>
-<li><code>RotatingCylinder</code> represents a cylinder where the rotational speed can be varied to alter the force output. This is intended to be used to model rotor sails.</li>
+<li><code>SingleElementFoil</code> uses the <a href="foil_model.html"><code>Foil</code></a> model, which represents a single element foil profile. It is suitable for modelling single element wing sails.</li>
+<li><code>MultiElementFoil</code> uses the <a href="varying_foil_model.html"><code>VaryingFoil</code></a> model, which extends the <code>Foil</code> model to allow the output to be dependent on an internal state. The internal state is typically a flap angle, for a two-element foil, or a combination of multiple element configurations, for instance to model a three-element foil.</li>
+<li><code>ActiveAirFlowFoil</code> uses the <a href="active_air_flow_foil.html"><code>ActiveAirFlowFoil</code></a> model, which is intended for foils with active flow control, such as suction sails. It also uses a <code>VaryingFoil</code> model for the lift and drag, but adds a conversion between the internal state set on the wing, such as the fan power, and the internal state used by the foil model, such as the suction coefficient.</li>
+<li><code>RotatingCylinder</code> uses the <a href="rotating_cylinder.html"><code>RotatingCylinder</code></a> model, which represents a cylinder where the rotational speed can be varied to alter the force output. This is intended to be used to model rotor sails.</li>
 <li><code>EffectiveWindSensor</code> is a special model without any input parameters that always gives zero lift and drag. A wing with this model therefore does not produce any forces, but can be used to measure the effective wind velocity at its control points.</li>
 </ol>
-<p>More sectional models can be added in the future. The only requirement is that each model must be able to compute the necessary force coefficients. However, the goal is to cover most use cases with these three core models. Since the models are handled through an enum, they may require different inputs in their own functions for calculating lift and drag. For instance, the <code>Foil</code> and <code>VaryingFoil</code> models require the angle of attack as input, while the <code>RotatingCylinder</code> takes the velocity magnitude and local chord length (or diameter) as input. The right input is managed by the line force model structure, and is not something the user needs to think about when running a simulation.</p>
+<p>More sectional models can be added in the future. The only requirement is that each model must be able to compute the necessary force coefficients. However, the goal is to cover most use cases with the current models.</p>
+<h2 id="internal-states"><a class="header" href="#internal-states">Internal states</a></h2>
+<p>All wings in a line force model have an <em>internal state</em>, which can be set for each wing, for instance by a <a href="../utils/control_system.html">controller</a>. What the internal state means depends on the section model:</p>
+<ul>
+<li><code>SingleElementFoil</code> and <code>EffectiveWindSensor</code>: the internal state is not used.</li>
+<li><code>MultiElementFoil</code>: the internal state is passed directly to the <code>VaryingFoil</code> model, and is typically the flap angle.</li>
+<li><code>ActiveAirFlowFoil</code>: the internal state is either the power, the rotational speed of the fans, or the suction coefficient, depending on the settings of the model. It is converted to the internal state of the <code>VaryingFoil</code> model on each line element. See the <a href="active_air_flow_foil.html">active air flow foil chapter</a> for more.</li>
+<li><code>RotatingCylinder</code>: the internal state is the revolutions per second of the cylinder, which is converted to a spin ratio on each line element, using the local chord length (i.e., the diameter) and the local velocity.</li>
+</ul>
+<p>This means that the internal state given to the section model on each line element can be different from the internal state set on the wing. The conversion is managed by the line force model structure, and is not something the user needs to think about when running a simulation. However, it is important to know which units the internal state is given in when setting up the models and the controller.</p>
+<h3 id="constant-and-span-varying-internal-states"><a class="header" href="#constant-and-span-varying-internal-states">Constant and span varying internal states</a></h3>
+<p>In most cases, the internal state is a single number for each wing, which is the same along the whole span. However, it is also possible to give an internal state that varies along the span, for instance to model a sail with several fans along the span, or a flap angle that varies along the span. The internal state of a wing is therefore represented by the following enums:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum WingInternalState {
+    Constant(f64),
+    SpanVarying(SpanVariation),
+}
+
+pub enum SpanVariation {
+    Linear { locations: Vec&lt;f64&gt;, values: Vec&lt;f64&gt; },
+    PiecewiseConstant { boundaries: Vec&lt;f64&gt;, values: Vec&lt;f64&gt; },
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The locations along the span are given as non-dimensional span positions, running from -0.5 at one end of the wing to 0.5 at the other. The span variation does not have to match the resolution of the line elements. There are two ways to give the variation:</p>
+<ol>
+<li><code>Linear</code>: The value is linearly interpolated between the given locations, and is constant outside of them.</li>
+<li><code>PiecewiseConstant</code>: The value is constant within zones along the span, defined by the boundaries between them. There must be one more boundary than values.</li>
+</ol>
+<p>For each line element, the value of the span variation at the control point is used. The exception is section models where the internal state applies to a part of the wing rather than to a single line element, such as an <a href="active_air_flow_foil.html">active air flow foil</a> with several internal compartments. The value is then averaged or integrated over each part of the wing, which is done exactly, without depending on the resolution of the line elements.</p>
+<p>When a single number is needed to represent a span varying internal state, for instance as the current state in the controller, the mean value over the span is used. See the chapter on how to <a href="../line_model/move_line_models.html#update-the-internal-state">move and modify a line model</a> for how to set the internal state, both as constant values and as span variations.</p>
+<p>Since the models are handled through an enum, they may also require different inputs in their own functions for calculating lift and drag. For instance, the foil models require the angle of attack as input, while the <code>RotatingCylinder</code> only uses the spin ratio. Again, the right input is managed by the line force model structure.</p>
+<h2 id="power-coefficient"><a class="header" href="#power-coefficient">Power coefficient</a></h2>
+<p>In addition to lift and drag, each section model can compute a <em>power coefficient</em>, which is used to estimate the power needed to operate the sail. The power coefficient is defined as:</p>
+<p>\[
+C_P = \frac{P}{0.5 \rho A U^3}
+\]</p>
+<p>where \( P \) is the power, \( \rho \) is the density, \( A \) is the area of the line element and \( U \) is the local velocity. Models that do not need power, such as regular foils, return zero.</p>
+<p>The power for a whole wing is computed by the section model, and is used by the default <a href="../line_model/input_power.html">input power model</a>. For most section models, this is simply the power coefficient integrated over the wing:</p>
+<p>\[
+P_{wing} = \sum_i C_{P, i} \, 0.5 \rho A_i U_i^3
+\]</p>
+<p>However, some models need information about the whole wing to compute the power. For instance, for an <a href="active_air_flow_foil.html">active air flow foil</a> where the fans are modeled with fan curves, the efficiency of the fans depends on the total volume flow through the wing. The power is then computed directly for the whole wing, rather than through the power coefficient on each line element.</p>
 <p>To get an overview of how to set up the different variants, see the sub-chapters for each model.</p>
 
                     </main>

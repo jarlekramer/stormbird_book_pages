@@ -193,7 +193,7 @@
                     {"x": -8.0, "y": 0.0, "z": 0.0}
                 ],
                 "section_model": {
-                    "Foil": {}
+                    "SingleElementFoil": {}
                 }
             },
             {
@@ -206,7 +206,7 @@
                     {"x": -8.0, "y": 0.0, "z": 0.0}
                 ],
                 "section_model": {
-                    "Foil": {}
+                    "SingleElementFoil": {}
                 }
             }
         ],
@@ -228,7 +228,7 @@
 }
 </code></pre>
 <h2 id="default-values"><a class="header" href="#default-values">Default values</a></h2>
-<p>Default values are often given for structures representing settings or models. This means that it may not be necessary to specify every field in a structure in the input. For instance, in the example above, the <code>"wake"</code> structure only has one specified variable. However, the complete wake structure has 15 fields, where some are other structures with more sub fields. The reason only the <code>"ratio_of_wake_affected_by_induced_velocities"</code> is given above is that this was the only setting where a different value than the default was wanted.</p>
+<p>Default values are often given for structures representing settings or models. This means that it may not be necessary to specify every field in a structure in the input. For instance, in the example above, the <code>"wake"</code> structure only has one specified variable. However, the complete wake structure has 13 fields, where some are other structures with more sub fields. The reason only the <code>"ratio_of_wake_affected_by_induced_velocities"</code> is given above is that this was the only setting where a different value than the default was wanted.</p>
 <p>The goal is to implement reasonable default values on as many variables as possible.</p>
 <h2 id="helper-library-to-create-the-right-json-settings"><a class="header" href="#helper-library-to-create-the-right-json-settings">Helper library to create the right JSON settings</a></h2>
 <p>Much of the setup of Stormbird models can be done using a Python library called <code>stormbird_setup</code>. This library is implemented independent of the core library, and should be useful for all interfaces. It makes different settings available as Python classes that inherit from the <a href="https://docs.pydantic.dev/latest/api/base_model/">Pydantic BaseModel</a>. This makes serializing of the data structures straightforward, and the setup of the models comes with typed check validation. That is, the only purpose of the library is to ease the generation of the right JSON strings, and can therefore be used no matter how stormbird is executed, and in combination with manually generated strings if that is needed. The library also implements some high-level shortcut-functionality for generating typical simulation settings for different cases. See the package folder on GitHub or the examples in the pyfoamsetup folder for more on how to use <code>stormbird_setup</code>.</p>

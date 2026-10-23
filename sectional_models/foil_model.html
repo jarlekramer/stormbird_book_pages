@@ -169,10 +169,11 @@
 <p>The downside of a parametric model is believed to be small, as long as the model can represent typical foil section behavior without too many simplifications. The design of the <code>Foil</code> model is intended to achieve this as best as possible<sup class="footnote-reference" id="fr-update_to_model_note-1"><a href="#footnote-update_to_model_note">1</a></sup>.</p>
 <h2 id="model-overview"><a class="header" href="#model-overview">Model overview</a></h2>
 <p>The model is divided in two core sub-models, labeled <em>pre-stall</em> and <em>post-stall</em>, respectively representing the behavior before and after the foil has stalled due to too high angle of attack.</p>
-<p>For angles of attack below stall, it is assumed that both lift and drag can be represented accurately with simple polynomials. The lift is linear by default, but can also have an optional high-order term where both the factor and power of the term is adjustable. The high order term is meant to capture slowly developing separations, which might occur at low Reynolds numbers. The drag is assumed to be represented as a second order polynomial. For a wing sail operating below stall, the drag will mostly be dominated by lift-induced drag forces. The viscous drag can therefore be kept simple, as the importance to the total force is relatively low.</p>
+<p>For angles of attack below stall, it is assumed that both lift and drag can be represented accurately with simple functions. The lift is linear by default, but the slope can optionally be reduced above a given angle of attack. This is meant to capture separation that develops gradually before the full stall, for instance on the flap of a multi-element foil, or at low Reynolds numbers. See the <a href="#pre-stall-lift">pre-stall lift</a> section below. The drag is assumed to be represented as a second order polynomial, with the minimum value at the angle where the linear part of the lift is zero. See the <a href="#pre-stall-drag">pre-stall drag</a> section below. For a wing sail operating below stall, the drag will mostly be dominated by lift-induced drag forces. The viscous drag can therefore be kept simple, as the importance to the total force is relatively low.</p>
 <p>For angles of attack above stall, both the lift and drag are assumed to be harmonic functions which primarily are adjusted by setting the <em>max value</em> after stall. This is a rough model which might not be perfect for all angles of attack, but is assumed to be close enough. A rough and approximate model for the post-stall behavior is assumed to be OK as wing sails and suction sails will most often operate below stall.</p>
-<p>The transit between the two models is done using a <a href="https://en.wikipedia.org/wiki/Sigmoid_function">sigmoid function</a>, where both the transition point and the width of the transition can be adjusted.</p>
-<p>In addition, there are factors in the model to account for added mass and lift due to the time derivative of the angle of attack. Both these effects are assumed to be linear for simplicity.</p>
+<p>The transit between the two models is done using a <a href="https://en.wikipedia.org/wiki/Sigmoid_function">sigmoid function</a>, where both the transition point and the width of the transition can be adjusted. See the <a href="#stall-model">stall model</a> section below.</p>
+<p>The model only describes the two-dimensional, steady lift and drag of the section. Effects that are set for the whole wing, such as added mass and empirical corrections of the lift-induced drag, are part of the line force model instead, as described in the <a href="../line_model/force_calculations.html">force calculations chapter</a>.</p>
+<p>An <a href="#interactive-example">interactive plot</a> at the end of this chapter can be used to explore how the parameters affect the output of the model.</p>
 <h2 id="available-parameters"><a class="header" href="#available-parameters">Available parameters</a></h2>
 <p>A view of the available fields in the <code>Foil</code> model is seen below, with further explanation of each parameter right after:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -180,60 +181,140 @@
 </span>pub struct Foil {
     pub cl_zero_angle: f64,
     pub cl_initial_slope: f64,
-    pub cl_high_order_factor_positive: f64,
-    pub cl_high_order_factor_negative: f64,
-    pub cl_high_order_power: f64,
+    pub cl_slope_reduction_factor_positive: f64,
+    pub cl_slope_reduction_factor_negative: f64,
+    pub cl_slope_reduction_onset_angle_positive: f64,
+    pub cl_slope_reduction_onset_angle_negative: f64,
+    pub cl_slope_reduction_range: f64,
     pub cl_max_after_stall: f64,
     pub cd_min: f64,
-    pub angle_cd_min: f64,
     pub cd_second_order_factor: f64,
     pub cd_max_after_stall: f64,
     pub cd_power_after_stall: f64,
-    pub cdi_correction_factor: f64,
     pub mean_positive_stall_angle: f64,
     pub mean_negative_stall_angle: f64,
     pub stall_range: f64,
-    pub cd_bump_during_stall: f64,
-    pub cd_stall_angle_offset: f64,
-    pub added_mass_factor: f64,
 }
 <span class="boring">}</span></code></pre></pre>
 <p>An explanation of the parameters is given below:</p>
 <ul>
-<li><code>cl_zero_angle</code>: Lift coefficient at zero angle of attack. This is zero by default, but can be set to a non-zero value to account for camber, flap angle or boundary layer suction/blowing.</li>
-<li><code>cl_initial_slope</code>: How fast the lift coefficient increases with angle of attack, when the angle of attack is small. The default value is \( 2 \pi \) , which should always be the value used for a normal foil profile - with or without camber and flap - but it can also be set to a different value for instance to account for boundary layer suction/blowing.</li>
-<li><code>cl_high_order_factor_positive/negative</code>: Optional proportionality factor for adding higher order terms to the lift when the angle of attack is either positive or negative. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
-<li><code>cl_high_order_power</code>: Optional power for adding higher order terms to the lift. Is zero by default, and therefore not used. Can be used to adjust the behavior of the lift curve close to stall.</li>
-<li><code>cl_max_after_stall</code>: The maximum lift coefficient after stall.</li>
-<li><code>cd_min</code>: Minimum drag coefficient when the angle of attack is equal to the <code>angle_cd_min</code>.</li>
-<li><code>angle_cd_min</code>: The angle where the minimum drag coefficient is reached.</li>
-<li><code>cd_second_order_factor</code>: Factor to give the drag coefficient a second order term. This is zero by default.</li>
-<li><code>cd_max_after_stall</code>: The maximum drag coefficient after stall.</li>
-<li><code>cd_power_after_stall</code>: Power factor for the harmonic dependency of the drag coefficient after stall. Set to 1.6 by default.</li>
-<li><code>cdi_correction_factor</code>: factor that can be used to correct for numerical errors in the lift-induced drag. Set to a positive value to increase the drag, and a negative value to decrease the drag. The default is zero, which means no correction.</li>
-<li><code>mean_positive_stall_angle</code>: The mean stall angle for positive angles of attack, which is the mean angle where the model transitions from pre-stall to post-stall behavior. The default value is 20 degrees.</li>
-<li><code>mean_negative_stall_angle</code>: The mean stall angle for negative angles of attack, which is the mean angle where the model transitions from pre-stall to post-stall behavior. The default value is 20 degrees.</li>
-<li><code>stall_range</code>: The range of the stall transition. The default value is 6 degrees.</li>
-<li><code>cd_bump_during_stall</code>: Factor to model additional drag when the foil is stalling, but that is not included in the pre- and post-stall drag models. Set to zero by default.</li>
-<li><code>cd_stall_angle_offset</code>: Optional offset to the stall angle for the drag coefficient. This can be used to tune the drag curve to better fit experimental data. The default is zero, which means that stall effects on the drag starts at the same angle of attack as for the lift. When the offset is set to any value, the "amount of stall" function is shifted by this value for the case of the drag coefficient only.</li>
-<li><code>added_mass_factor</code>: Factor to model added mass due to accelerating flow around the foil. Set to zero by default.</li>
+<li>
+<p><code>cl_zero_angle</code>: Lift coefficient at zero angle of attack. This is zero by default, but can be set to a non-zero value to account for camber, flap angle or boundary layer suction/blowing.</p>
+</li>
+<li>
+<p><code>cl_initial_slope</code>: How fast the lift coefficient increases with angle of attack, when the angle of attack is small. The default value is \( 2 \pi \) , which should always be the value used for a normal foil profile - with or without camber and flap - but it can also be set to a different value for instance to account for boundary layer suction/blowing.</p>
+</li>
+<li>
+<p><code>cl_slope_reduction_factor_positive/negative</code>: Optional reduction of the lift slope for positive or negative angles of attack, as described in the <a href="#pre-stall-lift">pre-stall lift</a> section below. A value of 0.0 means no reduction, while 1.0 means that the slope is reduced to zero. Is zero by default, and therefore not used.</p>
+</li>
+<li>
+<p><code>cl_slope_reduction_onset_angle_positive/negative</code>: The angle of attack where the slope reduction is half-way developed, for positive or negative angles of attack. Both are given as positive values. The default value is 10 degrees. Only used if the corresponding reduction factor is different from zero.</p>
+</li>
+<li>
+<p><code>cl_slope_reduction_range</code>: The range of the transition to the reduced lift slope, with the same definition as the <code>stall_range</code>. Shared by the positive and negative side. The default value is 6 degrees.</p>
+</li>
+<li>
+<p><code>cl_max_after_stall</code>: The maximum lift coefficient after stall.</p>
+</li>
+<li>
+<p><code>cd_min</code>: Minimum drag coefficient, which is reached at the angle where the linear part of the lift is zero.</p>
+</li>
+<li>
+<p><code>cd_second_order_factor</code>: Factor to give the drag coefficient a second order term, as described in the <a href="#pre-stall-drag">pre-stall drag</a> section below. This is zero by default.</p>
+</li>
+<li>
+<p><code>cd_max_after_stall</code>: The maximum drag coefficient after stall.</p>
+</li>
+<li>
+<p><code>cd_power_after_stall</code>: Power factor for the harmonic dependency of the drag coefficient after stall. Set to 1.6 by default.</p>
+</li>
+<li>
+<p><code>mean_positive_stall_angle</code>: The mean stall angle for positive angles of attack, which is the mean angle where the model transitions from pre-stall to post-stall behavior. The default value is 20 degrees.</p>
+</li>
+<li>
+<p><code>mean_negative_stall_angle</code>: The mean stall angle for negative angles of attack, which is the mean angle where the model transitions from pre-stall to post-stall behavior. The default value is 20 degrees.</p>
+</li>
+<li>
+<p><code>stall_range</code>: The range of the stall transition, as described in the <a href="#stall-model">stall model</a> section below. The default value is 6 degrees.</p>
+</li>
 </ul>
-<h2 id="example"><a class="header" href="#example">Example</a></h2>
-<p>An example of the output of a foil model is shown below. The parameters values are given as follows:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let foil = Foil {
-    cl_zero_angle: 0.5,
-    cl_max_after_stall: 0.9,
-    cd_max_after_stall: 1.2,
-    mean_positive_stall_angle: 20.0_f64.to_radians(),
-    mean_negative_stall_angle: 25.0_f64.to_radians(),
-    stall_range: 10.0_f64.to_radians(),
-    ..Default::default()
-};
-
-<span class="boring">}</span></code></pre></pre>
-<p><img src="figures/foil_model_example.png" alt="Foil model example" /></p>
+<h2 id="pre-stall-lift"><a class="header" href="#pre-stall-lift">Pre-stall lift</a></h2>
+<p>The pre-stall lift consists of a linear part and an optional reduction of the lift slope. The linear part is given as:</p>
+<p>\[
+C_{L, linear} = C_{L, 0} + a \sin(\alpha)
+\]</p>
+<p>where \( C_{L, 0} \) is <code>cl_zero_angle</code> and \( a \) is <code>cl_initial_slope</code>. The sine of the angle of attack is used rather than the angle itself, which is practically the same for small angles, but makes the lift periodic for large angles.</p>
+<h3 id="slope-reduction"><a class="header" href="#slope-reduction">Slope reduction</a></h3>
+<p>Many foils have a lift curve where the slope is gradually reduced before the full stall. This can, for instance, be due to the flow separating on the flap of a multi-element foil much earlier than on the main element, or due to a slowly developing trailing edge separation at low Reynolds numbers. The result is a reduction in the lift slope, without the drop in lift that comes with the full stall.</p>
+<p>This is modeled by letting the slope of the lift, with respect to \( x = \sin(\alpha) \), be reduced by sigmoid functions:</p>
+<p>\[
+\frac{d C_{L, pre-stall}}{dx} = a \left( 1 - r_+ \sigma_+(x) - r_- \sigma_-(-x) \right)
+\]</p>
+<p>where \( r_+ \) and \( r_- \) are <code>cl_slope_reduction_factor_positive</code> and <code>cl_slope_reduction_factor_negative</code>. The sigmoid function is the same as the one used in the <a href="#stall-model">stall model</a>:</p>
+<p>\[
+\sigma(x) = \frac{1}{1 + e^{-k (x - x_{0})}}, \quad k = \frac{4.595}{\Delta_r}, \quad x_{0} = \sin(\alpha_{r})
+\]</p>
+<p>where \( \alpha_r \) is the onset angle, given by <code>cl_slope_reduction_onset_angle_positive</code> or <code>cl_slope_reduction_onset_angle_negative</code>, and \( \Delta_r \) is <code>cl_slope_reduction_range</code>. With this definition, the sigmoid function is 0.01 at \( x_0 - \Delta_r \), 0.5 at \( x_0 \) and 0.99 at \( x_0 + \Delta_r \). That is, the onset angle is where the slope is half-way reduced.</p>
+<p>The pre-stall lift is found by integrating the slope from zero angle of attack:</p>
+<p>\[
+C_{L, pre-stall} = C_{L, linear} - a \, r_+ R_+(x) + a \, r_- R_-(-x)
+\]</p>
+<p>where \( R(x) \) is the integral of the sigmoid function, which can be computed exactly:</p>
+<p>\[
+R(x) = \int_0^x \sigma(t) \, dt = \frac{1}{k} \left[ \ln \left( 1 + e^{k (x - x_0)} \right) - \ln \left( 1 + e^{-k x_0} \right) \right]
+\]</p>
+<p>The model has the following properties:</p>
+<ul>
+<li>Well below the onset angle, the lift is equal to the linear lift. Well above the onset angle, the slope is \( a (1 - r) \). A reduction factor of 1.0 therefore gives a constant lift above the onset angle.</li>
+<li>The lift at zero angle of attack is always equal to <code>cl_zero_angle</code>, regardless of the slope reduction.</li>
+<li>The reductions for the positive and negative side are both included for all angles of attack, rather than switching between them based on the sign of the angle. The positive reduction is negligible for negative angles, and vice versa, but this ensures that the lift curve is smooth also at zero angle of attack, when the positive and negative parameters are different.</li>
+<li>The onset angle and the range are effectively defined in terms of \( \sin(\alpha) \) rather than \( \alpha \). This makes the reduction factor exact, but means that the range is slightly different from the range in radians. The difference is small for typical angles: \( \sin(20^\circ) = 0.342 \), while \( 20^\circ = 0.349 \) radians.</li>
+<li>The slope reduction is not part of the linear lift, and therefore does not affect the angle where the minimum drag occurs, as described in the <a href="#pre-stall-drag">pre-stall drag</a> section.</li>
+</ul>
+<p>The slope reduction is meant to be used together with the stall model, which reduces the pre-stall lift further as the foil stalls. The onset angle should therefore typically be lower than the mean stall angle.</p>
+<h2 id="pre-stall-drag"><a class="header" href="#pre-stall-drag">Pre-stall drag</a></h2>
+<p>The pre-stall drag is modeled as a second order polynomial, where the minimum drag is assumed to occur when the lift is zero. The zero-lift angle is found from the linear part of the lift, \( C_{L, linear} \), as defined in the <a href="#pre-stall-lift">pre-stall lift</a> section, so that the drag model automatically follows any changes in the zero-lift angle due to camber, flap angle or boundary layer suction. The pre-stall drag is given as:</p>
+<p>\[
+C_{D, pre-stall} = C_{D, min} + k_{D} \left( \frac{C_{L, linear}}{a} \right)^2
+\]</p>
+<p>where \( C_{D, min} \) is <code>cd_min</code> and \( k_D \) is <code>cd_second_order_factor</code>. The lift is divided by the initial slope so that the term inside the parenthesis is approximately the angle of attack relative to the zero-lift angle, in radians. A foil without camber therefore gets a drag that varies with \( \sin^2(\alpha) \approx \alpha^2 \). The slope reduction in the lift is not included, as the purpose is only to find where the minimum drag occurs. If <code>cl_initial_slope</code> is zero, the zero-lift angle is undefined, and \( \sin(\alpha) \) is used instead.</p>
+<p>Note that this is a simplification, as the minimum drag does not necessarily occur exactly at zero lift. However, it removes the need to tune the location of the minimum drag separately for each camber, flap angle or suction rate.</p>
+<h2 id="stall-model"><a class="header" href="#stall-model">Stall model</a></h2>
+<h3 id="amount-of-stall"><a class="header" href="#amount-of-stall">Amount of stall</a></h3>
+<p>The transition from pre-stall to post-stall behavior is controlled by the <em>amount of stall</em>, \( s \), which varies smoothly from 0, meaning no stall, to 1, meaning full stall. It is computed with a sigmoid function of the absolute value of the angle of attack:</p>
+<p>\[
+s(\alpha) = \frac{1}{1 + e^{-k_s (|\alpha| - \alpha_s)}}, \quad k_s = \frac{4.595}{\Delta_s}
+\]</p>
+<p>where \( \Delta_s \) is <code>stall_range</code> and \( \alpha_s \) is the mean stall angle, given by <code>mean_positive_stall_angle</code> for positive angles of attack and <code>mean_negative_stall_angle</code> for negative angles of attack. Both stall angles are given as positive values. The amount of stall is 0.01 at \( |\alpha| = \alpha_s - \Delta_s \), 0.5 at the mean stall angle, and 0.99 at \( |\alpha| = \alpha_s + \Delta_s \). The full transition therefore takes place over an interval of \( 2 \Delta_s \) around the mean stall angle.</p>
+<p>Note that the stall angles are measured from zero angle of attack, and not from the zero-lift angle. For a foil with camber, flap or suction, the stall angles for positive and negative angles of attack will therefore typically be different.</p>
+<h3 id="lift"><a class="header" href="#lift">Lift</a></h3>
+<p>The total lift coefficient is a weighted sum of the pre-stall and post-stall lift:</p>
+<p>\[
+C_L = (1 - s) \, C_{L, pre-stall} + s \, C_{L, max} \sin(2 \alpha)
+\]</p>
+<p>where \( C_{L, pre-stall} \) is described in the <a href="#pre-stall-lift">pre-stall lift</a> section and \( C_{L, max} \) is <code>cl_max_after_stall</code>. The post-stall lift has its maximum value at 45 degrees, and is zero at 90 degrees, which is a typical behavior for a fully stalled foil, similar to a flat plate.</p>
+<h3 id="drag"><a class="header" href="#drag">Drag</a></h3>
+<p>The post-stall drag is given as:</p>
+<p>\[
+C_{D, post-stall} = C_{D, max} |\sin(\alpha)|^{p}
+\]</p>
+<p>where \( C_{D, max} \) is <code>cd_max_after_stall</code> and \( p \) is <code>cd_power_after_stall</code>. The maximum drag is therefore reached at 90 degrees.</p>
+<p>The total drag coefficient uses the same amount of stall as the lift:</p>
+<p>\[
+C_D = (1 - s) \, C_{D, pre-stall} + s \, C_{D, post-stall}
+\]</p>
+<p>where \( C_{D, pre-stall} \) is described in the <a href="#pre-stall-drag">pre-stall drag</a> section.</p>
+<h2 id="interactive-example"><a class="header" href="#interactive-example">Interactive example</a></h2>
+<p>The plot below shows the output of the foil model, and can be used to explore how the parameters affect the lift and drag. The parameters are adjusted with the sliders, or by typing in values, below the plot. The angles are given in degrees in the sliders, but must be given in radians in the actual input to Stormbird. The current parameters can be copied as JSON input, with angles in radians, from the bottom of the plot.</p>
+<p>The thin gray lines show the pre-stall and post-stall models before they are combined using the amount of stall. The lowest panel shows the amount of stall, \( s \).</p>
+<link rel="stylesheet" href="interactive/model_explorer.css">
+<div data-foil-model-explorer>
+    <noscript>The interactive plot requires JavaScript.</noscript>
+</div>
+<script src="interactive/foil_model.js"></script>
+<script src="interactive/model_explorer.js"></script>
+<script src="interactive/foil_model_explorer.js"></script>
+<p>The plot uses a JavaScript copy of the Rust implementation of the <code>Foil</code> model, which can be found in <code>book/src/sectional_models/interactive/foil_model.js</code>.</p>
 <hr>
 <ol class="footnote-definition"><li id="footnote-update_to_model_note">
 <p>The design of the <code>Foil</code> model is open for changes, and may be updated when a need is discovered. The goal is to find the right balance between simplicity and flexibility. <a href="#fr-update_to_model_note-1">↩</a></p>

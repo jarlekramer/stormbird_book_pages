@@ -159,22 +159,29 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="input-power"><a class="header" href="#input-power">Input power</a></h1>
-<p>Some sail types, like rotor sails and suction sails, require input power to operate. This is modeled entirely empirically in Stormbird. The structures that control these models are shown below.</p>
-<p>MORE TO COME ON THIS LATER</p>
+<p>Some sail types, like rotor sails and suction sails, require input power to operate. This is modeled empirically in Stormbird, with a model that is specified for each wing. The structures that control these models are shown below.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct InputPowerData {
-    pub section_models_internal_state_data: Vec&lt;Float&gt;,
-    pub input_power_coefficient_data: Vec&lt;Float&gt;,
+    pub internal_state_data: Vec&lt;Float&gt;,
+    pub input_power_data: Vec&lt;Float&gt;,
 }
 
 pub enum InputPowerModel {
+    FromSectionModelPowerCoefficient,
     NoPower,
-    InternalStateAsPowerCoefficient,
-    InterpolatePowerCoefficientFromInternalState(InputPowerData),
-    InterpolateFromInternalStateOnly(InputPowerData),
+    DirectFromInternalState,
+    InterpolateFromInternalState(InputPowerData),
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The different variants work as follows:</p>
+<ol>
+<li><code>FromSectionModelPowerCoefficient</code>: The power is calculated by the <a href="../sectional_models/sectional_models_intro.html">section model</a>. For most section models, this is the power coefficient on each line element, integrated over the wing: \( P = \sum_i C_{P, i} \, 0.5 \rho A_i U_i^3 \). Section models that do not need power, such as regular foils, have a power coefficient of zero. Some section models compute the power for the whole wing directly, such as an active air flow foil with fan curves. This is the default, and is the recommended choice in most cases, as it keeps the power model together with the rest of the section model.</li>
+<li><code>NoPower</code>: The wing does not need power at all. This gives the same result as the default for section models without power, but can be used to explicitly turn off the power calculation for a wing.</li>
+<li><code>DirectFromInternalState</code>: The absolute value of the internal state of the wing is used directly as the power. This is a simple solution for, for instance, suction sails where the internal state is the power. If the internal state varies along the span, it is interpreted as power per span length, and the absolute value is integrated over the span.</li>
+<li><code>InterpolateFromInternalState</code>: The power is interpolated from the data in <code>InputPowerData</code>, as a function of the absolute value of the internal state of the wing. This can, for instance, be used to model the power of a rotor sail directly as a function of the revolutions per second. If the internal state varies along the span, the mean of the absolute value over the span is used.</li>
+</ol>
+<p>For the <a href="../sectional_models/active_air_flow_foil.html">active air flow foil</a> with a power based internal state conversion, the default model will give the same power as the <code>DirectFromInternalState</code> variant, as the power coefficient of the section model is computed to be consistent with the power given as the internal state. When the fans are modeled with fan curves, the internal state is the rotational speed of the fans, and the default model gives the power from the fan curves.</p>
 
                     </main>
 

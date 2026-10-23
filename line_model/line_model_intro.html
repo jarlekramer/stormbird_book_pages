@@ -193,10 +193,13 @@
     pub ctrl_point_spanwise_distance_non_dimensional: Vec&lt;f64&gt;,
     pub ctrl_point_spanwise_distance_circulation_model: Vec&lt;f64&gt;,
     pub input_power_models: Vec&lt;InputPowerModel&gt;,
+    pub force_corrections: Vec&lt;ForceCorrection&gt;,
+    pub added_mass: Vec&lt;AddedMass&gt;,
+    pub gyroscopic_moments: Vec&lt;GyroscopicMoment&gt;,
     pub force_calculation_settings: ForceCalculationSettings,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>More details on each field can be found in the code <a href="https://docs.rs/stormbird/0.9.0/stormbird/">documentation</a>. The construction of a line force model is generally not done with the structure directly, but rather through a <a href="/line_model/building_line_model.html">builder</a>.</p>
+<p>More details on each field can be found in the code <a href="https://docs.rs/stormbird/latest/stormbird/">documentation</a>. The construction of a line force model is generally not done with the structure directly, but rather through a <a href="/line_model/building_line_model.html">builder</a>.</p>
 
                     </main>
 

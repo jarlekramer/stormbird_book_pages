@@ -180,7 +180,7 @@
 <h2 id="sectional-vs-integrated"><a class="header" href="#sectional-vs-integrated">Sectional vs integrated</a></h2>
 <p>The forces on a line force model are specified both as <em>sectional values</em> and as <em>integrated values</em>. As the name suggests, the sectional forces are forces acting on each individual section in the line force model. That is, the force acting on a single line element. The integrated forces and moments are the sum of sectional forces for each wing in the line force model. That is, the length of the integrated forces and moments vectors will be equal to the number of wings. Line elements that are marked as <em>virtual</em> in the <a href="./building_line_model.html">wing builder</a> are not included in the integrated values.</p>
 <h2 id="force-types"><a class="header" href="#force-types">Force types</a></h2>
-<p>There are five different force types in Stormbird, which are estimated from different methods. Each force type has a dedicated section below.</p>
+<p>There are four different force types in Stormbird, together with a gyroscopic moment, which are estimated from different methods. Each has a dedicated section below. The circulation forces, the viscous lift and the sectional drag are computed from the section models, while the added mass and the gyroscopic moment are computed from models that are set for each wing in the <a href="./building_line_model.html">wing builder</a>. Empirical corrections of the forces are described in the <a href="#force-corrections">force corrections</a> section.</p>
 <h3 id="1---circulation-forces"><a class="header" href="#1---circulation-forces">1 - Circulation forces</a></h3>
 <p>The first, and usually most important, force component is the force that arises from the circulation on each line segment. The circulation strength is estimated directly from the local velocity and sectional model, as described <a href="./circulation_strength.html">here</a>. The direction of the force is always normal to the local velocity.</p>
 <p>The resulting force from the circulation strength is therefore just the "lift" on each line segment, but in the coordinate system of the local flow. Due to the presence of induced velocities, the sectional lift may cause both lift and drag relative to the incoming free stream. Circulation forces are, in other words, the combination of lift and lift-induced drag from the simulation.</p>
@@ -196,11 +196,77 @@
 <p>The default value is <code>false</code>. If it is set to <code>true</code>, the post-stall lift is included in the circulation strength, and the viscous lift force will always be zero.</p>
 <h3 id="3---sectional-drag"><a class="header" href="#3---sectional-drag">3 - Sectional drag</a></h3>
 <p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow.</p>
+<p>The sectional drag also includes the drag from the <a href="#lift-induced-drag-correction">lift-induced drag correction</a>, if it is used.</p>
 <h3 id="4---added-mass"><a class="header" href="#4---added-mass">4 - Added mass</a></h3>
-<p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the foil section. The magnitude of the force is determined by the added mass coefficients set in the sectional model and the acceleration. The foil-models only result in added mass forces due to acceleration in the direction normal to the chord vectors. For the rotating cylinder, the added mass forces are due to acceleration in all directions normal to the span line.</p>
-<p><strong>Note</strong>: for now, the default value of the added mass coefficient is set to zero. This is because the feature is currently lacking a proper test case. Must therefore be used with care!</p>
-<h3 id="5---gyroscopic"><a class="header" href="#5---gyroscopic">5 - Gyroscopic</a></h3>
-<p>The gyroscopic force/moment is only applicable to rotor sails. It is the <a href="https://en.wikipedia.org/wiki/Precession">gyroscopic precession</a> due to the rotation of the cylinders. It is dependent on the 2D moment of inertia, which needs to be specified for the sectional model in order to make this force non-zero.</p>
+<p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the flow relative to the wing. They are computed with a strip theory model, set with the <code>added_mass</code> field in the wing builder:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct AddedMass {
+    pub normal_coefficient: f64,
+    pub chordwise_coefficient: f64,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The added mass of each line element is given relative to a reference mass, which is the added mass of a flat plate accelerating normal to its chord in two-dimensional potential flow:</p>
+<p>\[
+m_{ref} = \rho \frac{\pi c^2}{4} \Delta s
+\]</p>
+<p>where \( \rho \) is the density, \( c \) is the chord length and \( \Delta s \) is the length of the line element. The acceleration along the span line is removed, and the remaining part is divided in a part normal to the chord, \( \mathbf{a}_n \), and a part along the chord, \( \mathbf{a}_c \). The added mass force is then:</p>
+<p>\[
+\mathbf{F}_{added \, mass} = m_{ref} \left( C_{n} \mathbf{a}_n + C_{c} \mathbf{a}_c \right)
+\]</p>
+<p>where \( C_n \) is <code>normal_coefficient</code> and \( C_c \) is <code>chordwise_coefficient</code>. The acceleration is the <em>felt</em> acceleration of the flow, meaning that it is opposite to the acceleration of the wing, if the wing is moving in still air.</p>
+<p>Both coefficients are zero by default, which means that the model is not used. Recommended values, based on two-dimensional potential flow theory, are given below:</p>
+<div class="table-wrapper"><table><thead><tr><th>Case</th><th><code>normal_coefficient</code></th><th><code>chordwise_coefficient</code></th></tr></thead><tbody>
+<tr><td>Thin foil, e.g., a single element wing sail</td><td>1.0</td><td>0.0</td></tr>
+<tr><td>Thick foil, with thickness ratio \( t / c \)</td><td>1.0</td><td>\( (t / c)^2 \)</td></tr>
+<tr><td>Rotating cylinder, i.e., a rotor sail</td><td>1.0</td><td>1.0</td></tr>
+</tbody></table>
+</div>
+<p>The values for the thick foil are exact for an elliptical section, and are a good approximation for other foil shapes. For instance, a foil with a thickness ratio of 18% gets a chordwise coefficient of 0.03, which can usually be neglected. For a rotating cylinder, the chord length is the diameter, so the reference mass is the mass of the displaced fluid, and the force is the same for acceleration in all directions normal to the span line. For multi-element foils, the chord length should be the total chord length of all the elements.</p>
+<p>The model is a strip theory, where each line element is treated as a two-dimensional section. The real added mass of a wing with a finite span is lower, in particular close to the tips and for wings with a low aspect ratio. This is not corrected for automatically, but can be accounted for by reducing the coefficients.</p>
+<h3 id="5---gyroscopic-moment"><a class="header" href="#5---gyroscopic-moment">5 - Gyroscopic moment</a></h3>
+<p>The gyroscopic moment is only applicable to rotor sails. It is the moment due to <a href="https://en.wikipedia.org/wiki/Precession">gyroscopic precession</a>, when the spinning rotor is rotated by the motion of the ship, for instance in roll or pitch. It is computed with a model that is set with the <code>gyroscopic_moment</code> field in the wing builder:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct GyroscopicMoment {
+    pub moment_of_inertia: f64,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The <code>moment_of_inertia</code> is the total moment of inertia of the rotor about its axis of rotation, in kg m^2. It is zero by default, which means that the model is not used. The model can only be used together with the <a href="../sectional_models/rotating_cylinder.html">rotating cylinder</a> section model, as the internal state of the wing is then the revolutions per second of the rotor, \( n \). Setting a non-zero moment of inertia for other section models gives an error.</p>
+<p>The angular momentum of the rotor is \( \mathbf{L} = I \, 2 \pi n \, \mathbf{e} \), where \( I \) is the moment of inertia and \( \mathbf{e} \) is the direction of the span line. The rotational speed of the rotor is assumed to be much larger than the rotational velocity of the line force model, \( \boldsymbol{\Omega} \), which gives the moment from the rotor on its supports:</p>
+<p>\[
+\mathbf{M}_{gyroscopic} = \mathbf{L} \times \boldsymbol{\Omega}
+\]</p>
+<p>The moment is distributed over the line elements in proportion to their length, so that a span varying internal state is taken into account. Virtual line elements get no moment. The gyroscopic effect is a pure moment, and is therefore not part of the forces. It is instead added directly to the integrated moments, see the <a href="#force-results-structures">force results structures</a> section below.</p>
+<p>The moment of inertia should include all the rotating parts, i.e., the cylinder and the end disk. If it is not known from the manufacturer, it can be estimated from the mass and the radius of the parts. A thin-walled cylinder with mass \( m \) and radius \( R \) has a moment of inertia of \( m R^2 \), while a uniform disk has \( m R^2 / 2 \).</p>
+<h2 id="force-corrections"><a class="header" href="#force-corrections">Force corrections</a></h2>
+<p>The lifting line and actuator line methods are simplified models of the flow around the wings, and the results may need to be adjusted to fit experimental data or high-fidelity simulations. Empirical corrections of the forces can therefore be set for each wing, through the <code>force_correction</code> field in the wing builder:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ForceCorrection {
+    pub lift_induced_drag_correction: f64,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>All corrections are zero by default, which means that they are not used. More corrections may be added to this structure in the future.</p>
+<h3 id="lift-induced-drag-correction"><a class="header" href="#lift-induced-drag-correction">Lift-induced drag correction</a></h3>
+<p>The lift-induced drag correction adds a drag force to each line element, with a drag coefficient that is proportional to the square of the lift coefficient:</p>
+<p>\[
+\Delta C_D = k_{i} C_L^2
+\]</p>
+<p>where \( k_i \) is <code>lift_induced_drag_correction</code>. The lift coefficient is computed from the total lift force on the line element, i.e., the sum of the <a href="#1---circulation-forces">circulation force</a> and the <a href="#2---viscous-lift">viscous lift</a>. The drag force is parallel to the local velocity, and is included in the <a href="#3---sectional-drag">sectional drag</a>. The correction is applied after the circulation strength is computed, and does therefore not affect the lift or the induced velocities.</p>
+<p>A positive value increases the drag, while a negative value decreases it. As the lift-induced drag of a wing is approximately \( C_L^2 / (\pi A) \), where \( A \) is the aspect ratio, the correction can be thought of as a change in the <em>effective</em> aspect ratio of the wing. To get the lift-induced drag of a wing with an effective aspect ratio of \( A_{eff} \) rather than \( A \), the factor should approximately be:</p>
+<p>\[
+k_i = \frac{1}{\pi A_{eff}} - \frac{1}{\pi A}
+\]</p>
+<p>The value must be used with care, as a negative value can give a negative total drag if it is too large.</p>
+<h3 id="virtual-line-segments"><a class="header" href="#virtual-line-segments">Virtual line segments</a></h3>
+<p><a href="./building_line_model.html#wing-builder">Virtual line segments</a> can also be used to alter the forces in a way that is similar to the lift-induced drag correction. A virtual segment at the end of a wing makes the wing effectively longer in the simulation, while the forces on the virtual segment are not included in the integrated forces. This increases the effective aspect ratio of the wing, for instance to model the effect of an end plate, or of a wing standing close to the deck of a ship. As the circulation is then non-zero at the end of the real part of the wing, the lift also increases slightly, and the lift-induced drag is reduced.</p>
+<p>The two methods therefore largely do the same thing, but there are some differences:</p>
+<ul>
+<li>Virtual line segments only work one way. They can increase the effective aspect ratio, and thereby reduce the lift-induced drag, but they can not increase the drag. The lift-induced drag correction is the only way to increase the drag.</li>
+<li>Virtual line segments affect the circulation distribution, and therefore also the lift and the interaction with other wings, while the lift-induced drag correction only affects the drag.</li>
+<li>Virtual line segments add more line elements to the simulation, which increases the computational cost, while the lift-induced drag correction is practically free.</li>
+</ul>
 <h2 id="force-results-structures"><a class="header" href="#force-results-structures">Force results structures</a></h2>
 <p>To allow for a comparison between the force types - for instance in debugging situations - each force type is stored separately, in addition to the total force / moment. The structures used to store this data are shown below:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -210,11 +276,12 @@
     pub viscous_lift: Vec&lt;SpatialVector&gt;,
     pub sectional_drag: Vec&lt;SpatialVector&gt;,
     pub added_mass: Vec&lt;SpatialVector&gt;,
-    pub gyroscopic: Vec&lt;SpatialVector&gt;,
+    pub gyroscopic_moment: Vec&lt;SpatialVector&gt;,
     pub total: Vec&lt;SpatialVector&gt;,
     pub coordinate_system: CoordinateSystem,
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The <code>gyroscopic_moment</code> is the moment from each line element, and is not included in the <code>total</code> force.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub struct IntegratedValues {
@@ -226,6 +293,7 @@
     pub total: SpatialVector,
 }
 <span class="boring">}</span></code></pre></pre>
+<p>The integrated moments are computed as the sum of the cross product between the control point and the sectional force on each line element, with the gyroscopic moment added directly. The <code>gyroscopic</code> field is therefore always zero for the integrated forces.</p>
 <hr>
 <ol class="footnote-definition"><li id="footnote-sectional_drag_note">
 <p>It is perfectly fine to include more than the viscous drag in the sectional drag model, if, for instance, it is necessary to add some empirical corrections to the total drag estimate. What exactly the sectional drag represents from a purely physical point of view must be decided on when setting up the model by the user. <a href="#fr-sectional_drag_note-1">↩</a></p>
