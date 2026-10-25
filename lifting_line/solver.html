@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-dfdd1220.css">
+        <link rel="stylesheet" href="../custom-8261d0b5.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19387604.js";
+            window.path_to_searchindex_js = "../searchindex-87625286.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-ce562b88.js"></script>
+        <script src="../toc-8bb202f0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -188,8 +188,9 @@
 <li>Calculate the lift-induced velocities and resulting effective angle of attack with the solved circulation strength</li>
 <li>Calculate the lift both with a linearized sectional model and the full sectional model, including stall effects</li>
 <li>Correct the solved circulation strength by multiplying it with the full lift and dividing it by the linearized lift</li>
-<li>Recalculate lift-induced velocities and effective angles of attack for the final force calculations</li>
 </ol>
+<p>The forces are then calculated with the corrected circulation strength and the effective angles of attack from step 1. The post-stall lift, which is added to the lift from the circulation in the <a href="../line_model/force_calculations.html">force calculations</a>, is therefore based on the same angles of attack as the correction of the circulation.</p>
+<p>An optional fourth step, controlled by the <code>induced_velocity_correction_method</code> setting below, recalculates the lift-induced velocities and effective angles of attack from the corrected circulation strength before the forces are calculated. This was the default in earlier versions of Stormbird. However, the circulation is then corrected with different angles of attack than the forces are calculated with. Right before stall, a reduced circulation gives lower lift-induced velocities and therefore a larger angle of attack in the force calculations, so that sections can get both an almost unstalled circulation and post-stall lift. This shows up as a jump in the lift right before stall, and the step is therefore not used by default.</p>
 <p>This solver is found to work fine for <strong>quasi-steady</strong> cases, but does also tend to predict <strong>stall at a larger angle of attack</strong> than the full non-linear solver below. However, the stall-issue can be handled by tuning the stall behavior of the sectional model to 3D data of a single sail. For quasi-steady cases it will be significantly faster than running the full non-linear solver described in the next section, and is therefore set to the default solver for such cases.</p>
 <h2 id="non-linear-solver-using-damped-iterations"><a class="header" href="#non-linear-solver-using-damped-iterations">Non-linear solver using damped iterations</a></h2>
 <p>The second solver is inspired by a simple approach outlined in <a href="../literature/simulation_methods.html#fundamentals-of-aerodynamics-2005">Anderson (2005), chapter 5.4</a>. The basic principle is to start with a first guess of the circulation distribution and then slowly update the values based on iterative calculations of the lift-induced velocities. In short, for every iteration of a lifting line solver, the following is calculated:</p>
@@ -233,8 +234,13 @@ pub enum QuasiSteadySolverBuilder {
     pub disable_viscous_corrections: bool,
     pub induced_velocity_correction_method: InducedVelocityCorrectionMethod
 }
+
+pub enum InducedVelocityCorrectionMethod {
+    NoCorrection,   // Default
+    FullCorrection,
+}
 <span class="boring">}</span></code></pre>
-<p>The only one that could be interesting to modify is the <code>VelocityCorrections</code>. They are explained in their own section below. The other two are mainly for testing purposes and not necessary to adjust for normal use cases.</p>
+<p>The only one that could be interesting to modify is the <code>VelocityCorrections</code>. They are explained in their own section below. The other two are mainly for testing purposes and not necessary to adjust for normal use cases. The <code>induced_velocity_correction_method</code> selects whether the lift-induced velocities are recalculated after the viscous correction (<code>FullCorrection</code>) or not (<code>NoCorrection</code>), as explained above.</p>
 <h3 id="non-linear-settings"><a class="header" href="#non-linear-settings">Non-linear settings</a></h3>
 <p>For the non-linear settings, the following source code shows the available fields:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]

@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="custom-dfdd1220.css">
+        <link rel="stylesheet" href="custom-8261d0b5.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -39,10 +39,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-19387604.js";
+            window.path_to_searchindex_js = "searchindex-87625286.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-ce562b88.js"></script>
+        <script src="toc-8bb202f0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -220,6 +220,7 @@
 <p>Stormbird itself is a <a href="https://www.rust-lang.org/">Rust</a> library. The Rust programming language was chosen as it combines high computational speed with a modern user-friendly developer experience. One potential way to set up a Stormbird simulation is, therefore, to make a custom Rust executable. However, for those that don’t know Rust, or just want to use the library in a high-level setting, it is also possible to use one of the <em>high-level</em> interfaces to the core functionality, listed below:</p>
 <ul>
 <li><strong>The Python interface</strong>, implemented in the <code>pystormbird</code> module. This interface is a direct API to the <em>necessary</em> Rust functions and data structures for running lifting line simulations. This allows for scripting the setup and execution of simulations using Python. More information about the interface will often be mentioned throughout the rest of the book, as well as a high-level description that can be found <a href="#python-interface">here</a>.</li>
+<li><strong>The C interface</strong>, implemented in the <code>cstormbird</code> library. This interface makes the complete sail model and the lifting line simulation available through the C calling convention, so that Stormbird can be used from most other programming languages, also those without a dedicated interface. More information can be found <a href="#c-interface">here</a>.</li>
 <li><strong>The <a href="https://fmi-standard.org/">Functional Mockup Interface</a></strong>, implemented in the <code>StormbirdLiftingLine</code> FMU. This interface is more restricted in what it can do, relative to the Python interface, but serves as a practical way to execute sail simulations together with other FMU-models representing the ship. More information about the FMU-interface can be found <a href="#functional-mockup-unit">here</a>.</li>
 <li><strong>Actuator lines in CFD solvers</strong>, for running actuator line simulations with either <a href="https://www.openfoam.com/">OpenFOAM</a>, through a dedicated OpenFOAM interface, or with Stormflow, a CFD solver made specifically for actuator line simulations with Stormbird. Stormflow is used through its own Python interface, <code>pystormflow</code>. More information can be found <a href="#actuator-lines-in-cfd-solvers">here</a>.</li>
 </ul>
@@ -391,6 +392,37 @@ varying_foil_setup = VaryingFoilSetup(
 # Pass it to the Stormbird library
 foil_model = VaryingFoil(varying_foil_setup.to_json_string())
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="c-interface"><a class="header" href="#c-interface">C interface</a></h1>
+<p>The <code>cstormbird</code> library is a C interface to Stormbird. Most programming languages can call functions that follow the C calling convention, so the purpose of the library is to make Stormbird available in languages that do not have a dedicated interface, such as C, C++, Fortran, C#, Julia or MATLAB. The functionality is intended to be very similar to the <a href="#python-interface">Python interface</a>, and the setup is done with the same JSON input, which can be created with the <code>stormbird_setup</code> library, for instance from the <a href="#default-sail-models">default sail models</a>.</p>
+<p>The library has two entry points:</p>
+<ul>
+<li><code>CompleteSailModel</code>: the <a href="#complete-sail-model">complete sail model</a>, for simulating the sails as a complete system from a wind condition and a ship velocity. This includes the <code>simulate_optimal_steady_state_condition_simple_output</code> function, which writes one <code>SingleSailResult</code> per sail to an array owned by the caller.</li>
+<li><code>LiftingLineSimulation</code>: a <a href="#simulation-overview">lifting line simulation</a> on its own, for cases where the freestream velocity is computed elsewhere.</li>
+</ul>
+<h2 id="building"><a class="header" href="#building">Building</a></h2>
+<p>The library is built with Cargo from the <code>interfaces/cstormbird</code> folder:</p>
+<pre><code>cargo build --release
+</code></pre>
+<p>This gives a shared library in the <code>target/release</code> folder, and a header file, <code>include/cstormbird.h</code>, which is generated by <a href="https://github.com/mozilla/cbindgen">cbindgen</a>.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-c">#include "cstormbird.h"
+
+CompleteSailModel *model = complete_sail_model_new(setup_json_string);
+WindCondition *wind = wind_condition_new_constant(1.57, 8.0);
+
+int nr_sails = complete_sail_model_get_number_of_sails(model);
+SingleSailResult *results = malloc(nr_sails * sizeof(SingleSailResult));
+
+complete_sail_model_simulate_optimal_steady_state_condition_simple_output(
+    model, wind, 6.0, 1.0, results, nr_sails
+);
+
+free(results);
+wind_condition_drop(wind);
+complete_sail_model_drop(model);
+</code></pre>
+<p>Structures that cannot be represented directly in C, such as the models, wind conditions and simulation results, are handled as <em>opaque pointers</em>. They are created by the <code>*_new*</code> functions, which return <code>NULL</code> on failure, and must be released with the matching <code>*_drop</code> function. Functions that can fail return an error code, and <code>stormbird_last_error_message</code> gives a description of the latest failure. See the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/cstormbird">cstormbird README</a> for the full conventions.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="functional-mockup-unit"><a class="header" href="#functional-mockup-unit">Functional Mockup Unit</a></h1>
 <p>The lifting line functionality in Stormbird is available as a <em>Functional Mockup Unit</em>, which means that the functionality can be executed through the <a href="https://fmi-standard.org/">Functional Mockup Interface standard</a>. The actual interface is generated using the <a href="https://github.com/jarlekramer/fmu_from_struct">fmu_from_struct</a> library, which is made by the same developer as Stormbird.</p>
@@ -1718,8 +1750,9 @@ pub struct DynamicSettings {
 <li>Calculate the lift-induced velocities and resulting effective angle of attack with the solved circulation strength</li>
 <li>Calculate the lift both with a linearized sectional model and the full sectional model, including stall effects</li>
 <li>Correct the solved circulation strength by multiplying it with the full lift and dividing it by the linearized lift</li>
-<li>Recalculate lift-induced velocities and effective angles of attack for the final force calculations</li>
 </ol>
+<p>The forces are then calculated with the corrected circulation strength and the effective angles of attack from step 1. The post-stall lift, which is added to the lift from the circulation in the <a href="#force-calculations">force calculations</a>, is therefore based on the same angles of attack as the correction of the circulation.</p>
+<p>An optional fourth step, controlled by the <code>induced_velocity_correction_method</code> setting below, recalculates the lift-induced velocities and effective angles of attack from the corrected circulation strength before the forces are calculated. This was the default in earlier versions of Stormbird. However, the circulation is then corrected with different angles of attack than the forces are calculated with. Right before stall, a reduced circulation gives lower lift-induced velocities and therefore a larger angle of attack in the force calculations, so that sections can get both an almost unstalled circulation and post-stall lift. This shows up as a jump in the lift right before stall, and the step is therefore not used by default.</p>
 <p>This solver is found to work fine for <strong>quasi-steady</strong> cases, but does also tend to predict <strong>stall at a larger angle of attack</strong> than the full non-linear solver below. However, the stall-issue can be handled by tuning the stall behavior of the sectional model to 3D data of a single sail. For quasi-steady cases it will be significantly faster than running the full non-linear solver described in the next section, and is therefore set to the default solver for such cases.</p>
 <h2 id="non-linear-solver-using-damped-iterations"><a class="header" href="#non-linear-solver-using-damped-iterations">Non-linear solver using damped iterations</a></h2>
 <p>The second solver is inspired by a simple approach outlined in <a href="#fundamentals-of-aerodynamics-2005">Anderson (2005), chapter 5.4</a>. The basic principle is to start with a first guess of the circulation distribution and then slowly update the values based on iterative calculations of the lift-induced velocities. In short, for every iteration of a lifting line solver, the following is calculated:</p>
@@ -1763,8 +1796,13 @@ pub enum QuasiSteadySolverBuilder {
     pub disable_viscous_corrections: bool,
     pub induced_velocity_correction_method: InducedVelocityCorrectionMethod
 }
+
+pub enum InducedVelocityCorrectionMethod {
+    NoCorrection,   // Default
+    FullCorrection,
+}
 <span class="boring">}</span></code></pre>
-<p>The only one that could be interesting to modify is the <code>VelocityCorrections</code>. They are explained in their own section below. The other two are mainly for testing purposes and not necessary to adjust for normal use cases.</p>
+<p>The only one that could be interesting to modify is the <code>VelocityCorrections</code>. They are explained in their own section below. The other two are mainly for testing purposes and not necessary to adjust for normal use cases. The <code>induced_velocity_correction_method</code> selects whether the lift-induced velocities are recalculated after the viscous correction (<code>FullCorrection</code>) or not (<code>NoCorrection</code>), as explained above.</p>
 <h3 id="non-linear-settings"><a class="header" href="#non-linear-settings">Non-linear settings</a></h3>
 <p>For the non-linear settings, the following source code shows the available fields:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -2015,8 +2053,8 @@ for time_step_index in range(nr_time_steps):
 <h2 id="why-spatially-varying-input"><a class="header" href="#why-spatially-varying-input">Why spatially varying input?</a></h2>
 <p>The point of specifying the velocity at each of these points individually is that this opens up for models that supply spatially varying velocity fields to the simulations. This can for instance be used to incorporate the following things in the simulation:</p>
 <ul>
-<li><strong>Atmospheric boundary layer model:</strong> The wind speed - and potentially also direction - will vary depending on the height above the ocean. A simplified model of the atmospheric boundary layer can be used to generate different velocities for each relevant point. At the moment this must be specified by the user <sup class="footnote-reference" id="fr-model_note-1"><a href="#footnote-model_note">1</a></sup>.</li>
-<li><strong>Simplified models of viscous wakes:</strong> The flow field on a ship will often be affected by separated flow from various superstructures and deck equipment. The flow might also be affected by separated flow from other sails. There exist simplified models to account for this<sup class="footnote-reference" id="fr-model_note-2"><a href="#footnote-model_note">1</a></sup>. These models can be connected to the lifting line simulations by affecting the input freestream velocity. In that case, the position of each point in the simulation matters for how the velocity should be affected.</li>
+<li><strong>Atmospheric boundary layer model:</strong> The wind speed - and potentially also direction - will vary depending on the height above the ocean. A simplified model of the atmospheric boundary layer can be used to generate different velocities for each relevant point.</li>
+<li><strong>Simplified models of viscous wakes:</strong> The flow field on a ship will often be affected by separated flow from various superstructures and deck equipment. The flow might also be affected by separated flow from other sails. There exist simplified models to account for this. These models can be connected to the lifting line simulations by affecting the input freestream velocity. In that case, the position of each point in the simulation matters for how the velocity should be affected.</li>
 <li><strong>CFD data as input:</strong> Using CFD data is a possible way to account for interactions with the rest of the ship. In that case, a velocity field from a simulation of the deck and superstructure can be used to generate an interpolation model, which later is used to specify a spatially varying velocity fields as input to the lifting line.</li>
 </ul>
 <h2 id="code-example"><a class="header" href="#code-example">Code example</a></h2>
@@ -2056,12 +2094,221 @@ while current_time &lt; end_time:
 
     current_time += time_step
 </code></pre>
-<hr>
-<ol class="footnote-definition">
-<li id="footnote-model_note">
-<p>There are actually implementations of atmospheric boundary layer (ABL) models and  viscous wake models on the Rust side of Stormbird. However, they are not yet exposed to the Python side. This will come soon. For now, custom Python implementations must be used. This is trivial for ABL models, but perhaps slightly more cumbersome for the viscous wake models. <a href="#fr-model_note-1">↩</a> <a href="#fr-model_note-2">↩2</a></p>
-</li>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="complete-sail-model"><a class="header" href="#complete-sail-model">Complete sail model</a></h1>
+<p>A lifting line <a href="#simulation-overview"><code>Simulation</code></a> needs the freestream velocity at every relevant point, and the sail settings, such as the local wing angles and the internal states, must be set from the outside. The <code>CompleteSailModel</code> combines a lifting line simulation with a <a href="#wind-environment">wind environment</a> and a <a href="#control-system">control system</a>, so that the sails can be simulated as a <em>complete unit</em>. The input is then a wind condition and a ship velocity, and the output is the forces and the input power for each sail, with the sails operated as the control system dictates.</p>
+<p>The typical use case is to predict the performance of a sail system in many different conditions, for instance in power prediction or voyage simulation tools. The model is available in Rust, in <a href="#python-interface">pystormbird</a>, and through the <a href="#c-interface">C interface</a>.</p>
+<h2 id="input"><a class="header" href="#input">Input</a></h2>
+<p>The model is created from a <code>CompleteSailModelBuilder</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CompleteSailModelBuilder {
+    lifting_line_simulation: SimulationBuilder,
+    wind_environment: WindEnvironment,
+    controller: ControllerBuilder,
+    settings: CompleteSailModelSettings, // Optional
+}
+
+pub struct CompleteSailModelSettings {
+    pub max_controller_iterations: usize,               // Default: 10
+    pub allowed_angle_error: Float,                     // Default: 0.1 degrees, in radians
+    pub nr_loadings_to_test_during_optimization: usize, // Default: 10
+    pub retractable: bool,                              // Default: false
+    pub thrust_direction: SpatialVector,                // Default: (-1, 0, 0)
+}
+<span class="boring">}</span></code></pre>
+<ul>
+<li><code>lifting_line_simulation</code>: the <a href="#simulation-overview">simulation builder</a> for the sails. Quasi-steady settings are the natural choice for steady state conditions.</li>
+<li><code>wind_environment</code>: the <a href="#wind-environment">wind environment</a>, which defines how a wind condition is turned into a freestream velocity at each point, including optional inflow corrections.</li>
+<li><code>controller</code>: the <a href="#control-system">controller builder</a>, with one set of set points for each sail.</li>
+<li><code>settings</code>: settings that are specific to the complete sail model, explained in the sections below.</li>
+</ul>
+<p>The ship velocity is given as a scalar. The velocity due to the ship motion is the ship velocity times the <code>zero_direction_vector</code> in the wind environment, which is added to the true wind to give the apparent wind. In other words, the ship is assumed to sail in the opposite direction of the <code>zero_direction_vector</code>, and a wind direction of zero is a head wind. With the default values, the ship sails in the negative x-direction, which is why the default <code>thrust_direction</code> is <code>(-1, 0, 0)</code>. The <a href="#coordinate-system">coordinate system</a> section below shows how to use other directions.</p>
+<h2 id="steady-state-simulations"><a class="header" href="#steady-state-simulations">Steady state simulations</a></h2>
+<p>There are two main methods for steady state conditions. The Python signatures are shown below. The methods have the same names and arguments in Rust.</p>
+<pre><code class="language-python">def simulate_steady_state_condition(
+    self,
+    *,
+    wind_condition: WindCondition,
+    ship_velocity: float,
+    controller_loading: float,
+) -&gt; SimulationResult
+</code></pre>
+<pre><code class="language-python">def simulate_optimal_steady_state_condition(
+    self,
+    *,
+    wind_condition: WindCondition,
+    ship_velocity: float,
+    max_loading: float,
+) -&gt; SimulationResult
+</code></pre>
+<p><code>simulate_steady_state_condition</code> simulates the sails with a given controller <em>loading</em>. The loading scales all set points in the controller. A loading of 1.0 gives the set points as specified, while 0.0 gives sails in a neutral position. Values outside this range are clamped. The simulation runs in two steps:</p>
+<ol>
+<li>The controller is first applied based on the wind condition alone, which neglects the velocities induced by the sails.</li>
+<li>The model then alternates between running the lifting line simulation and updating the controller based on the result, until the change in the local wing angles is smaller than <code>allowed_angle_error</code> or until <code>max_controller_iterations</code> is reached. This makes it possible to reach the set points also when they depend on the induced velocities, e.g., when the controller uses the effective angle of attack.</li>
 </ol>
+<p><code>simulate_optimal_steady_state_condition</code> runs <code>simulate_steady_state_condition</code> for <code>nr_loadings_to_test_during_optimization</code> loadings, evenly distributed from 0.0 to <code>max_loading</code>, and returns the result with the highest <em>effective power</em>:</p>
+<p>\[
+P_{effective} = \mathbf{F} \cdot \mathbf{e}_{thrust} \, V_{ship} - P_{input}
+\]</p>
+<p>where \( \mathbf{F} \) is the sum of the forces on all sails, \( \mathbf{e}_{thrust} \) is the <code>thrust_direction</code>, and \( P_{input} \) is the sum of the <a href="#input-power">input power</a> for all sails. This is mainly useful for sails that need power, such as rotor sails and suction sails. For these sails, the maximum thrust does not necessarily give the best net result. It can also be used to reduce the loading in conditions where the full set points give a drag rather than thrust. If <code>retractable</code> is <code>true</code>, and the best effective power is still negative, the sails are assumed to be retracted, and the forces, moments and input power in the returned result are set to zero.</p>
+<h3 id="simple-output"><a class="header" href="#simple-output">Simple output</a></h3>
+<p>The methods above return a full <a href="#force-calculations"><code>SimulationResult</code></a>, which contains sectional values, the input to the force calculations, and more. Usually only the total values for each sail are needed. Both methods therefore also have a <code>_simple_output</code> variant, which takes the same arguments but returns a list with one <code>SingleSailResult</code> for each sail:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct SingleSailResult {
+    pub force: SpatialVector,  // Total force on the sail
+    pub moment: SpatialVector, // Total moment on the sail
+    pub input_power: Float,    // Input power to the sail
+}
+<span class="boring">}</span></code></pre>
+<p>The force and moment are the <code>total</code> integrated values for each wing in the simulation result. They are given in the output coordinate system of the line force model, which is the global coordinate system by default. In Python, <code>force</code> and <code>moment</code> are returned as lists with three elements, and <code>input_power</code> as a float.</p>
+<p><code>simulate_optimal_steady_state_condition_simple_output</code> is likely to be the main way to use the complete sail model. It finds the best operating point in a given condition, and returns only the values that are needed in a typical performance prediction.</p>
+<h2 id="default-sail-models"><a class="header" href="#default-sail-models">Default sail models</a></h2>
+<p>Setting up the lifting line simulation and the controller for a complete sail model requires many choices. The <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/stormbird_setup">stormbird_setup</a> library therefore comes with a limited set of default sail models, which can be used to set up a complete sail model with reasonable values for all settings. The models are classified by the <code>DefaultSail</code> enum:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Name</th><th>Sail type</th><th>Basis</th></tr>
+</thead>
+<tbody>
+<tr><td><code>GenericSingleElementWingSail</code></td><td>Single element wing sail</td><td>Best guess, based on the default <a href="#foil-model">foil model</a></td></tr>
+<tr><td><code>GenericTwoElementWingSail</code></td><td>Wing sail with a flap. The internal state is the flap angle</td><td>Best guess</td></tr>
+<tr><td><code>RotorSailDeybach2024</code></td><td>Rotor sail</td><td>Lift fitted to Deybach (2024), <em>Aerodynamics of the Flettner rotor at high Reynolds number</em></td></tr>
+<tr><td><code>RotorSailOstman2023</code></td><td>Rotor sail</td><td>Lift fitted to Ostman (2023), <em>Calculation of Flettner rotor forces using lifting line and CFD methods</em></td></tr>
+<tr><td><code>SuctionSailCharrier1985</code></td><td>Suction sail. The internal state is the fan power</td><td>Tuned to the wind tunnel data for the original TurboSail in Charrier et al. (1985)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The names indicate whether a model is a generic best guess, or tuned to a specific source. None of the models are intended to represent a specific commercial sail. Each model is a <code>SailDefinition</code> that contains:</p>
+<ul>
+<li>The <a href="#section-models">section model</a>, which also gives the <a href="#input-power">input power</a>.</li>
+<li>The <a href="#control-system">controller set points</a>. The angle of attack set points are <em>effective</em> angles of attack, so that multiple sails are operated close to the set points, also when they affect each other. The maximum angle of attack is 5 degrees below the angle where the 2D lift is at its maximum.</li>
+<li>Simulation settings, such as the <a href="#solver">solver</a> and the <a href="#circulation-strength">circulation correction</a>, together with optional virtual extensions of the span.</li>
+</ul>
+<p>A definition does not contain the size of the sail, and can be scaled to any chord length (diameter for rotor sails) and height. Limits that depend on the size, such as the maximum revolutions per second of a rotor sail, are scaled automatically.</p>
+<p>Each model is available for both the linearized and the iterative <a href="#solver">solver</a>, selected with the <code>SolverType</code> enum. The linearized solver is the default. The two versions only differ in the stall parameters of the foils, which are set so that the maximum lift, and the angle of attack where it occurs, are about the same for both solvers.</p>
+<h3 id="setting-up-a-model"><a class="header" href="#setting-up-a-model">Setting up a model</a></h3>
+<p>The <code>CompleteSailModelBuilder.new_from_default_sail</code> class method sets up a complete sail model with a sail at each of the given positions:</p>
+<pre><code class="language-python">from stormbird_setup.default_sails import DefaultSail, SolverType
+from stormbird_setup.lifting_line import CompleteSailModelBuilder, SymmetryCondition
+from stormbird_setup.spatial_vector import SpatialVector
+
+builder = CompleteSailModelBuilder.new_from_default_sail(
+    sail = DefaultSail.RotorSailDeybach2024,
+    positions = [SpatialVector(x = -40.0, z = 10.0), SpatialVector(x = 40.0, z = 10.0)],
+    chord_length = 5.0, # The diameter, for rotor sails
+    height = 35.0,
+    symmetry_condition = SymmetryCondition.Z,
+    solver_type = SolverType.Linearized, # Optional, linearized by default
+)
+
+# Input to, e.g., the complete sail model in pystormbird or cstormbird
+builder.to_json_file("sail_model.json")
+</code></pre>
+<ul>
+<li><code>positions</code>: the bottom of each sail. All sails use the same model and size.</li>
+<li><code>symmetry_condition</code>: the symmetry condition of the <a href="#lifting-line-wake">wake</a>. With <code>SymmetryCondition.Z</code>, the plane at z = 0 represents the water surface. A sail with the base on the plane continues as a mirror image below it, which is detected from the position. A sail above the plane, as on the deck of a ship, gets a gap between the base and its mirror image.</li>
+<li><code>wind_environment</code> and <code>settings</code>: optional, see the <a href="#coordinate-system">coordinate system</a> section below.</li>
+</ul>
+<p>The <code>sail</code> can also be a custom <code>SailDefinition</code>, for instance a modified default sail. As the definition is a normal stormbird_setup class, it can be stored as a JSON file, and read again later:</p>
+<pre><code class="language-python">from stormbird_setup.default_sails import SailDefinition
+
+definition = DefaultSail.SuctionSailCharrier1985.definition()
+definition.virtual_extension_factors = (0.0, 0.5)
+
+definition.to_json_file("my_sail.json")
+
+definition = SailDefinition.from_json_file("my_sail.json")
+</code></pre>
+<h3 id="coordinate-system"><a class="header" href="#coordinate-system">Coordinate system</a></h3>
+<p>The orientation of the sails follows the <a href="#wind-environment">wind environment</a>:</p>
+<ul>
+<li>The span of each sail goes along the <code>up_direction</code>.</li>
+<li>The chord goes along the <code>zero_direction_vector</code>. The ship sails in the opposite direction, so a local wing angle of zero aligns the sails with a head wind.</li>
+<li>The <code>thrust_direction</code> in the settings is set opposite of the <code>zero_direction_vector</code>, i.e., in the sailing direction.</li>
+</ul>
+<p>The default wind environment has the x-axis pointing backwards and the z-axis pointing up, so that the ship sails in the negative x-direction. To use another coordinate system, give a wind environment with different directions. The <code>wind_rotation_axis</code> should then be opposite of the up direction, so that the wind direction is measured in the same way, i.e., clockwise seen from above. For instance, for a coordinate system with the x-axis pointing forward, the y-axis to starboard and the z-axis pointing down:</p>
+<pre><code class="language-python">from stormbird_setup.wind import WindEnvironment
+
+wind_environment = WindEnvironment(
+    up_direction = SpatialVector(z = -1.0),
+    wind_rotation_axis = SpatialVector(z = 1.0),
+    zero_direction_vector = SpatialVector(x = -1.0), # The ship sails in the positive x-direction
+)
+
+builder = CompleteSailModelBuilder.new_from_default_sail(
+    sail = DefaultSail.RotorSailDeybach2024,
+    positions = [SpatialVector(x = 40.0, z = -10.0), SpatialVector(x = -40.0, z = -10.0)],
+    chord_length = 5.0,
+    height = 35.0,
+    symmetry_condition = SymmetryCondition.Z,
+    wind_environment = wind_environment,
+)
+</code></pre>
+<p>The sails then extend in the negative z-direction from the deck, which is 10 m above the water surface, and the thrust direction is <code>(1, 0, 0)</code>. With both coordinate systems, a wind direction of 90 degrees is a wind from starboard, and the results are the same, apart from the directions of the force vectors. Note that the controller currently uses the opposite sign for the apparent wind direction, as explained in the <a href="#sign-of-the-apparent-wind-direction">control system</a> chapter.</p>
+<p><strong>Note</strong>: if the <code>settings</code> argument is given, the settings are used as they are, and the thrust direction is not set from the wind environment. It must then be set manually, if it is not the default <code>(-1, 0, 0)</code>:</p>
+<pre><code class="language-python">from stormbird_setup.lifting_line.complete_sail_model import CompleteSailModelSettings
+
+settings = CompleteSailModelSettings(
+    retractable = True,
+    thrust_direction = SpatialVector(x = 1.0),
+)
+</code></pre>
+<h2 id="example-1"><a class="header" href="#example-1">Example</a></h2>
+<p>The example below runs the rotor sail model from above with pystormbird, for a range of wind directions, using <code>simulate_optimal_steady_state_condition_simple_output</code>:</p>
+<pre><code class="language-python">import numpy as np
+
+from stormbird_setup.default_sails import DefaultSail
+from stormbird_setup.lifting_line import CompleteSailModelBuilder, SymmetryCondition
+from stormbird_setup.spatial_vector import SpatialVector
+
+from pystormbird.lifting_line import CompleteSailModel
+from pystormbird.wind import WindCondition
+
+builder = CompleteSailModelBuilder.new_from_default_sail(
+    sail = DefaultSail.RotorSailDeybach2024,
+    positions = [SpatialVector(x = -40.0, z = 10.0), SpatialVector(x = 40.0, z = 10.0)],
+    chord_length = 5.0,
+    height = 35.0,
+    symmetry_condition = SymmetryCondition.Z,
+)
+
+model = CompleteSailModel(builder.to_json_string())
+
+ship_velocity = 12.0 * 0.5144  # 12 knots in m/s
+
+for wind_direction_deg in range(0, 181, 30):
+    wind_condition = WindCondition.new_constant(
+        direction_coming_from = np.radians(wind_direction_deg),
+        velocity = 8.0
+    )
+
+    results = model.simulate_optimal_steady_state_condition_simple_output(
+        wind_condition = wind_condition,
+        ship_velocity = ship_velocity,
+        max_loading = 1.0
+    )
+
+    thrust = sum(-result.force[0] for result in results)
+    input_power = sum(result.input_power for result in results)
+
+    print(
+        f"Wind direction: {wind_direction_deg:3d} deg, "
+        f"thrust: {thrust / 1000:6.1f} kN, "
+        f"input power: {input_power / 1000:6.1f} kW"
+    )
+</code></pre>
+<p>The thrust is the negative x-component of the force, which matches the default <code>thrust_direction</code>. An example that compares all the default sail models can be found in the <a href="https://github.com/NTNU-IMT/stormbird/tree/main/interfaces/pystormbird/examples">pystormbird examples folder</a>.</p>
+<h2 id="other-methods"><a class="header" href="#other-methods">Other methods</a></h2>
+<p>The model also has methods for more direct control of the simulation:</p>
+<ul>
+<li><code>do_step</code> and <code>do_multiple_steps</code>: run the lifting line simulation for a given wind condition and ship velocity, with the current sail settings. The controller is <strong>not</strong> applied. <code>do_multiple_steps</code> re-initializes the wake and runs from time zero to <code>end_time</code>, and is mainly useful with dynamic simulation settings, for instance with <a href="#wind-environment">gusts</a> in the wind condition.</li>
+<li><code>apply_controller_based_on_wind_condition</code>, <code>apply_controller_based_on_freestream</code> and <code>apply_controller_based_on_simulation_result</code>: update the sail settings with the controller, based on different types of input.</li>
+<li><code>set_local_wing_angles</code> and <code>set_internal_state</code>: set the sail settings manually. Any later controller update overwrites them. In Python, there are also <code>set_internal_state_linear</code> and <code>set_internal_state_piecewise_constant</code> for internal states that vary along the span.</li>
+<li><code>freestream_velocity</code>: the apparent wind at all the points where the simulation needs it, including the ship velocity and any inflow corrections.</li>
+<li><code>local_wing_angles</code>, <code>internal_state</code>, <code>get_number_of_sails</code> and <code>get_wind_environment</code> (Python): query the current state of the model.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="actuator-line"><a class="header" href="#actuator-line">Actuator line</a></h1>
 <p>An actuator line model shares a lot of the same principles as a lifting line model; the wings are divided into line segments, and the forces on each line segment are dependent on the local velocity and the output from the sectional models. However, unlike a lifting line simulation, there is no potential theory wake. The velocity at each control point is instead estimated directly from the velocity field in a CFD solver. The point of this is that other structures in the CFD domain will influence the felt velocity at each control point. For the sake of sail simulations, this allows for modeling the interaction effects between the deck and superstructure and the sails.</p>
@@ -2224,12 +2471,19 @@ pub struct ProjectionSettings {
     pub initialization_time: Option&lt;f64&gt;,
     pub reference_core_length_factor: f64,
     pub include_wing_interactions: bool,
+    pub max_correction_ratio: Option&lt;f64&gt;,
+    pub virtual_extension_factors: [f64; 2],
 }
 <span class="boring">}</span></code></pre>
 <p>The <code>wake_length_factor</code> is set to 100.0 by default, which means that the wake used for computing lift-induced velocities is assumed to extend 100 chord lengths downstream. The <code>symmetry_condition</code> is set to <code>NoSymmetry</code> by default. The symmetry condition should generally reflect the same symmetry condition as used in the CFD simulation. For instance, if the bottom of the domain is at the lowest z-coordinate, the symmetry condition should be set to <code>Z</code>.</p>
 <p>The viscous core length used to represent the actuator line is calculated from the force projection settings, as the average of the <code>chord_factor</code> and <code>thickness_factor</code> in the <a href="#force-projection">Gaussian projection kernel</a> multiplied with the average chord length. The <em>very small</em> core length used in the second wake model is then calculated by dividing this value by the <code>reference_core_length_factor</code>, which is set to 100.0 by default.</p>
 <p>The <code>initialization_time</code> is optional, and not used by default. If it is set, the correction is gradually ramped up from zero to its full value, using a smooth cosine transition, over the specified time from the start of the simulation. This can be used to avoid large corrections in the start-up phase of a CFD simulation.</p>
 <p>The <code>include_wing_interactions</code> is set to <code>false</code> by default, meaning that the correction is computed for each wing in isolation. If set to <code>true</code>, the correction includes the induced velocities from all wings, as described in the <a href="#isolated-wings-or-wing-interactions">section above</a>.</p>
+<p>Two additional settings are available, which are still experimental:</p>
+<ul>
+<li><code>max_correction_ratio</code>: optional limit on the magnitude of the velocity correction at each control point, as a ratio of the magnitude of the sampled velocity. The direction of the correction is kept. Not used by default. This can be needed for wings with a large circulation at the ends, such as rotor sails, where the correction can otherwise become larger than the freestream velocity at the ends of the wing.</li>
+<li><code>virtual_extension_factors</code>: length of a virtual extension of each wing at the first and the last end, relative to the chord length at that end. The extensions are only included in the reference model with the small viscous core, and carry the circulation of the outermost line element, which moves the tip vortices away from the ends of the wing. This can be used to represent end plates. Zero by default, which means no extensions.</li>
+</ul>
 <p>Experience from this correction technique is that it works very well for actuator line simulations that only include wings. Even with a <strong>large isotropic projection width</strong>, the result from an actuator line simulation will match the lifting line model almost perfectly. However, it can also create instabilities when combined with complex ship geometries. <strong>The hope is to find a solution to this in the future</strong>, as this type of correction is believed to be very general and promising for practical use cases.</p>
 <h2 id="empirical-circulation-correction"><a class="header" href="#empirical-circulation-correction">Empirical circulation correction</a></h2>
 <p>A more classical correction technique for actuator line simulations is to use an empirical correction factor to the calculated circulation on each wing. As mentioned, the <em>raw circulation at the tips</em> is often predicted to be too large. A simple solution is, then, to artificially reduce it based on an analytical correction. There are many small variations in how this is done. A recent discussion about the topic can be found in the paper by <a href="#spanwise-flow-corrections-for-tidal-turbines-2018">Wimshurst and Willden, 2018</a>. The correction in Stormbird follows the following principle:</p>
@@ -2442,12 +2696,12 @@ simulation_builder = SimulationBuilder(
 <p>Grid settings:</p>
 <ul>
 <li><code>background_mesh_cells_per_representative_length</code>: resolution of the background mesh.</li>
-<li><code>actuator_line_refinement</code>: refinement zone around each wing, shaped as a cylinder from the first to the last section point. The diameter is <code>padding</code> × the mean chord length of the wing × the largest factor in the Gaussian projection function. <code>None</code> means no refinement.</li>
+<li><code>actuator_line_refinement</code>: refinement zone around each wing, shaped as a cylinder from the first to the last section point. The diameter is <code>padding</code> × the mean chord length of the wing × the largest factor in the Gaussian projection function. The cylinder is extended by half the diagonal of a background cell, in radius and at the ends, so that all cells that overlap it are refined. <code>None</code> means no refinement.</li>
 <li><code>geometry_cells_per_representative_length</code>: resolution at the surface of the geometries. How far the refinement extends away from the surfaces is controlled by the <code>snappyHexMesh</code> settings in the base folder. <code>None</code> means no refinement.</li>
 </ul>
 <p>Since <code>snappyHexMesh</code> refines by splitting cells in two, the actual resolution in a refined region is the background resolution multiplied by a power of two, at least as fine as the requested value.</p>
 <p>The number of cells in the background mesh is rounded up along each axis, so that the cells fit the domain exactly and are at least as fine as requested.</p>
-<p>All geometries are snapped to, without boundary layers. Supported geometries are triangle meshes, spheres and cuboids. Each geometry becomes a patch in the mesh, named <code>geometry_&lt;index&gt;</code> for <code>geometries</code> (type <code>wall</code>) and <code>slip_geometry_&lt;index&gt;</code> for <code>slip_geometries</code> (type <code>patch</code>), where the index is the position in the list. Triangle mesh files are copied to <code>constant/triSurface</code>, and should contain a single group or solid. Feature edges are captured with implicit feature snapping.</p>
+<p>All geometries are snapped to, without boundary layers. Supported geometries are triangle meshes, spheres, cuboids and disks. Disks are meshed as solid cylinders, extruded from the center along the normal, so they must have a thickness larger than zero, and a fillet radius of zero. The cells at the surface must be smaller than the thickness for the disk to be resolved. Each geometry becomes a patch in the mesh, named <code>geometry_&lt;index&gt;</code> for <code>geometries</code> (type <code>wall</code>) and <code>slip_geometry_&lt;index&gt;</code> for <code>slip_geometries</code> (type <code>patch</code>), where the index is the position in the list. Triangle mesh files are copied to <code>constant/triSurface</code>, and should contain a single group or solid. Feature edges are captured with implicit feature snapping.</p>
 <h3 id="time-control"><a class="header" href="#time-control">Time control</a></h3>
 <p>The <code>time_control</code> field selects between a steady simulation with <code>simpleFoam</code> and a time dependent simulation with <code>pimpleFoam</code>:</p>
 <pre><code class="language-python">from stormbird_setup.openfoam import SteadyTimeControl, DynamicTimeControl
@@ -2627,6 +2881,9 @@ pub struct SpanwiseMeasurementBuilder {
 <p>There is one <code>ControllerSetPoints</code> for each wing. Each time the controller is updated, it measures the flow conditions on each wing, as described in the <a href="#spanwise-measurement">spanwise measurement</a> section, and uses the measured values, together with the set points, to compute a new local wing angle and a new internal state for each wing.</p>
 <h2 id="set-points"><a class="header" href="#set-points">Set points</a></h2>
 <p>The set points are given as a function of the apparent wind direction, and are linearly interpolated between the data points. The <code>angle_of_attack_data</code> gives the set points for the angle of attack, while the <code>internal_state_data</code> gives the set points for the internal state of each wing. Both are optional. If the angle of attack data is not given, the controller sets the local wing angle to zero, and if the internal state data is not given, the controller sets the internal state to zero. All set points are scaled by a <em>loading</em> factor, which can be used to reduce the sail forces, for instance in strong winds.</p>
+<h3 id="sign-of-the-apparent-wind-direction"><a class="header" href="#sign-of-the-apparent-wind-direction">Sign of the apparent wind direction</a></h3>
+<p><strong>Note</strong>: the apparent wind direction in the set points is currently not defined in the same way as in the <a href="#wind-environment">wind environment</a>. The controller measures the apparent wind direction for each wing as the angle from the chord to the velocity, around the <strong>span direction</strong> of the wing. The wind environment measures it from the <code>zero_direction_vector</code>, around the <code>wind_rotation_axis</code>, which is also how the <a href="#wind-environment">inflow corrections</a> are looked up. For sails that are built from the bottom to the top, in a wind environment where the <code>wind_rotation_axis</code> is opposite of the up direction, as by default, the two have opposite signs. That is, a wind from starboard has a positive apparent wind direction in the wind environment, but a negative apparent wind direction in the controller.</p>
+<p>This does not affect set points that are mirrored between positive and negative apparent wind directions, such as the <a href="#default-sail-models">default sail models</a>, as the controller is consistent with itself. However, set points that are different for the two sides of the sail must be given with the sign used by the controller. A fix, where the controller uses the same definition as the wind environment, is targeted for the next release of Stormbird. Set points that are not mirrored will then have to be updated.</p>
 <h3 id="angle-of-attack-set-points"><a class="header" href="#angle-of-attack-set-points">Angle of attack set points</a></h3>
 <p>The angle of attack set point is reached by rotating each wing around its span axis, i.e., by changing the local wing angle. The <code>use_effective_angle_of_attack</code> setting defines how the local wing angle is computed:</p>
 <ul>

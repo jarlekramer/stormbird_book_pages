@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-dfdd1220.css">
+        <link rel="stylesheet" href="../custom-8261d0b5.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19387604.js";
+            window.path_to_searchindex_js = "../searchindex-87625286.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-ce562b88.js"></script>
+        <script src="../toc-8bb202f0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -216,6 +216,9 @@ pub struct SpanwiseMeasurementBuilder {
 <p>There is one <code>ControllerSetPoints</code> for each wing. Each time the controller is updated, it measures the flow conditions on each wing, as described in the <a href="#spanwise-measurement">spanwise measurement</a> section, and uses the measured values, together with the set points, to compute a new local wing angle and a new internal state for each wing.</p>
 <h2 id="set-points"><a class="header" href="#set-points">Set points</a></h2>
 <p>The set points are given as a function of the apparent wind direction, and are linearly interpolated between the data points. The <code>angle_of_attack_data</code> gives the set points for the angle of attack, while the <code>internal_state_data</code> gives the set points for the internal state of each wing. Both are optional. If the angle of attack data is not given, the controller sets the local wing angle to zero, and if the internal state data is not given, the controller sets the internal state to zero. All set points are scaled by a <em>loading</em> factor, which can be used to reduce the sail forces, for instance in strong winds.</p>
+<h3 id="sign-of-the-apparent-wind-direction"><a class="header" href="#sign-of-the-apparent-wind-direction">Sign of the apparent wind direction</a></h3>
+<p><strong>Note</strong>: the apparent wind direction in the set points is currently not defined in the same way as in the <a href="./wind_environment.html">wind environment</a>. The controller measures the apparent wind direction for each wing as the angle from the chord to the velocity, around the <strong>span direction</strong> of the wing. The wind environment measures it from the <code>zero_direction_vector</code>, around the <code>wind_rotation_axis</code>, which is also how the <a href="./wind_environment.html">inflow corrections</a> are looked up. For sails that are built from the bottom to the top, in a wind environment where the <code>wind_rotation_axis</code> is opposite of the up direction, as by default, the two have opposite signs. That is, a wind from starboard has a positive apparent wind direction in the wind environment, but a negative apparent wind direction in the controller.</p>
+<p>This does not affect set points that are mirrored between positive and negative apparent wind directions, such as the <a href="../lifting_line/complete_sail_model.html#default-sail-models">default sail models</a>, as the controller is consistent with itself. However, set points that are different for the two sides of the sail must be given with the sign used by the controller. A fix, where the controller uses the same definition as the wind environment, is targeted for the next release of Stormbird. Set points that are not mirrored will then have to be updated.</p>
 <h3 id="angle-of-attack-set-points"><a class="header" href="#angle-of-attack-set-points">Angle of attack set points</a></h3>
 <p>The angle of attack set point is reached by rotating each wing around its span axis, i.e., by changing the local wing angle. The <code>use_effective_angle_of_attack</code> setting defines how the local wing angle is computed:</p>
 <ul>

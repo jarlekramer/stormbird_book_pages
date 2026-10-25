@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-dfdd1220.css">
+        <link rel="stylesheet" href="../custom-8261d0b5.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19387604.js";
+            window.path_to_searchindex_js = "../searchindex-87625286.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-ce562b88.js"></script>
+        <script src="../toc-8bb202f0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -233,12 +233,12 @@ simulation_builder = SimulationBuilder(
 <p>Grid settings:</p>
 <ul>
 <li><code>background_mesh_cells_per_representative_length</code>: resolution of the background mesh.</li>
-<li><code>actuator_line_refinement</code>: refinement zone around each wing, shaped as a cylinder from the first to the last section point. The diameter is <code>padding</code> × the mean chord length of the wing × the largest factor in the Gaussian projection function. <code>None</code> means no refinement.</li>
+<li><code>actuator_line_refinement</code>: refinement zone around each wing, shaped as a cylinder from the first to the last section point. The diameter is <code>padding</code> × the mean chord length of the wing × the largest factor in the Gaussian projection function. The cylinder is extended by half the diagonal of a background cell, in radius and at the ends, so that all cells that overlap it are refined. <code>None</code> means no refinement.</li>
 <li><code>geometry_cells_per_representative_length</code>: resolution at the surface of the geometries. How far the refinement extends away from the surfaces is controlled by the <code>snappyHexMesh</code> settings in the base folder. <code>None</code> means no refinement.</li>
 </ul>
 <p>Since <code>snappyHexMesh</code> refines by splitting cells in two, the actual resolution in a refined region is the background resolution multiplied by a power of two, at least as fine as the requested value.</p>
 <p>The number of cells in the background mesh is rounded up along each axis, so that the cells fit the domain exactly and are at least as fine as requested.</p>
-<p>All geometries are snapped to, without boundary layers. Supported geometries are triangle meshes, spheres and cuboids. Each geometry becomes a patch in the mesh, named <code>geometry_&lt;index&gt;</code> for <code>geometries</code> (type <code>wall</code>) and <code>slip_geometry_&lt;index&gt;</code> for <code>slip_geometries</code> (type <code>patch</code>), where the index is the position in the list. Triangle mesh files are copied to <code>constant/triSurface</code>, and should contain a single group or solid. Feature edges are captured with implicit feature snapping.</p>
+<p>All geometries are snapped to, without boundary layers. Supported geometries are triangle meshes, spheres, cuboids and disks. Disks are meshed as solid cylinders, extruded from the center along the normal, so they must have a thickness larger than zero, and a fillet radius of zero. The cells at the surface must be smaller than the thickness for the disk to be resolved. Each geometry becomes a patch in the mesh, named <code>geometry_&lt;index&gt;</code> for <code>geometries</code> (type <code>wall</code>) and <code>slip_geometry_&lt;index&gt;</code> for <code>slip_geometries</code> (type <code>patch</code>), where the index is the position in the list. Triangle mesh files are copied to <code>constant/triSurface</code>, and should contain a single group or solid. Feature edges are captured with implicit feature snapping.</p>
 <h3 id="time-control"><a class="header" href="#time-control">Time control</a></h3>
 <p>The <code>time_control</code> field selects between a steady simulation with <code>simpleFoam</code> and a time dependent simulation with <code>pimpleFoam</code>:</p>
 <pre><code class="language-python">from stormbird_setup.openfoam import SteadyTimeControl, DynamicTimeControl

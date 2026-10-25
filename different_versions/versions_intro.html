@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../custom-dfdd1220.css">
+        <link rel="stylesheet" href="../custom-8261d0b5.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19387604.js";
+            window.path_to_searchindex_js = "../searchindex-87625286.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-ce562b88.js"></script>
+        <script src="../toc-8bb202f0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -181,6 +181,7 @@
 <p>Stormbird itself is a <a href="https://www.rust-lang.org/">Rust</a> library. The Rust programming language was chosen as it combines high computational speed with a modern user-friendly developer experience. One potential way to set up a Stormbird simulation is, therefore, to make a custom Rust executable. However, for those that don’t know Rust, or just want to use the library in a high-level setting, it is also possible to use one of the <em>high-level</em> interfaces to the core functionality, listed below:</p>
 <ul>
 <li><strong>The Python interface</strong>, implemented in the <code>pystormbird</code> module. This interface is a direct API to the <em>necessary</em> Rust functions and data structures for running lifting line simulations. This allows for scripting the setup and execution of simulations using Python. More information about the interface will often be mentioned throughout the rest of the book, as well as a high-level description that can be found <a href="python_interface.html">here</a>.</li>
+<li><strong>The C interface</strong>, implemented in the <code>cstormbird</code> library. This interface makes the complete sail model and the lifting line simulation available through the C calling convention, so that Stormbird can be used from most other programming languages, also those without a dedicated interface. More information can be found <a href="c_interface.html">here</a>.</li>
 <li><strong>The <a href="https://fmi-standard.org/">Functional Mockup Interface</a></strong>, implemented in the <code>StormbirdLiftingLine</code> FMU. This interface is more restricted in what it can do, relative to the Python interface, but serves as a practical way to execute sail simulations together with other FMU-models representing the ship. More information about the FMU-interface can be found <a href="fmu_version.html">here</a>.</li>
 <li><strong>Actuator lines in CFD solvers</strong>, for running actuator line simulations with either <a href="https://www.openfoam.com/">OpenFOAM</a>, through a dedicated OpenFOAM interface, or with Stormflow, a CFD solver made specifically for actuator line simulations with Stormbird. Stormflow is used through its own Python interface, <code>pystormflow</code>. More information can be found <a href="cfd_solvers.html">here</a>.</li>
 </ul>
