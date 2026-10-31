@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -184,6 +184,7 @@
 <li><code>actuator_line</code>: an <code>ActuatorLineBuilder</code>, as described in the <a href="./simulation_overview.html">simulation overview</a>.</li>
 <li><code>wind_condition</code> and <code>linear_velocity</code>: the true wind and the velocity due to the motion of the ship, which are added together to give the apparent wind in the domain. The optional <code>wind_environment</code> field controls how the wind condition is interpreted. See the <a href="../utils/wind_environment.html">wind environment chapter</a>.</li>
 <li><code>geometries</code> and <code>slip_geometries</code>: other structures in the domain, with no-slip and slip walls respectively. Typically created with <code>GeometryBuilder.new_triangle_mesh(file_path)</code>.</li>
+<li><code>boundary_condition_type</code>: how the boundary conditions are assigned to the outer boundaries of the domain, given as a <code>BoundaryConditionType</code>, which can be imported from both <code>stormbird_setup.stormflow</code> and <code>stormbird_setup.openfoam</code>. The default, <code>WindInletOutlet</code>, is for wind propulsion devices in the open air, with the ground at the bottom of the domain, an open top, and the apparent wind flowing in and out through the vertical sides. <code>WindTunnel</code> is for reproducing wind tunnel experiments, with an inlet at the start of the x axis, an outlet at the end of it, and slip walls on all other faces. It requires the apparent wind to be along the positive x axis. The details for each solver are given in the <a href="./stormflow.html#boundary-conditions">Stormflow chapter</a> and the <a href="#boundary-conditions">OpenFOAM section</a> below.</li>
 <li><code>grid</code>: the domain size and resolution. The resolution is specified as a number of cells per <em>representative length</em>, which by default is the average chord length of the wings. It can be set manually with <code>grid.representative_length</code>, which is required if there is no actuator line model.</li>
 </ul>
 <h2 id="stormflow"><a class="header" href="#stormflow">Stormflow</a></h2>
@@ -203,7 +204,7 @@ simulation_builder = SimulationBuilder(
     geometries=[GeometryBuilder.new_triangle_mesh("superstructure.obj")],
 )
 </code></pre>
-<p>The builder also contains the solver settings (<code>velocity_solver</code>, <code>pressure_solver</code>, <code>solver_settings</code>, <code>turbulence</code> and <code>effective_viscosity</code>), which all have default values. The JSON string from the builder is the direct input to Stormflow:</p>
+<p>The builder also contains the solver settings (<code>velocity_solver</code>, <code>pressure_solver</code>, <code>solver_settings</code>, <code>turbulence</code> and <code>effective_viscosity</code>), which all have default values. The boundary conditions are described in the <a href="./stormflow.html#boundary-conditions">Stormflow chapter</a>. The JSON string from the builder is the direct input to Stormflow:</p>
 <pre><code class="language-python">from pystormflow import Simulation
 
 simulation = Simulation(simulation_builder.to_json_string())
@@ -252,6 +253,8 @@ dynamic = DynamicTimeControl(time_step=0.01, end_time=60.0, max_courant_number=1
 </ul>
 <p>The fields are written 10 times during the simulation, and only the latest write is kept (<code>purgeWrite 1</code>). The base folder contains a steady and a dynamic version of <code>system/controlDict</code> and <code>system/fvSchemes</code>, marked with the suffixes <code>.steady</code> and <code>.dynamic</code>, and the matching version is used in the case.</p>
 <h3 id="boundary-conditions"><a class="header" href="#boundary-conditions">Boundary conditions</a></h3>
+<p>The boundary conditions are set up from the patches in the base folder, according to <code>boundary_condition_type</code>.</p>
+<p>With the default, <code>WindInletOutlet</code>, the patches in the base folder are used as they are: <code>vertical_sides</code>, <code>z_max</code> (top) and <code>z_min</code> (bottom):</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -266,7 +269,23 @@ dynamic = DynamicTimeControl(time_step=0.01, end_time=60.0, max_courant_number=1
 </tbody>
 </table>
 </div>
-<p>The apparent wind at the vertical sides varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>. It is also used as the initial velocity in the domain, evaluated at 10 m height. Since the base folder assumes that z is up, <code>wind_environment.up_direction</code> must be <code>(0, 0, 1)</code>. Gusts and inflow corrections are not supported.</p>
+<p>With <code>WindTunnel</code>, the patches are replaced by <code>inlet</code> (the start of the x axis), <code>outlet</code> (the end of the x axis) and <code>tunnel_walls</code> (the faces along the y and z axes). The conditions are taken from the patches in the base folder: the inlet gets the conditions of the vertical sides, the outlet the conditions of the top, and the walls the slip conditions of the bottom. A custom base folder must therefore contain the same patches as the default one.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th><th>Turbulence</th></tr>
+</thead>
+<tbody>
+<tr><td><code>inlet</code></td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td><td>Inlet value where the flow enters, zero gradient where it leaves</td></tr>
+<tr><td><code>outlet</code></td><td>Zero gradient</td><td>Fixed at zero</td><td>Zero gradient</td></tr>
+<tr><td><code>tunnel_walls</code></td><td>Slip</td><td>Slip</td><td>Slip</td></tr>
+<tr><td><code>geometries</code></td><td>No slip</td><td>Zero gradient</td><td>Wall functions</td></tr>
+<tr><td><code>slip_geometries</code></td><td>Slip</td><td>Slip</td><td>Slip</td></tr>
+</tbody>
+</table>
+</div>
+<p>The apparent wind must be along the positive x axis at all heights in the domain for <code>WindTunnel</code>, which is checked when the builder is created. Whether the flow enters the domain is decided from the direction of the apparent wind relative to the boundary, so the whole inlet has a fixed velocity in this case. This is a small difference from Stormflow, where the decision is made from the local velocity in the domain.</p>
+<p>In both variants, the apparent wind at the inlet varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>, so the velocity profile can be constant or follow an atmospheric boundary layer. It is also used as the initial velocity in the domain, evaluated at 10 m height. Since the base folder assumes that z is up, <code>wind_environment.up_direction</code> must be <code>(0, 0, 1)</code>. Gusts and inflow corrections are not supported.</p>
 <p>The turbulence is set by <code>inlet_turbulence</code>, which is an <code>IntensityAndViscosityRatio</code> with the fields <code>turbulence_intensity</code> (default 0.01) and <code>eddy_viscosity_ratio</code> (default 10). The values are the same at all heights, and are computed as <code>k = 1.5 (I U)^2</code> and <code>omega = k / (r nu)</code>, where <code>U</code> is the true wind velocity at 10 m height, or the magnitude of <code>linear_velocity</code> if there is no true wind, and <code>nu</code> is the viscosity in the base folder.</p>
 <h3 id="writing-the-case"><a class="header" href="#writing-the-case">Writing the case</a></h3>
 <pre><code class="language-python">simulation_builder.write_foam_case("path/to/case")

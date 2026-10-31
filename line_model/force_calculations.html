@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -214,7 +214,7 @@
 <span class="boring">}</span></code></pre>
 <p>The default value is <code>false</code>. If it is set to <code>true</code>, the post-stall lift is included in the circulation strength, and the viscous lift force will always be zero.</p>
 <h3 id="3---sectional-drag"><a class="header" href="#3---sectional-drag">3 - Sectional drag</a></h3>
-<p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow.</p>
+<p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="../sectional_models/sectional_models_intro.html">sectional model</a>. The direction is always parallel to the local flow. For wings with a <a href="../sectional_models/dynamic_stall.html">dynamic stall model</a>, the drag is computed with the same dynamic amount of stall and internal state as the lift.</p>
 <p>The sectional drag also includes the drag from the <a href="#lift-induced-drag-correction">lift-induced drag correction</a>, if it is used.</p>
 <h3 id="4---added-mass"><a class="header" href="#4---added-mass">4 - Added mass</a></h3>
 <p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the flow relative to the wing. They are computed with a strip theory model, set with the <code>added_mass</code> field in the wing builder:</p>

@@ -1,0 +1,470 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Dynamic stall - Stormbird</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../custom-8261d0b5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-089a1913.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Stormbird</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="dynamic-stall"><a class="header" href="#dynamic-stall">Dynamic stall</a></h1>
+<p>The sectional models can also be combined with a complementary model for time dependence of viscous effects. That is, the section models that build on the core <a href="foil_model.html">foil model</a> can be combined with a model for so called <em>dynamic stall</em>, while the rotating cylinder can use an experimental feature to delay changes in lift with changing spin ratio (as far as the author knows, there are no established dynamic stall models for rotating cylinders, which is why this part is kept experimental for now). In classical foil theory, dynamic stall refers to the time-dependent effects that occur on the lift due to viscous effects, and which are therefore not automatically captured by for instance dynamic potential theory. These effects are complicated in practice, and the only way to model them in a simplified way is to rely on empirical equations. The model implemented in Stormbird builds on the classical approach known as the <a href="https://www.ingentaconnect.com/content/ahs/jahs/1989/00000034/00000003/art00001">Leishman-Beddoes model</a> (LB model), but adapted to the stall model in the foil model. This section explains how it works, how it differs from the original LB model, and how to activate it for lifting line and actuator line simulations.</p>
+<h2 id="theory"><a class="header" href="#theory">Theory</a></h2>
+<p>There are two basic building blocks in the LB model that are directly relevant for the dynamic stall model in Stormbird. That is, the original formulation also contains models for the time variation in the circulatory lift and added mass, but this is handled numerically through the dynamic wake model in the lifting line method, as well as dedicated added mass models, and therefore omitted from the dynamic stall model itself in Stormbird. The first relevant block is connected to time-dependent effects on how the flow separates when it starts to move away from the trailing edge. The second block is a model for time-dependent effects due to leading edge vortex generation. The physical mechanisms are very different, but they use similar mathematical corrections.</p>
+<h3 id="general-about-time-lags"><a class="header" href="#general-about-time-lags">General about time lags</a></h3>
+<p>The LB model introduces dynamics to several variables (described further down) through something labeled <em>deficiency functions</em>, which is a discrete approximation of a first order lag. That is, it is a function that can introduce time lags to variables in a generic way, that is controlled through parameters that adjust the amount of lag. This section describes the basics of the general deficiency function, which is then later used throughout different steps of the complete dynamic stall model.</p>
+<p>The time lags are defined in non-dimensional time, \(\tau\), measured in semi-chords travelled, where \(V\) is the local velocity, \(t\) is the time, and \(c\) is the local chord length:</p>
+<p>\[
+\tau = \frac{2 V t}{c}
+\]</p>
+<p>In discrete time, \(\Delta \tau = 2 V \Delta t / c\) is the non-dimensional time step, \(i\) is the current time index, and \(i-1\) is the previous time index. The local velocity is taken as the magnitude of the velocity at the control point in each time step.</p>
+<p>For an input signal \(x\) and a time constant \(T\), the deficiency function, \(D\), depends on the current and previous value of the input, the previous value of the deficiency function itself, and the time constant in the following way:</p>
+<p>\[
+D_{i} = D_{i-1} e^{-\Delta \tau/ T} + (x_i - x_{i-1})e^{-\Delta \tau / (2 T)}
+\]</p>
+<p>The lagged signal is then \(x_i - D_i\). A time constant of zero turns the lag off, so that the lagged signal is equal to the input. The same function is used for all the lags in the model, and is available as <code>DynamicStallModel::deficiency_function</code> in the Rust library.</p>
+<p>The plot below illustrates how the deficiency function works. The input is a pulse that starts at a given time, increases linearly to one over the ramp width, stays at one for the hold width, and then decreases linearly back to zero over the ramp width again. With a hold width of zero, the pulse is a triangle, which is similar to an angle of attack that goes quickly through stall and back again. With a ramp width of zero, the pulse is rectangular, which shows the classical step response of a first order lag. The lagged signal is computed with the discrete deficiency function, and is held constant through each time step, as in a simulation. For comparison, the plot also shows the continuous first order lag, \(dy/d\tau = (x - y) / T\), which the deficiency function approximates. The difference between the two shows the error from the discrete approximation, which grows with the time step relative to the time constant.</p>
+<link rel="stylesheet" href="interactive/model_explorer.css">
+<div data-deficiency-function-explorer="">
+    <noscript>The interactive plot requires JavaScript.</noscript>
+</div>
+
+<script src="interactive/model_explorer.js"></script>
+<script src="interactive/deficiency_function_explorer.js"></script>
+<h3 id="time-lag-in-the-separation-point-and-reattachment"><a class="header" href="#time-lag-in-the-separation-point-and-reattachment">Time lag in the separation point and reattachment</a></h3>
+<p>When the flow over a foil starts to separate due to stalling, or reattaches after having stalled earlier, it may be seen as the separation point moving along the chord, causing differences in the generated lift as a result. However, this does not happen instantaneously for a given angle of attack. Viscous effects in the boundary layer can cause significant time-lag in how fast the flow is able to separate. Or in other words, if an angle of attack exceeds the stall angle for just a very short amount of time, the flow might not have time to separate. Similarly, when the angle of attack is reduced below the stall angle again, the flow needs time to reattach. The result is a hysteresis loop in the lift, where the lift is higher than the static value when the angle of attack increases through stall, and lower when it decreases.</p>
+<h4 id="the-original-formulation"><a class="header" href="#the-original-formulation">The original formulation</a></h4>
+<p>In the original LB model, the degree of separation is described by an <em>effective separation point</em>, \( f(\alpha) \). It is non-dimensional, and takes the value 1 when the flow is separating cleanly on the trailing edge and goes towards zero when the separation point moves towards the leading edge. The relationship between the separation point and the force on the foil comes from Kirchhoff flow theory for a flat plate, where the separation point is forced to move. It is applied to the normal force on the foil section (i.e., not only the lift force, but a combination of lift and drag into a normal force), where \( C_{n,static}(\alpha) \) is the full non-linear static normal force coefficient and \(C_{n,linear}(\alpha)\) is the linearized version of the same coefficient:</p>
+<p>\[
+C_{n,static}(\alpha) = C_{n,linear}(\alpha) \left(\frac{1 + \sqrt{f(\alpha)}}{2}\right)^2
+\]</p>
+<p>The values of \(f(\alpha)\) are found from static foil data, either by fitting an empirical curve, or by inverting the relationship above.</p>
+<p>The time variation is then introduced with two first order time lags, applied in sequence. The first is a lag in the pressure distribution, applied to the attached flow normal force, with a time constant \(T_p\). The lagged normal force is converted to an equivalent, lagged, angle of attack, which is used to look up a separation point, \(f’\). The second is a lag in the boundary layer response, applied to \(f’\), with a time constant \(T_f\). This gives the dynamic separation point, \(f’’\), which is inserted into the Kirchhoff relationship to compute the dynamic normal force.</p>
+<h4 id="differences-from-the-original-formulation"><a class="header" href="#differences-from-the-original-formulation">Differences from the original formulation</a></h4>
+<p>The dynamic stall model in Stormbird keeps the core idea of the LB model, i.e., the two time lags, applied in sequence, with the same discrete deficiency functions. However, the way the degree of separation is connected to the force is adapted to the <a href="foil_model.html">foil model</a>. The differences, and the reasons for them, are as follows:</p>
+<ol>
+<li><strong>The amount of stall replaces the Kirchhoff relationship.</strong> The parametric foil model in Stormbird already computes the lift as a blend between a pre-stall and a post-stall lift curve, weighted by the <a href="foil_model.html#amount-of-stall">amount of stall</a>, \(s(\alpha)\). This is the same structure as in the dynamic stall model by <a href="https://backend.orbit.dtu.dk/ws/portalfiles/portal/7711084/ris_r_1354.pdf">Hansen, Gaunaa and Madsen (2004)</a>, which is widely used for wind turbines, where the lift is a blend between a fully attached and a fully separated lift curve. The amount of stall then plays the same role as \(1 - f\) in the LB model, and the time lags are applied directly to it. The reasons for this choice are:
+<ul>
+<li><strong>Valid for all angles of attack.</strong> The Kirchhoff relationship can not give a force lower than \(C_{n,linear}/4\), even for fully separated flow. In deep stall, which is a relevant operating condition for wind propulsion devices, for instance when sailing downwind, or for suction sails with high stall angles and high lift, the static force is often lower than this. The Kirchhoff relationship can then not reproduce the static force, even in steady conditions. A blend between two lift curves does not have this limitation, and works for all angles of attack, including the full range from -180 to 180 degrees.</li>
+<li><strong>No inversion, and therefore no edge cases.</strong> Computing \(f(\alpha)\) from static data requires inverting the Kirchhoff relationship, which is only well defined for a limited range of the ratio between the static and the linear force, and which is numerically unstable close to the zero-lift angle. The amount of stall is instead given directly by the foil model.</li>
+<li><strong>The static model is always recovered in steady conditions.</strong> As the amount of stall comes directly from the foil model, the dynamic model gives exactly the static lift when the angle of attack is constant.</li>
+<li><strong>Consistent with the force calculations.</strong> The pre-stall part of the lift is used for the circulation, while the post-stall part is, by default, treated as a separate viscous lift force (see the <a href="../line_model/force_calculations.html">force calculations chapter</a>). The dynamic amount of stall can therefore be used directly in the same split, so that a delayed stall gives more circulation, which is then also seen by the wake.</li>
+</ul>
+</li>
+<li><strong>The lift is used instead of the normal force.</strong> This follows from the point above, as the foil model gives the lift directly. The model by Hansen, Gaunaa and Madsen uses the lift in the same way. It also means that the chordwise force from the LB model is not needed.</li>
+<li><strong>The pressure lag is applied to the angle of attack directly.</strong> In the LB model, the lag is applied to the attached flow normal force, which is then converted back to an angle of attack. For a linear relationship with a constant slope and zero-lift angle, this is mathematically identical to applying the lag directly to the angle of attack. The linear lift in the foil model uses \(\sin(\alpha)\), which can not be inverted for angles above 90 degrees, so the lag is applied to the angle of attack directly to make the model valid for all angles.</li>
+<li><strong>The time constants are constant.</strong> In the original LB model, and many implementations of it, the separation time constant is modified depending on whether the foil is loading or unloading, and on the state of the leading edge vortex. In Stormbird, the time constants are constant, and do not depend on the internal state of the section model either, e.g., flap angle or suction rate. This is a simplification, but the error is believed to be small, and it keeps the number of parameters to tune low.</li>
+<li><strong>Only the stall is lagged.</strong> The optional <a href="foil_model.html#slope-reduction">slope reduction</a> in the pre-stall lift, which can represent separation that develops gradually before the full stall, is not part of the amount of stall, and is therefore not lagged.</li>
+<li><strong>The drag uses the same amount of stall as the lift.</strong> The drag in the foil model is also a blend between a pre-stall and a post-stall curve, weighted by the amount of stall. The dynamic amount of stall is therefore used for the drag as well, so that the lift and the drag are always consistent. In the LB model, the drag is instead found from the dynamic normal and chordwise forces.</li>
+</ol>
+<h4 id="step-1-pressure-lag"><a class="header" href="#step-1-pressure-lag">Step 1: Pressure lag</a></h4>
+<p>When the angle of attack changes, the pressure distribution over the foil, and in particular the suction peak near the leading edge, does not respond instantaneously. Since the separation of the boundary layer is driven by the pressure gradient, the separation responds to this lagged pressure distribution rather than to the instantaneous angle of attack. This is represented by applying a first order lag to the angle of attack, with a time constant \(T_p\):</p>
+<p>\[
+D_{p,i} = D_{p,i-1} e^{-\Delta \tau/ T_p} + (\alpha_i - \alpha_{i-1})e^{-\Delta \tau / (2 T_p)}
+\]</p>
+<p>\[
+\alpha_{f,i} = \alpha_i - D_{p,i}
+\]</p>
+<h4 id="step-2-separation-lag"><a class="header" href="#step-2-separation-lag">Step 2: Separation lag</a></h4>
+<p>The static amount of stall from the foil model is then evaluated at the lagged angle of attack, rather than the instantaneous one:</p>
+<p>\[
+s_i’ = s(\alpha_{f,i})
+\]</p>
+<p>This gives the amount of stall that the flow would have in steady conditions, given the lagged pressure distribution. However, the boundary layer itself also needs time to respond, so a second lag is applied, with a time constant \(T_f\). This gives the dynamic amount of stall, \(s’’\):</p>
+<p>\[
+D_{f,i} = D_{f,i-1} e^{-\Delta \tau/ T_f} + (s_i’ - s_{i-1}’)e^{-\Delta \tau / (2 T_f)}
+\]</p>
+<p>\[
+s_i’’ = s_i’ - D_{f,i}
+\]</p>
+<p>The deficiency function is a discrete approximation, and with large time steps or rapidly varying input, it is not strictly guaranteed to stay within the range of the input values. The dynamic amount of stall is therefore limited to the range \([0, 1]\).</p>
+<h4 id="step-3-dynamic-lift"><a class="header" href="#step-3-dynamic-lift">Step 3: Dynamic lift</a></h4>
+<p>Finally, the dynamic lift coefficient is computed from the same blend as in the foil model, but with the dynamic amount of stall. Note that the pre-stall and post-stall lift curves are evaluated at the instantaneous angle of attack, \(\alpha\), and not the lagged one, \(\alpha_f\). The lags only affect the degree of separation, and not the lift curves themselves:</p>
+<p>\[
+C_{L,dynamic,i} = (1 - s_i’‘) \, C_{L,pre-stall}(\alpha_i) + s_i’’ \, C_{L,post-stall}(\alpha_i)
+\]</p>
+<p>The drag coefficient is computed in the same way, from the pre-stall and post-stall drag curves in the foil model:</p>
+<p>\[
+C_{D,dynamic,i} = (1 - s_i’‘) \, C_{D,pre-stall}(\alpha_i) + s_i’’ \, C_{D,post-stall}(\alpha_i)
+\]</p>
+<p>In steady conditions, both deficiency functions go to zero, so that \(\alpha_f = \alpha\) and \(s’’ = s(\alpha)\), and the static lift and drag coefficients from the foil model are recovered for all angles of attack.</p>
+<p>In other words, this part of the model collapses down to two time constants, \(T_p\) and \(T_f\), that must be tuned and adjusted for a given foil profile, while the rest, how the stall depends on the angle of attack, comes directly from the foil model. Typical values reported in the literature for a NACA 0012 profile at low Mach numbers are around \(T_p \approx 1.7\) and \(T_f \approx 3\), which are used as default values.</p>
+<h3 id="leading-edge-vortex-creation"><a class="header" href="#leading-edge-vortex-creation">Leading edge vortex creation</a></h3>
+<p>When the angle of attack increases rapidly through the static stall angle, the flow does not necessarily only separate gradually from the trailing edge. At some point, the high suction peak near the leading edge can no longer be sustained, and the flow separates at the leading edge as well. This forms a strong vortex that is first fed by vorticity from the leading edge, and then travels downstream over the suction side of the foil. While the vortex is above the foil, its low pressure core gives an extra suction force, so that the lift becomes significantly higher than the maximum static value. When the vortex passes the trailing edge, it is shed into the wake, and the lift drops suddenly, often to values below the static post-stall lift. This is the lift overshoot, followed by an abrupt stall, that is characteristic of <em>deep dynamic stall</em>.</p>
+<h4 id="the-original-formulation-1"><a class="header" href="#the-original-formulation-1">The original formulation</a></h4>
+<p>In the LB model, the vortex is not modelled explicitly. Instead, the extra force from the vortex is modelled as an accumulation of the force that is <em>lost</em> due to separation. The idea is that the circulation that the separated flow is no longer able to keep bound to the foil, is instead collected in the vortex, and gives a force as long as the vortex is above the foil. The input to the vortex model, often called the <em>vortex feed</em>, is the difference between the linear, attached flow, normal force and the normal force from the Kirchhoff relationship, evaluated with the dynamic separation point:</p>
+<p>\[
+C_{v,i} = C_{n,linear,i} \left(1 - \left(\frac{1 + \sqrt{f_i’’}}{2}\right)^2 \right)
+\]</p>
+<p>The vortex normal force, \(C_n^v\), is then found with the same type of deficiency function as the time lags, but with a separate time constant for the decay of the vortex, \(T_v\):</p>
+<p>\[
+C_{n,i}^v = C_{n,i-1}^v e^{-\Delta \tau / T_v} + (C_{v,i} - C_{v,i-1}) e^{-\Delta \tau / (2 T_v)}
+\]</p>
+<p>That is, the vortex force increases when the vortex feed increases, i.e., when more of the flow separates, and decays exponentially with the time constant \(T_v\) otherwise. When the vortex feed is constant, the vortex force therefore goes to zero.</p>
+<p>However, the vortex is only fed while it is above the foil. This is controlled with an onset criterion and a <em>vortex time</em>, \(\tau_v\), which tracks the position of the vortex:</p>
+<ul>
+<li><strong>Onset.</strong> The leading edge separation is assumed to start when the lagged normal force from the pressure lag, \(C_n’\), exceeds a critical value, \(C_{n1}\). This is meant to represent a critical pressure at the leading edge. The critical value is a separate parameter, found from static foil data, typically close to the normal force at the static stall angle. As the lagged normal force is used, the onset is delayed relative to the static stall angle, as the pressure distribution needs time to build up.</li>
+<li><strong>Vortex time.</strong> After the onset, the vortex time increases with the non-dimensional time step, \(\tau_{v,i} = \tau_{v,i-1} + \Delta \tau\), and is reset to zero when the onset criterion is no longer met. The vortex is assumed to travel over the chord at a constant fraction of the free stream velocity, so that it reaches the trailing edge after a fixed non-dimensional time, \(T_{vl}\).</li>
+<li><strong>Feeding and shedding.</strong> The increments in the vortex feed are only added while the vortex is above the foil, i.e., \(0 &lt; \tau_v \leq T_{vl}\). After the vortex has passed the trailing edge, the vortex force only decays.</li>
+</ul>
+<p>The vortex force is added to the normal force from the separation model, so that the total dynamic normal force is the sum of the two.</p>
+<p>In addition, the original model, and many implementations of it, include several further adjustments related to the vortex:</p>
+<ul>
+<li>The decay of the vortex force is accelerated after the vortex has passed the trailing edge, typically by halving \(T_v\).</li>
+<li>The separation time constant, \(T_f\), is modified depending on the vortex time and on whether the foil is loading or unloading.</li>
+<li>The center of pressure of the vortex force moves with the vortex, which gives a characteristic variation in the pitching moment.</li>
+<li>Some versions allow for secondary vortices, which are shed with a period of \(T_{vl}\) as long as the onset criterion is met.</li>
+</ul>
+<p>The core of the model is therefore two additional time constants, \(T_v\) and \(T_{vl}\), and the critical normal force, \(C_{n1}\). Typical values reported for a NACA 0012 profile at low Mach numbers are around \(T_v \approx 6\) and \(T_{vl} \approx 7\), while for instance OpenFAST uses \(T_{vl} = 11\) as default.</p>
+<h4 id="differences-from-the-original-formulation-1"><a class="header" href="#differences-from-the-original-formulation-1">Differences from the original formulation</a></h4>
+<p>The vortex model in Stormbird keeps the core of the LB vortex model, i.e., a vortex feed that is accumulated with a deficiency function, and a vortex time that controls when the vortex is fed. The adaptations follow the same principles as for the separation model: the force from the vortex is connected to the amount of stall rather than the Kirchhoff relationship, and as much as possible is taken directly from the foil model, so that the number of new parameters is kept low. The differences are as follows:</p>
+<ol>
+<li><strong>The vortex feed is the lift lost due to the dynamic stall.</strong> In the LB model, the vortex feed is the difference between the attached flow force and the force from the separation model. The equivalent in Stormbird is the difference between the pre-stall lift and the dynamic lift from the separation model, which, from the blend in <a href="#step-3-dynamic-lift">step 3</a>, simplifies to the dynamic amount of stall times the difference between the pre-stall and post-stall lift. This keeps the physical interpretation of the original model, i.e., that the lift that is lost due to stall is collected in the vortex, without the need for the Kirchhoff relationship. As for the separation model, the lift is used instead of the normal force.</li>
+<li><strong>The onset criterion is given by the stall angle in the foil model.</strong> In the LB model, the onset is given by a separate parameter, the critical normal force, which is typically set close to the force at the static stall angle. In Stormbird, the onset is instead defined as the point where the lagged angle of attack from the pressure lag, \(\alpha_f\), exceeds the mean stall angle in the foil model. This is the same as saying that the static amount of stall at the lagged angle of attack, \(s’\), is larger than 0.5. This is a simplification, but removes the need for a separate parameter, it is valid for both positive and negative angles of attack, with different stall angles, and it automatically follows changes in the stall angle due to the internal state of the section model, such as flap angle or suction rate. It also keeps the same physical interpretation as the original criterion, as the onset is still delayed by the pressure lag.</li>
+<li><strong>No modifications of the time constants.</strong> All the time constants are constant, also after the vortex has passed the trailing edge, for the same reasons as given for the separation model. This means that the vortex force decays somewhat slower after the vortex has passed the trailing edge than in the original model.</li>
+<li><strong>No pitching moment.</strong> The section models in Stormbird do not compute a pitching moment, so the movement of the center of pressure is not needed.</li>
+<li><strong>No secondary vortices.</strong> Only one vortex is created for each time the onset criterion is met. A new vortex requires that the lagged angle of attack goes below the stall angle first.</li>
+<li><strong>Only the lift is affected.</strong> In the LB model, the vortex force is a normal force, which therefore also contributes to the drag. In Stormbird, the vortex model only affects the lift at the moment. Note that this only applies to the vortex lift. The drag is still affected by the separation model, through the dynamic amount of stall.</li>
+</ol>
+<h4 id="step-4-vortex-feed"><a class="header" href="#step-4-vortex-feed">Step 4: Vortex feed</a></h4>
+<p>The vortex feed is the difference between the pre-stall lift and the dynamic lift from <a href="#step-3-dynamic-lift">step 3</a>, which can be written as:</p>
+<p>\[
+C_{L,v,feed,i} = C_{L,pre-stall}(\alpha_i) - C_{L,dynamic,i} = s_i’’ \left( C_{L,pre-stall}(\alpha_i) - C_{L,post-stall}(\alpha_i) \right)
+\]</p>
+<h4 id="step-5-vortex-onset-and-vortex-time"><a class="header" href="#step-5-vortex-onset-and-vortex-time">Step 5: Vortex onset and vortex time</a></h4>
+<p>The vortex time, \(\tau_v\), is increased with the non-dimensional time step as long as the lagged angle of attack is above the mean stall angle, and reset to zero otherwise:</p>
+<p>\[
+\tau_{v,i} =
+\begin{cases}
+\tau_{v,i-1} + \Delta \tau &amp; \text{if } s(\alpha_{f,i}) &gt; 0.5 \\
+0 &amp; \text{otherwise}
+\end{cases}
+\]</p>
+<p>The vortex is above the foil, and therefore fed, when \(0 &lt; \tau_{v,i} \leq T_{vl}\).</p>
+<h4 id="step-6-vortex-lift"><a class="header" href="#step-6-vortex-lift">Step 6: Vortex lift</a></h4>
+<p>The vortex lift coefficient, \(C_{L,v}\), is found with the same deficiency function as in the other steps, with the time constant \(T_v\), but where the increment in the vortex feed is only included while the vortex is above the foil:</p>
+<p>\[
+C_{L,v,i} =
+\begin{cases}
+C_{L,v,i-1} e^{-\Delta \tau / T_v} + (C_{L,v,feed,i} - C_{L,v,feed,i-1}) e^{-\Delta \tau / (2 T_v)} &amp; \text{if } 0 &lt; \tau_{v,i} \leq T_{vl} \\
+C_{L,v,i-1} e^{-\Delta \tau / T_v} &amp; \text{otherwise}
+\end{cases}
+\]</p>
+<p>The total dynamic lift is then the sum of the lift from the separation model and the vortex lift:</p>
+<p>\[
+C_{L,total,i} = C_{L,dynamic,i} + C_{L,v,i}
+\]</p>
+<p>The vortex lift is treated as part of the stall related lift. That is, it is handled in the same way as the post-stall lift, which by default is a separate viscous lift force, and only included in the circulation if the <code>include_viscous_lift_in_the_circulation</code> setting is used.</p>
+<p>The vortex model also recovers the static lift in steady conditions. When the angle of attack is constant, the vortex feed is constant, so that no new vortex lift is added, and any existing vortex lift decays to zero. The vortex time also makes the model robust in deep stall, where the difference between the pre-stall and the post-stall lift can be large. Small variations in the angle of attack around a constant value well above the stall angle, for instance due to waves, will only give vortex lift during the first \(T_{vl}\) after the lagged angle of attack exceeded the stall angle. After that, the vortex model only gives a decaying lift, until the angle of attack goes below the stall angle again.</p>
+<p>In other words, the vortex model adds two new time constants, \(T_v\) and \(T_{vl}\), while the onset criterion and the vortex feed come directly from the foil model. A time constant \(T_v\) of zero turns the vortex model off, in the same way as for the other time constants.</p>
+<h3 id="experimental-time-lag-in-the-internal-state"><a class="header" href="#experimental-time-lag-in-the-internal-state">Experimental: time lag in the internal state</a></h3>
+<blockquote>
+<p><strong>Note:</strong> This part of the model is experimental. It is mostly intended for rotor sails, and as a basis for future tests. It is turned off by default.</p>
+</blockquote>
+<p>Most section models have an <em>internal state</em>, in addition to the angle of attack, that controls the force coefficients. The lag is applied to the internal state that is given to the section model on each line element, which is not always the same as the internal state that is set on the wing. For a rotating cylinder, the internal state of the wing is the revolutions per second, while the internal state on each line element is the <a href="rotating_cylinder.html">spin ratio</a>, so it is the spin ratio that is lagged. For other section models, the internal state is, for instance, a flap angle or a suction coefficient. For a single element foil, the internal state is not used, so the lag has no effect. The dynamic stall model can apply a first order time lag to the internal state, \(x\), with the same deficiency function as for the other lags, and a time constant \(T_i\):</p>
+<p>\[
+D_{x,i} = D_{x,i-1} e^{-\Delta \tau/ T_i} + (x_i - x_{i-1})e^{-\Delta \tau / (2 T_i)}
+\]</p>
+<p>\[
+x_{lagged,i} = x_i - D_{x,i}
+\]</p>
+<p>The lag is applied before all the other steps, so that the foil model, if any, is evaluated with the lagged internal state. The lagged internal state is used for all the force coefficients, i.e., both the lift and the drag, but not for the power, which is always computed from the instantaneous internal state.</p>
+<p>The motivation comes from rotor sails. As far as the author knows, there are no established dynamic stall models for rotating cylinders. However, the forces on a rotating cylinder depend on the boundary layer, which is driven by the rotating surface. When the spin ratio changes, for instance due to a change in the wind speed or in the rotational speed of the rotor, it can be expected that the boundary layer, and therefore the forces, need some time to adapt to the new spin ratio. The lag on the internal state is a simple way to model this. For rotating cylinders, this is the only part of the dynamic stall model that is used.</p>
+<p>Some notes on the use of the lag:</p>
+<ul>
+<li><strong>It is not a model of the actuator.</strong> The lag is applied in non-dimensional time, and is meant to represent the response of the flow to a change in the internal state. The time it takes for an actuator to change the internal state, for instance for a motor to change the rotational speed of a rotor, does not scale with the flow velocity, and should rather be modelled in the controller, for instance with the maximum change rate of the internal state of the wing.</li>
+<li><strong>The spin ratio depends on the velocity.</strong> As the spin ratio is computed from the revolutions per second, the diameter and the local velocity on each line element, the lag also acts on changes in the velocity, for instance due to gusts or motions, even when the revolutions per second are constant.</li>
+<li><strong>The static model is recovered in steady conditions.</strong> When the internal state is constant, the deficiency function goes to zero, and the static force coefficients are recovered.</li>
+<li><strong>The time constant is not calibrated.</strong> There are no recommended values for \(T_i\) yet, which is why the default value is zero.</li>
+</ul>
+<h2 id="implementation"><a class="header" href="#implementation">Implementation</a></h2>
+<h3 id="activating-the-model"><a class="header" href="#activating-the-model">Activating the model</a></h3>
+<p>The dynamic stall model is set for each wing, through the optional <code>dynamic_stall</code> field in the <a href="../line_model/building_line_model.html#wing-builder">wing builder</a>. The field takes a <code>DynamicStallModelBuilder</code>, which only contains the parameters of the model:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct DynamicStallModelBuilder {
+    pub pressure_time_constant: Option&lt;f64&gt;,
+    pub separation_time_constant: Option&lt;f64&gt;,
+    pub vortex_time_constant: Option&lt;f64&gt;,
+    pub vortex_passage_time: Option&lt;f64&gt;,
+    pub internal_state_time_constant: f64,
+}
+<span class="boring">}</span></code></pre>
+<ul>
+<li><code>pressure_time_constant</code>: the non-dimensional time constant for the pressure lag, \(T_p\). The default value is 1.7.</li>
+<li><code>separation_time_constant</code>: the non-dimensional time constant for the separation lag, \(T_f\). The default value is 3.0.</li>
+<li><code>vortex_time_constant</code>: the non-dimensional time constant for the decay of the leading edge vortex lift, \(T_v\). The default value is 6.0.</li>
+<li><code>vortex_passage_time</code>: the non-dimensional time it takes for the leading edge vortex to pass the trailing edge, \(T_{vl}\). The default value is 7.0.</li>
+<li><code>internal_state_time_constant</code>: <strong>experimental</strong>. The non-dimensional time constant for the <a href="#experimental-time-lag-in-the-internal-state">lag in the internal state</a>, \(T_i\). The default value is 0.0, which turns the lag off.</li>
+</ul>
+<p>The first four parameters control the stall in the foil model. They are optional, and values that are not set use the default values. They can only be set for section models that build on the foil model. Setting them for other section models, such as a rotating cylinder, gives an error, so that parameters are never silently ignored. The <code>internal_state_time_constant</code> can be used for all section models.</p>
+<p>All the time constants must be zero or larger, where zero turns the corresponding lag off. A <code>vortex_time_constant</code> of zero turns the leading edge vortex off, so that only the time lags in the separation are used. The model is not used by default. To activate it with the default values, it is enough to give an empty object in the JSON input:</p>
+<pre><code class="language-json">{
+    "section_points": [...],
+    "chord_vectors": [...],
+    "section_model": {"SingleElementFoil": {...}},
+    "dynamic_stall": {}
+}
+</code></pre>
+<p>In Python, using <code>stormbird_setup</code>, the same is done with the <code>DynamicStallModelBuilder</code> class from <code>stormbird_setup.section_models</code>:</p>
+<pre><code class="language-python">from stormbird_setup.section_models import DynamicStallModelBuilder
+
+wing_builder = WingBuilder(
+    section_points = ...,
+    chord_vectors = ...,
+    section_model = ...,
+    dynamic_stall = DynamicStallModelBuilder(
+        pressure_time_constant = 1.7,
+        separation_time_constant = 3.0,
+        vortex_time_constant = 6.0,
+        vortex_passage_time = 7.0
+    )
+)
+</code></pre>
+<p>The full model is used together with section models that build on the foil model, i.e., <code>SingleElementFoil</code>, <code>MultiElementFoil</code> and <code>ActiveAirFlowFoil</code>. For a rotating cylinder, only the lag in the internal state is used, so the model must then be set with only the <code>internal_state_time_constant</code>:</p>
+<pre><code class="language-json">"dynamic_stall": {"internal_state_time_constant": 2.0}
+</code></pre>
+<p>Note that an empty object has no effect for a rotating cylinder, as the lag in the internal state is off by default.</p>
+<p>The model depends on the time history of the flow, and can therefore only be used in lifting line simulations with <a href="../lifting_line/simulation_overview.html">dynamic simulation settings</a>, or in <a href="../actuator_line/simulation_overview.html">actuator line simulations</a>. Using it together with quasi-steady settings gives an error.</p>
+<p>From the perspective of the dynamic stall model, an actuator line simulation is equivalent to a dynamic lifting line simulation. The time variation in the circulatory lift is resolved by the shed vorticity in both cases, in the dynamic wake for the lifting line and in the CFD domain for the actuator line, so the same model and parameters are used for both.</p>
+<h3 id="internal-state-and-time-stepping"><a class="header" href="#internal-state-and-time-stepping">Internal state and time stepping</a></h3>
+<p>When the line force model is built, each wing with a dynamic stall model gets a <code>DynamicStallModel</code>, which contains both the parameters and the state from the last completed time step for each line segment on the wing. That is, the internal state, the angle of attack, the deficiency functions, the amounts of stall, the vortex feed, the vortex time, and the vortex lift. For section models that do not build on the foil model, only the internal state and its deficiency function are used. The structure is defined together with the section models, as it is fundamentally a two dimensional model, while the line force model holds one optional model for each wing.</p>
+<p>The solvers in the lifting line simulation evaluate the lift many times per time step. The dynamic stall model is therefore always evaluated based on the state from the last completed time step, and the state is not changed during the iterations. In each time step, the simulation does the following:</p>
+<ol>
+<li>Sets the time step in the dynamic stall models, which is needed to compute the non-dimensional time step.</li>
+<li>Solves for the circulation strength, where the dynamic amount of stall is used in the lift coefficients.</li>
+<li>Computes the forces, with the same state as in the solver.</li>
+<li>Updates the state of the dynamic stall models, based on the angles of attack, internal states and velocities in the force input of the result, i.e., the same values as the forces are computed from.</li>
+</ol>
+<p>In actuator line simulations, the model is updated in the same way, but the CFD solver may call the actuator line model several times per time step, e.g., in each outer iteration. The time given to the actuator line model is therefore used to detect when a new time step starts. The state is then updated from the last result of the previous time step, before the time step is changed. Calls with the same time are all evaluated from the same state.</p>
+<p>In the first time step, there is no time history available, so the model gives the static values, and the state is initialized from the result. The state is also reset when the simulation is initialized again, for instance in the <code>do_multiple_steps</code> function of the complete sail model. The steady state functions of the complete sail model reset the state before each iteration, as the iterations are not a time history, so that the results are always based on the static foil model. When the state is initialized at an angle of attack above the stall angle, any leading edge vortex is assumed to have passed the trailing edge a long time ago, so that a new vortex is only created after the lagged angle of attack has been below the stall angle first.</p>
+<p>The dynamic stall model does not compute the forces itself. Instead, it only gives the effects that enter the force coefficients on each line segment: the lagged internal state, the dynamic amount of stall and the vortex lift. The force coefficients are then computed in two passes. First, the dynamic stall model is evaluated for each wing that has one, while wings without a dynamic stall model use the instantaneous internal state, the static amount of stall and no vortex lift. Second, the lift and drag coefficients are computed from the section model, where the internal state and the amount of stall from the first pass replace the instantaneous internal state and the static amount of stall. The lift and drag curves are always evaluated at the instantaneous angle of attack, so the lagged angle of attack is only used internally in the dynamic stall model. The power is always computed from the instantaneous internal state.</p>
+<p>The dynamic amount of stall affects both the pre-stall lift, which is used for the circulation, and the post-stall lift, which is used either for the viscous lift force or in the circulation, depending on the <code>include_viscous_lift_in_the_circulation</code> setting. The lift from the leading edge vortex is added to the post-stall lift, and is therefore treated in the same way. See the <a href="../line_model/circulation_strength.html">circulation strength chapter</a> for more.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../sectional_models/rotating_cylinder.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../lifting_line/lifting_line_intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../sectional_models/rotating_cylinder.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../lifting_line/lifting_line_intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

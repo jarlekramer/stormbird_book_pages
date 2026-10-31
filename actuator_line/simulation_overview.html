@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -193,7 +193,7 @@
     pub start_time: f64,
     pub controller: Option&lt;ControllerBuilder&gt;,
     pub lifting_line_correction: Option&lt;LiftingLineCorrectionBuilder&gt;,
-    pub empirical_circulation_correction: Option&lt;EmpiricalCirculationCorrection&gt;,
+    pub tip_loss_correction: Option&lt;TipLossCorrection&gt;,
     pub spanflow_damper: Option&lt;SpanflowDamper&gt;,
 }
 <span class="boring">}</span></code></pre>
@@ -205,10 +205,13 @@
 <ol>
 <li>The <strong>velocity on the control point of each line segment</strong> in the line force model is sampled from the CFD domain, using one of the available <a href="velocity_sampling.html">velocity sampling methods</a>.</li>
 <li><strong>The circulation strength on each line segment is calculated</strong> based on the sampled velocity and the sectional models, in the same way as for the <a href="../lifting_line/solver.html">non-linear solver</a> in the lifting line model, but with only one iteration. That is, the new circulation is estimated directly from the velocity, but the final values can be based on the previous time step as well, using the same general damping technique as for the lifting line model. The reason for using only one iteration is that there is no way to update the velocity fields in the CFD domain outside the general solver loop. As such, the number of iterations are inherently controlled by the CFD solver directly, and not by the actuator line model.</li>
-<li><strong>If any corrections are enabled</strong>, these are applied to the estimated circulation strength. The corrections may be crucial for accurate results. See the <a href="corrections.html">corrections chapter</a> for more details on what corrections are available and when they should be used.</li>
-<li>Based on the estimated circulation strength, the forces on each line segment are calculated, and the <strong>circulatory forces are projected back to the CFD grid</strong> using the methods and settings specified in the <a href="force_projection.html">force projection chapter</a>.</li>
+<li><strong>If any corrections are enabled</strong>, these are applied to the estimated circulation strength. The corrections may be crucial for accurate results. See the <a href="corrections.html">corrections chapter</a> for more details on what corrections are available and when they should be used. The tip loss correction can also be set to only apply to the circulation used for the projected forces, in which case it is applied after the damping.</li>
+<li>Based on the estimated circulation strength, the forces on each line segment are calculated, and the <strong>circulatory forces are projected back to the CFD grid</strong> using the methods and settings specified in the <a href="force_projection.html">force projection chapter</a>. The projected forces are computed from the same circulation as the forces on the wings, unless the tip loss correction is only applied to the projected forces.</li>
 <li>The <strong><a href="../line_model/force_calculations.html">result data</a></strong> for each time step will finally be written to disk, and the actuator line model is ready for the next time step.</li>
 </ol>
+<h2 id="dynamic-stall"><a class="header" href="#dynamic-stall">Dynamic stall</a></h2>
+<p>The <a href="../sectional_models/dynamic_stall.html">dynamic stall model</a> can be used in actuator line simulations in the same way as in dynamic lifting line simulations, by setting it on the wings in the line force model. The actuator line model can be called several times per time step, e.g., in each outer iteration of the CFD solver, and the state of the dynamic stall model is only updated when the time increases.</p>
+<p>Note that the damping of the circulation, set with the <code>damping_factor</code> in the <code>SolverSettings</code>, acts as an additional numerical time lag on the circulation of about <code>1 / damping_factor</code> time steps. For simulations of dynamic effects, the damping, as well as the rest of the setup, should be chosen so that this lag is small compared to the time scales of interest. A warning is given when the model has a dynamic stall model and the damping factor is below one.</p>
 
                     </main>
 

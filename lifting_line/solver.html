@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -205,7 +205,7 @@
 \]</p>
 <p>The benefit of this solver is that it is simple and technically more correct than the linearized solver, as there are no assumptions about small lift-induced velocities. It will also handle non-linear effects on the lift directly, without any post-solver corrections, like in the case for the linearized solver. It is generally robust <strong>if the damping factor is set low enough</strong>, but may also give noise in the final results right at the stall point in some cases. This is typically handled by applying some <a href="../line_model/circulation_strength.html">smoothing to the circulation strength</a> in the line force model. It is also the <strong>most suitable solver for unsteady simulations</strong>, which typically do not require many iterations for each time step, as the change in the circulation strength is small.</p>
 <h2 id="residual-damping-factor-and-convergence-testing"><a class="header" href="#residual-damping-factor-and-convergence-testing">Residual, damping factor, and convergence testing</a></h2>
-<p>The residual is a measure on how close the solver is to the <em>correct solution</em>. It is calculated from the difference in the lift coefficient on each line element with the current best guess of the circulation distribution, \( \Gamma_i \) from the equations above, and the lift coefficient directly from the <a href="./../sectional_models/sectional_models_intro.html">sectional model</a> using the current estimated lift-induced velocities. That is, this will also be the same as the lift coefficient calculated with the current estimated circulation distribution, or \( \Gamma_{i, estimated} \) from the equations above.</p>
+<p>The residual is a measure on how close the solver is to the <em>correct solution</em>. It is calculated from the difference in the lift coefficient on each line element with the current best guess of the circulation distribution, \( \Gamma_i \) from the equations above, and the lift coefficient directly from the <a href="./../sectional_models/sectional_models_intro.html">sectional model</a> using the current estimated lift-induced velocities. That is, this will also be the same as the lift coefficient calculated with the current estimated circulation distribution, or \( \Gamma_{i, estimated} \) from the equations above. The lift coefficient from the sectional model is the same part of the lift that is used to compute the circulation strength, i.e., the pre-stall lift by default, and the sum of the pre-stall and post-stall lift if the <code>include_viscous_lift_in_the_circulation</code> setting is used (see the <a href="../line_model/circulation_strength.html">circulation strength chapter</a>).</p>
 <p>As an equation, the residual, \(r\), for a line element is calculated as follows, where \(C_L(\Gamma) \) is the lift coefficient based on the induced velocities due to \( \Gamma \):</p>
 <p>\[
 r_i = C_L(\Gamma_{i}) - C_L(\Gamma_{i, estimated})

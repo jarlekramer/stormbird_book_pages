@@ -39,10 +39,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-87625286.js";
+            window.path_to_searchindex_js = "searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-8bb202f0.js"></script>
+        <script src="toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -537,6 +537,7 @@ complete_sail_model_drop(model);
     pub force_correction: ForceCorrection,
     pub added_mass: AddedMass,
     pub gyroscopic_moment: GyroscopicMoment,
+    pub dynamic_stall: Option&lt;DynamicStallModelBuilder&gt;,
 }
 <span class="boring">}</span></code></pre>
 <p>The input consists of a set of <code>section_points</code> which contain information about the span line position. The minimum number of section points is two, and the first has to start at one end of the wing, while the last must end up at the other. There can, however, also be more section points in between the ends.</p>
@@ -553,6 +554,7 @@ complete_sail_model_drop(model);
 <li><code>added_mass</code>: a strip theory model of the <a href="#4---added-mass">added mass forces</a>.</li>
 <li><code>gyroscopic_moment</code>: a model of the <a href="#5---gyroscopic-moment">gyroscopic moment</a> from a rotor sail. Can only be used together with the rotating cylinder section model.</li>
 </ul>
+<p>The <code>dynamic_stall</code> is an optional <a href="#dynamic-stall">dynamic stall model</a> for the wing, which adds time lags to the stall in the section model. The parameters for the stall can only be used together with section models that build on the foil model, while the experimental lag on the internal state can be used for all section models. The model is only used in dynamic lifting line simulations, and it is not used by default.</p>
 <p>When building a line force model from a wing builder, the wings are divided into multiple line segments based on the data in the <code>WingBuilder</code> structure. Each point in between the specified points are linearly interpolated <sup class="footnote-reference" id="fr-interpolation_note-1"><a href="#footnote-interpolation_note">2</a></sup>.</p>
 <h2 id="input-to-methods"><a class="header" href="#input-to-methods">Input to methods</a></h2>
 <p>In many cases, the methods in Stormbird will handle the actual building of the line force models automatically, using a builder structure as input. That is, the input to some function is often the builder and not the line force model itself. For instance, when setting up a lifting line simulation in Python, you only have to supply the builder data, and the line force model will be built automatically internally.</p>
@@ -589,27 +591,22 @@ L = 0.5 \cdot \rho \cdot c \cdot C_L \cdot U^2
 </span>pub fn circulation_strength_raw(
     &amp;self, 
     angles_of_attack: &amp;[f64],
+    internal_states: &amp;[f64],
     velocity: &amp;[SpatialVector], 
 ) -&gt; Vec&lt;f64&gt; {
-    let mut cl = self.lift_coefficients_pre_stall_with_stall_drop_off(
+    let cl = self.lift_coefficients_for_circulation(
         angles_of_attack, 
+        internal_states,
         velocity
     );
-    
-    if self.force_calculation_settings.include_viscous_lift_in_the_circulation {
-        let cl_viscous = self.lift_coefficients_post_stall_with_stall_weight(angles_of_attack);
-        
-        for i in 0..cl.len() {
-            cl[i] += cl_viscous[i];
-        }
-    }
 
     (0..velocity.len()).map(|index| {
         -0.5 * self.chord_lengths[index] * velocity[index].length() * cl[index]
     }).collect()
 }
 <span class="boring">}</span></code></pre>
-<p>Note that, by default, only the pre-stall part of the lift coefficient from the sectional model is used to calculate the circulation strength. The post-stall part of the lift is instead treated as a separate <em>viscous lift</em> force, which does not affect the lift-induced velocities. This can be changed with the <code>include_viscous_lift_in_the_circulation</code> setting. See the <a href="#force-calculations">force calculations chapter</a> for more.</p>
+<p>Note that, by default, only the pre-stall part of the lift coefficient from the sectional model is used to calculate the circulation strength. The post-stall part of the lift is instead treated as a separate <em>viscous lift</em> force, which does not affect the lift-induced velocities. This can be changed with the <code>include_viscous_lift_in_the_circulation</code> setting, in which case <code>lift_coefficients_for_circulation</code> returns the sum of the pre-stall and post-stall parts. The same lift coefficient is used when computing the residual in the solvers. See the <a href="#force-calculations">force calculations chapter</a> for more.</p>
+<p>For wings with a <a href="#dynamic-stall">dynamic stall model</a>, the split between the pre-stall and the post-stall lift is based on the dynamic amount of stall rather than the static value, and the lift is computed with the lagged internal state, if that lag is used. This is the reason why the velocity is also given to the lift coefficient function, as the dynamic stall model needs it to compute the non-dimensional time step. The pre-stall and post-stall parts are computed together, so that the dynamic stall model is only evaluated once for each line element.</p>
 <h2 id="optional-corrections"><a class="header" href="#optional-corrections">Optional corrections</a></h2>
 <p>Sometimes, there might be noise in the estimated circulation strength, which might cause instabilities and errors in the estimated forces. A typical example is lifting line simulations of stalled wings - especially when the lift coefficient is very large.</p>
 <p>To handle such cases in a practical manner, there are optional <em>corrections methods</em> that can be used when estimating the circulation strength. These methods are controlled through a <code>CirculationCorrection</code> enum that is specified for the line force model. To set up different types of corrections, a <code>CirculationCorrectionBuilder</code> is used, which has the following structure:</p>
@@ -710,13 +707,15 @@ pub struct PrescribedCirculation {
     pub velocity: Vec&lt;SpatialVector&gt;,
     pub angles_of_attack: Vec&lt;f64&gt;,
     pub section_models_internal_state: Vec&lt;f64&gt;,
+    pub amount_of_stall: Vec&lt;f64&gt;,
     pub acceleration: Vec&lt;SpatialVector&gt;,
     pub rotation_velocity: SpatialVector,
     pub coordinate_system: CoordinateSystem,
 }
 <span class="boring">}</span></code></pre>
 <p>Each element in the vectors in the <code>SectionalForcesInput</code> corresponds to a line element in the <code>LineForceModel</code>. Both the velocity and the acceleration are a combination of freestream conditions, induced velocities, and motion velocities.</p>
-<p>The <code>section_models_internal_state</code> is the internal state given to the section model on each line element, which is converted from the internal state set on the wing (see the <a href="#control-variables">control variables</a> below). For some section models, the conversion depends on the local velocity, which means that the motion can also affect the section internal states. For instance, the spin ratio of a rotor sail with a constant rotational speed changes when the felt velocity changes, and the suction coefficient of a suction sail with a constant fan power varies with the local flow conditions. The motion velocities can either be automatically calculated based on finite difference and the time history of the motion or set manually if the variables are available from some other sources (e.g., a rigid body solver of a ship).</p>
+<p>The <code>section_models_internal_state</code> is the internal state given to the section model on each line element, which is converted from the internal state set on the wing (see the <a href="#control-variables">control variables</a> below). For some section models, the conversion depends on the local velocity, which means that the motion can also affect the section internal states. For instance, the spin ratio of a rotor sail with a constant rotational speed changes when the felt velocity changes, and the suction coefficient of a suction sail with a constant fan power varies with the local flow conditions. The <code>amount_of_stall</code> is the amount of stall used for the lift and drag on each line element, between 0 (no stall) and 1 (full stall), as explained in the <a href="#foil-model">foil model chapter</a>. For wings with a <a href="#dynamic-stall">dynamic stall model</a>, this is the dynamic amount of stall. The value is zero for section models that do not build on the foil model, such as the rotating cylinder.</p>
+<p>The motion velocities can either be automatically calculated based on finite difference and the time history of the motion or set manually if the variables are available from some other sources (e.g., a rigid body solver of a ship).</p>
 <h2 id="control-variables"><a class="header" href="#control-variables">Control variables</a></h2>
 <p>Two types of control variables exist for the sails in a <code>LineForceModel</code>.</p>
 <p>The first is the <code>local_wing_angles</code>, which defines the rotation of the sails around its local axis. The local axis is defined as the axis of the first span line. If the sail is defined to be oriented in the z-direction as the span direction, a local wing angle value will then rotate all chord vectors around the z-axis.</p>
@@ -837,7 +836,7 @@ simulation.set_internal_state_piecewise_constant(
 <span class="boring">}</span></code></pre>
 <p>The default value is <code>false</code>. If it is set to <code>true</code>, the post-stall lift is included in the circulation strength, and the viscous lift force will always be zero.</p>
 <h3 id="3---sectional-drag"><a class="header" href="#3---sectional-drag">3 - Sectional drag</a></h3>
-<p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="#section-models">sectional model</a>. The direction is always parallel to the local flow.</p>
+<p>Sectional drag is, usually<sup class="footnote-reference" id="fr-sectional_drag_note-1"><a href="#footnote-sectional_drag_note">1</a></sup>, the viscous drag on each line segment. It is calculated directly from the drag function in the <a href="#section-models">sectional model</a>. The direction is always parallel to the local flow. For wings with a <a href="#dynamic-stall">dynamic stall model</a>, the drag is computed with the same dynamic amount of stall and internal state as the lift.</p>
 <p>The sectional drag also includes the drag from the <a href="#lift-induced-drag-correction">lift-induced drag correction</a>, if it is used.</p>
 <h3 id="4---added-mass"><a class="header" href="#4---added-mass">4 - Added mass</a></h3>
 <p><a href="https://en.wikipedia.org/wiki/Added_mass">Added mass forces</a> are the forces that are proportional to the acceleration of the flow relative to the wing. They are computed with a strip theory model, set with the <code>added_mass</code> field in the wing builder:</p>
@@ -1625,6 +1624,240 @@ C_P = 0.0234 \, SR - 0.0168 \, SR^2 + 0.0143 \, SR^3 - 0.0004 \, SR^4 + 0.0001 \
 <script src="interactive/rotating_cylinder_model_explorer.js"></script>
 <p>The plot uses a JavaScript copy of the Rust implementation of the <code>RotatingCylinder</code> model, which can be found in <code>book/src/sectional_models/interactive/rotating_cylinder_model.js</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="dynamic-stall"><a class="header" href="#dynamic-stall">Dynamic stall</a></h1>
+<p>The sectional models can also be combined with a complementary model for time dependence of viscous effects. That is, the section models that build on the core <a href="#foil-model">foil model</a> can be combined with a model for so called <em>dynamic stall</em>, while the rotating cylinder can use an experimental feature to delay changes in lift with changing spin ratio (as far as the author knows, there are no established dynamic stall models for rotating cylinders, which is why this part is kept experimental for now). In classical foil theory, dynamic stall refers to the time-dependent effects that occur on the lift due to viscous effects, and which are therefore not automatically captured by for instance dynamic potential theory. These effects are complicated in practice, and the only way to model them in a simplified way is to rely on empirical equations. The model implemented in Stormbird builds on the classical approach known as the <a href="https://www.ingentaconnect.com/content/ahs/jahs/1989/00000034/00000003/art00001">Leishman-Beddoes model</a> (LB model), but adapted to the stall model in the foil model. This section explains how it works, how it differs from the original LB model, and how to activate it for lifting line and actuator line simulations.</p>
+<h2 id="theory"><a class="header" href="#theory">Theory</a></h2>
+<p>There are two basic building blocks in the LB model that are directly relevant for the dynamic stall model in Stormbird. That is, the original formulation also contains models for the time variation in the circulatory lift and added mass, but this is handled numerically through the dynamic wake model in the lifting line method, as well as dedicated added mass models, and therefore omitted from the dynamic stall model itself in Stormbird. The first relevant block is connected to time-dependent effects on how the flow separates when it starts to move away from the trailing edge. The second block is a model for time-dependent effects due to leading edge vortex generation. The physical mechanisms are very different, but they use similar mathematical corrections.</p>
+<h3 id="general-about-time-lags"><a class="header" href="#general-about-time-lags">General about time lags</a></h3>
+<p>The LB model introduces dynamics to several variables (described further down) through something labeled <em>deficiency functions</em>, which is a discrete approximation of a first order lag. That is, it is a function that can introduce time lags to variables in a generic way, that is controlled through parameters that adjust the amount of lag. This section describes the basics of the general deficiency function, which is then later used throughout different steps of the complete dynamic stall model.</p>
+<p>The time lags are defined in non-dimensional time, \(\tau\), measured in semi-chords travelled, where \(V\) is the local velocity, \(t\) is the time, and \(c\) is the local chord length:</p>
+<p>\[
+\tau = \frac{2 V t}{c}
+\]</p>
+<p>In discrete time, \(\Delta \tau = 2 V \Delta t / c\) is the non-dimensional time step, \(i\) is the current time index, and \(i-1\) is the previous time index. The local velocity is taken as the magnitude of the velocity at the control point in each time step.</p>
+<p>For an input signal \(x\) and a time constant \(T\), the deficiency function, \(D\), depends on the current and previous value of the input, the previous value of the deficiency function itself, and the time constant in the following way:</p>
+<p>\[
+D_{i} = D_{i-1} e^{-\Delta \tau/ T} + (x_i - x_{i-1})e^{-\Delta \tau / (2 T)}
+\]</p>
+<p>The lagged signal is then \(x_i - D_i\). A time constant of zero turns the lag off, so that the lagged signal is equal to the input. The same function is used for all the lags in the model, and is available as <code>DynamicStallModel::deficiency_function</code> in the Rust library.</p>
+<p>The plot below illustrates how the deficiency function works. The input is a pulse that starts at a given time, increases linearly to one over the ramp width, stays at one for the hold width, and then decreases linearly back to zero over the ramp width again. With a hold width of zero, the pulse is a triangle, which is similar to an angle of attack that goes quickly through stall and back again. With a ramp width of zero, the pulse is rectangular, which shows the classical step response of a first order lag. The lagged signal is computed with the discrete deficiency function, and is held constant through each time step, as in a simulation. For comparison, the plot also shows the continuous first order lag, \(dy/d\tau = (x - y) / T\), which the deficiency function approximates. The difference between the two shows the error from the discrete approximation, which grows with the time step relative to the time constant.</p>
+<link rel="stylesheet" href="interactive/model_explorer.css">
+<div data-deficiency-function-explorer="">
+    <noscript>The interactive plot requires JavaScript.</noscript>
+</div>
+
+<script src="interactive/model_explorer.js"></script>
+<script src="interactive/deficiency_function_explorer.js"></script>
+<h3 id="time-lag-in-the-separation-point-and-reattachment"><a class="header" href="#time-lag-in-the-separation-point-and-reattachment">Time lag in the separation point and reattachment</a></h3>
+<p>When the flow over a foil starts to separate due to stalling, or reattaches after having stalled earlier, it may be seen as the separation point moving along the chord, causing differences in the generated lift as a result. However, this does not happen instantaneously for a given angle of attack. Viscous effects in the boundary layer can cause significant time-lag in how fast the flow is able to separate. Or in other words, if an angle of attack exceeds the stall angle for just a very short amount of time, the flow might not have time to separate. Similarly, when the angle of attack is reduced below the stall angle again, the flow needs time to reattach. The result is a hysteresis loop in the lift, where the lift is higher than the static value when the angle of attack increases through stall, and lower when it decreases.</p>
+<h4 id="the-original-formulation"><a class="header" href="#the-original-formulation">The original formulation</a></h4>
+<p>In the original LB model, the degree of separation is described by an <em>effective separation point</em>, \( f(\alpha) \). It is non-dimensional, and takes the value 1 when the flow is separating cleanly on the trailing edge and goes towards zero when the separation point moves towards the leading edge. The relationship between the separation point and the force on the foil comes from Kirchhoff flow theory for a flat plate, where the separation point is forced to move. It is applied to the normal force on the foil section (i.e., not only the lift force, but a combination of lift and drag into a normal force), where \( C_{n,static}(\alpha) \) is the full non-linear static normal force coefficient and \(C_{n,linear}(\alpha)\) is the linearized version of the same coefficient:</p>
+<p>\[
+C_{n,static}(\alpha) = C_{n,linear}(\alpha) \left(\frac{1 + \sqrt{f(\alpha)}}{2}\right)^2
+\]</p>
+<p>The values of \(f(\alpha)\) are found from static foil data, either by fitting an empirical curve, or by inverting the relationship above.</p>
+<p>The time variation is then introduced with two first order time lags, applied in sequence. The first is a lag in the pressure distribution, applied to the attached flow normal force, with a time constant \(T_p\). The lagged normal force is converted to an equivalent, lagged, angle of attack, which is used to look up a separation point, \(f’\). The second is a lag in the boundary layer response, applied to \(f’\), with a time constant \(T_f\). This gives the dynamic separation point, \(f’’\), which is inserted into the Kirchhoff relationship to compute the dynamic normal force.</p>
+<h4 id="differences-from-the-original-formulation"><a class="header" href="#differences-from-the-original-formulation">Differences from the original formulation</a></h4>
+<p>The dynamic stall model in Stormbird keeps the core idea of the LB model, i.e., the two time lags, applied in sequence, with the same discrete deficiency functions. However, the way the degree of separation is connected to the force is adapted to the <a href="#foil-model">foil model</a>. The differences, and the reasons for them, are as follows:</p>
+<ol>
+<li><strong>The amount of stall replaces the Kirchhoff relationship.</strong> The parametric foil model in Stormbird already computes the lift as a blend between a pre-stall and a post-stall lift curve, weighted by the <a href="#amount-of-stall">amount of stall</a>, \(s(\alpha)\). This is the same structure as in the dynamic stall model by <a href="https://backend.orbit.dtu.dk/ws/portalfiles/portal/7711084/ris_r_1354.pdf">Hansen, Gaunaa and Madsen (2004)</a>, which is widely used for wind turbines, where the lift is a blend between a fully attached and a fully separated lift curve. The amount of stall then plays the same role as \(1 - f\) in the LB model, and the time lags are applied directly to it. The reasons for this choice are:
+<ul>
+<li><strong>Valid for all angles of attack.</strong> The Kirchhoff relationship can not give a force lower than \(C_{n,linear}/4\), even for fully separated flow. In deep stall, which is a relevant operating condition for wind propulsion devices, for instance when sailing downwind, or for suction sails with high stall angles and high lift, the static force is often lower than this. The Kirchhoff relationship can then not reproduce the static force, even in steady conditions. A blend between two lift curves does not have this limitation, and works for all angles of attack, including the full range from -180 to 180 degrees.</li>
+<li><strong>No inversion, and therefore no edge cases.</strong> Computing \(f(\alpha)\) from static data requires inverting the Kirchhoff relationship, which is only well defined for a limited range of the ratio between the static and the linear force, and which is numerically unstable close to the zero-lift angle. The amount of stall is instead given directly by the foil model.</li>
+<li><strong>The static model is always recovered in steady conditions.</strong> As the amount of stall comes directly from the foil model, the dynamic model gives exactly the static lift when the angle of attack is constant.</li>
+<li><strong>Consistent with the force calculations.</strong> The pre-stall part of the lift is used for the circulation, while the post-stall part is, by default, treated as a separate viscous lift force (see the <a href="#force-calculations">force calculations chapter</a>). The dynamic amount of stall can therefore be used directly in the same split, so that a delayed stall gives more circulation, which is then also seen by the wake.</li>
+</ul>
+</li>
+<li><strong>The lift is used instead of the normal force.</strong> This follows from the point above, as the foil model gives the lift directly. The model by Hansen, Gaunaa and Madsen uses the lift in the same way. It also means that the chordwise force from the LB model is not needed.</li>
+<li><strong>The pressure lag is applied to the angle of attack directly.</strong> In the LB model, the lag is applied to the attached flow normal force, which is then converted back to an angle of attack. For a linear relationship with a constant slope and zero-lift angle, this is mathematically identical to applying the lag directly to the angle of attack. The linear lift in the foil model uses \(\sin(\alpha)\), which can not be inverted for angles above 90 degrees, so the lag is applied to the angle of attack directly to make the model valid for all angles.</li>
+<li><strong>The time constants are constant.</strong> In the original LB model, and many implementations of it, the separation time constant is modified depending on whether the foil is loading or unloading, and on the state of the leading edge vortex. In Stormbird, the time constants are constant, and do not depend on the internal state of the section model either, e.g., flap angle or suction rate. This is a simplification, but the error is believed to be small, and it keeps the number of parameters to tune low.</li>
+<li><strong>Only the stall is lagged.</strong> The optional <a href="#slope-reduction">slope reduction</a> in the pre-stall lift, which can represent separation that develops gradually before the full stall, is not part of the amount of stall, and is therefore not lagged.</li>
+<li><strong>The drag uses the same amount of stall as the lift.</strong> The drag in the foil model is also a blend between a pre-stall and a post-stall curve, weighted by the amount of stall. The dynamic amount of stall is therefore used for the drag as well, so that the lift and the drag are always consistent. In the LB model, the drag is instead found from the dynamic normal and chordwise forces.</li>
+</ol>
+<h4 id="step-1-pressure-lag"><a class="header" href="#step-1-pressure-lag">Step 1: Pressure lag</a></h4>
+<p>When the angle of attack changes, the pressure distribution over the foil, and in particular the suction peak near the leading edge, does not respond instantaneously. Since the separation of the boundary layer is driven by the pressure gradient, the separation responds to this lagged pressure distribution rather than to the instantaneous angle of attack. This is represented by applying a first order lag to the angle of attack, with a time constant \(T_p\):</p>
+<p>\[
+D_{p,i} = D_{p,i-1} e^{-\Delta \tau/ T_p} + (\alpha_i - \alpha_{i-1})e^{-\Delta \tau / (2 T_p)}
+\]</p>
+<p>\[
+\alpha_{f,i} = \alpha_i - D_{p,i}
+\]</p>
+<h4 id="step-2-separation-lag"><a class="header" href="#step-2-separation-lag">Step 2: Separation lag</a></h4>
+<p>The static amount of stall from the foil model is then evaluated at the lagged angle of attack, rather than the instantaneous one:</p>
+<p>\[
+s_i’ = s(\alpha_{f,i})
+\]</p>
+<p>This gives the amount of stall that the flow would have in steady conditions, given the lagged pressure distribution. However, the boundary layer itself also needs time to respond, so a second lag is applied, with a time constant \(T_f\). This gives the dynamic amount of stall, \(s’’\):</p>
+<p>\[
+D_{f,i} = D_{f,i-1} e^{-\Delta \tau/ T_f} + (s_i’ - s_{i-1}’)e^{-\Delta \tau / (2 T_f)}
+\]</p>
+<p>\[
+s_i’’ = s_i’ - D_{f,i}
+\]</p>
+<p>The deficiency function is a discrete approximation, and with large time steps or rapidly varying input, it is not strictly guaranteed to stay within the range of the input values. The dynamic amount of stall is therefore limited to the range \([0, 1]\).</p>
+<h4 id="step-3-dynamic-lift"><a class="header" href="#step-3-dynamic-lift">Step 3: Dynamic lift</a></h4>
+<p>Finally, the dynamic lift coefficient is computed from the same blend as in the foil model, but with the dynamic amount of stall. Note that the pre-stall and post-stall lift curves are evaluated at the instantaneous angle of attack, \(\alpha\), and not the lagged one, \(\alpha_f\). The lags only affect the degree of separation, and not the lift curves themselves:</p>
+<p>\[
+C_{L,dynamic,i} = (1 - s_i’‘) \, C_{L,pre-stall}(\alpha_i) + s_i’’ \, C_{L,post-stall}(\alpha_i)
+\]</p>
+<p>The drag coefficient is computed in the same way, from the pre-stall and post-stall drag curves in the foil model:</p>
+<p>\[
+C_{D,dynamic,i} = (1 - s_i’‘) \, C_{D,pre-stall}(\alpha_i) + s_i’’ \, C_{D,post-stall}(\alpha_i)
+\]</p>
+<p>In steady conditions, both deficiency functions go to zero, so that \(\alpha_f = \alpha\) and \(s’’ = s(\alpha)\), and the static lift and drag coefficients from the foil model are recovered for all angles of attack.</p>
+<p>In other words, this part of the model collapses down to two time constants, \(T_p\) and \(T_f\), that must be tuned and adjusted for a given foil profile, while the rest, how the stall depends on the angle of attack, comes directly from the foil model. Typical values reported in the literature for a NACA 0012 profile at low Mach numbers are around \(T_p \approx 1.7\) and \(T_f \approx 3\), which are used as default values.</p>
+<h3 id="leading-edge-vortex-creation"><a class="header" href="#leading-edge-vortex-creation">Leading edge vortex creation</a></h3>
+<p>When the angle of attack increases rapidly through the static stall angle, the flow does not necessarily only separate gradually from the trailing edge. At some point, the high suction peak near the leading edge can no longer be sustained, and the flow separates at the leading edge as well. This forms a strong vortex that is first fed by vorticity from the leading edge, and then travels downstream over the suction side of the foil. While the vortex is above the foil, its low pressure core gives an extra suction force, so that the lift becomes significantly higher than the maximum static value. When the vortex passes the trailing edge, it is shed into the wake, and the lift drops suddenly, often to values below the static post-stall lift. This is the lift overshoot, followed by an abrupt stall, that is characteristic of <em>deep dynamic stall</em>.</p>
+<h4 id="the-original-formulation-1"><a class="header" href="#the-original-formulation-1">The original formulation</a></h4>
+<p>In the LB model, the vortex is not modelled explicitly. Instead, the extra force from the vortex is modelled as an accumulation of the force that is <em>lost</em> due to separation. The idea is that the circulation that the separated flow is no longer able to keep bound to the foil, is instead collected in the vortex, and gives a force as long as the vortex is above the foil. The input to the vortex model, often called the <em>vortex feed</em>, is the difference between the linear, attached flow, normal force and the normal force from the Kirchhoff relationship, evaluated with the dynamic separation point:</p>
+<p>\[
+C_{v,i} = C_{n,linear,i} \left(1 - \left(\frac{1 + \sqrt{f_i’’}}{2}\right)^2 \right)
+\]</p>
+<p>The vortex normal force, \(C_n^v\), is then found with the same type of deficiency function as the time lags, but with a separate time constant for the decay of the vortex, \(T_v\):</p>
+<p>\[
+C_{n,i}^v = C_{n,i-1}^v e^{-\Delta \tau / T_v} + (C_{v,i} - C_{v,i-1}) e^{-\Delta \tau / (2 T_v)}
+\]</p>
+<p>That is, the vortex force increases when the vortex feed increases, i.e., when more of the flow separates, and decays exponentially with the time constant \(T_v\) otherwise. When the vortex feed is constant, the vortex force therefore goes to zero.</p>
+<p>However, the vortex is only fed while it is above the foil. This is controlled with an onset criterion and a <em>vortex time</em>, \(\tau_v\), which tracks the position of the vortex:</p>
+<ul>
+<li><strong>Onset.</strong> The leading edge separation is assumed to start when the lagged normal force from the pressure lag, \(C_n’\), exceeds a critical value, \(C_{n1}\). This is meant to represent a critical pressure at the leading edge. The critical value is a separate parameter, found from static foil data, typically close to the normal force at the static stall angle. As the lagged normal force is used, the onset is delayed relative to the static stall angle, as the pressure distribution needs time to build up.</li>
+<li><strong>Vortex time.</strong> After the onset, the vortex time increases with the non-dimensional time step, \(\tau_{v,i} = \tau_{v,i-1} + \Delta \tau\), and is reset to zero when the onset criterion is no longer met. The vortex is assumed to travel over the chord at a constant fraction of the free stream velocity, so that it reaches the trailing edge after a fixed non-dimensional time, \(T_{vl}\).</li>
+<li><strong>Feeding and shedding.</strong> The increments in the vortex feed are only added while the vortex is above the foil, i.e., \(0 &lt; \tau_v \leq T_{vl}\). After the vortex has passed the trailing edge, the vortex force only decays.</li>
+</ul>
+<p>The vortex force is added to the normal force from the separation model, so that the total dynamic normal force is the sum of the two.</p>
+<p>In addition, the original model, and many implementations of it, include several further adjustments related to the vortex:</p>
+<ul>
+<li>The decay of the vortex force is accelerated after the vortex has passed the trailing edge, typically by halving \(T_v\).</li>
+<li>The separation time constant, \(T_f\), is modified depending on the vortex time and on whether the foil is loading or unloading.</li>
+<li>The center of pressure of the vortex force moves with the vortex, which gives a characteristic variation in the pitching moment.</li>
+<li>Some versions allow for secondary vortices, which are shed with a period of \(T_{vl}\) as long as the onset criterion is met.</li>
+</ul>
+<p>The core of the model is therefore two additional time constants, \(T_v\) and \(T_{vl}\), and the critical normal force, \(C_{n1}\). Typical values reported for a NACA 0012 profile at low Mach numbers are around \(T_v \approx 6\) and \(T_{vl} \approx 7\), while for instance OpenFAST uses \(T_{vl} = 11\) as default.</p>
+<h4 id="differences-from-the-original-formulation-1"><a class="header" href="#differences-from-the-original-formulation-1">Differences from the original formulation</a></h4>
+<p>The vortex model in Stormbird keeps the core of the LB vortex model, i.e., a vortex feed that is accumulated with a deficiency function, and a vortex time that controls when the vortex is fed. The adaptations follow the same principles as for the separation model: the force from the vortex is connected to the amount of stall rather than the Kirchhoff relationship, and as much as possible is taken directly from the foil model, so that the number of new parameters is kept low. The differences are as follows:</p>
+<ol>
+<li><strong>The vortex feed is the lift lost due to the dynamic stall.</strong> In the LB model, the vortex feed is the difference between the attached flow force and the force from the separation model. The equivalent in Stormbird is the difference between the pre-stall lift and the dynamic lift from the separation model, which, from the blend in <a href="#step-3-dynamic-lift">step 3</a>, simplifies to the dynamic amount of stall times the difference between the pre-stall and post-stall lift. This keeps the physical interpretation of the original model, i.e., that the lift that is lost due to stall is collected in the vortex, without the need for the Kirchhoff relationship. As for the separation model, the lift is used instead of the normal force.</li>
+<li><strong>The onset criterion is given by the stall angle in the foil model.</strong> In the LB model, the onset is given by a separate parameter, the critical normal force, which is typically set close to the force at the static stall angle. In Stormbird, the onset is instead defined as the point where the lagged angle of attack from the pressure lag, \(\alpha_f\), exceeds the mean stall angle in the foil model. This is the same as saying that the static amount of stall at the lagged angle of attack, \(s’\), is larger than 0.5. This is a simplification, but removes the need for a separate parameter, it is valid for both positive and negative angles of attack, with different stall angles, and it automatically follows changes in the stall angle due to the internal state of the section model, such as flap angle or suction rate. It also keeps the same physical interpretation as the original criterion, as the onset is still delayed by the pressure lag.</li>
+<li><strong>No modifications of the time constants.</strong> All the time constants are constant, also after the vortex has passed the trailing edge, for the same reasons as given for the separation model. This means that the vortex force decays somewhat slower after the vortex has passed the trailing edge than in the original model.</li>
+<li><strong>No pitching moment.</strong> The section models in Stormbird do not compute a pitching moment, so the movement of the center of pressure is not needed.</li>
+<li><strong>No secondary vortices.</strong> Only one vortex is created for each time the onset criterion is met. A new vortex requires that the lagged angle of attack goes below the stall angle first.</li>
+<li><strong>Only the lift is affected.</strong> In the LB model, the vortex force is a normal force, which therefore also contributes to the drag. In Stormbird, the vortex model only affects the lift at the moment. Note that this only applies to the vortex lift. The drag is still affected by the separation model, through the dynamic amount of stall.</li>
+</ol>
+<h4 id="step-4-vortex-feed"><a class="header" href="#step-4-vortex-feed">Step 4: Vortex feed</a></h4>
+<p>The vortex feed is the difference between the pre-stall lift and the dynamic lift from <a href="#step-3-dynamic-lift">step 3</a>, which can be written as:</p>
+<p>\[
+C_{L,v,feed,i} = C_{L,pre-stall}(\alpha_i) - C_{L,dynamic,i} = s_i’’ \left( C_{L,pre-stall}(\alpha_i) - C_{L,post-stall}(\alpha_i) \right)
+\]</p>
+<h4 id="step-5-vortex-onset-and-vortex-time"><a class="header" href="#step-5-vortex-onset-and-vortex-time">Step 5: Vortex onset and vortex time</a></h4>
+<p>The vortex time, \(\tau_v\), is increased with the non-dimensional time step as long as the lagged angle of attack is above the mean stall angle, and reset to zero otherwise:</p>
+<p>\[
+\tau_{v,i} =
+\begin{cases}
+\tau_{v,i-1} + \Delta \tau &amp; \text{if } s(\alpha_{f,i}) &gt; 0.5 \\
+0 &amp; \text{otherwise}
+\end{cases}
+\]</p>
+<p>The vortex is above the foil, and therefore fed, when \(0 &lt; \tau_{v,i} \leq T_{vl}\).</p>
+<h4 id="step-6-vortex-lift"><a class="header" href="#step-6-vortex-lift">Step 6: Vortex lift</a></h4>
+<p>The vortex lift coefficient, \(C_{L,v}\), is found with the same deficiency function as in the other steps, with the time constant \(T_v\), but where the increment in the vortex feed is only included while the vortex is above the foil:</p>
+<p>\[
+C_{L,v,i} =
+\begin{cases}
+C_{L,v,i-1} e^{-\Delta \tau / T_v} + (C_{L,v,feed,i} - C_{L,v,feed,i-1}) e^{-\Delta \tau / (2 T_v)} &amp; \text{if } 0 &lt; \tau_{v,i} \leq T_{vl} \\
+C_{L,v,i-1} e^{-\Delta \tau / T_v} &amp; \text{otherwise}
+\end{cases}
+\]</p>
+<p>The total dynamic lift is then the sum of the lift from the separation model and the vortex lift:</p>
+<p>\[
+C_{L,total,i} = C_{L,dynamic,i} + C_{L,v,i}
+\]</p>
+<p>The vortex lift is treated as part of the stall related lift. That is, it is handled in the same way as the post-stall lift, which by default is a separate viscous lift force, and only included in the circulation if the <code>include_viscous_lift_in_the_circulation</code> setting is used.</p>
+<p>The vortex model also recovers the static lift in steady conditions. When the angle of attack is constant, the vortex feed is constant, so that no new vortex lift is added, and any existing vortex lift decays to zero. The vortex time also makes the model robust in deep stall, where the difference between the pre-stall and the post-stall lift can be large. Small variations in the angle of attack around a constant value well above the stall angle, for instance due to waves, will only give vortex lift during the first \(T_{vl}\) after the lagged angle of attack exceeded the stall angle. After that, the vortex model only gives a decaying lift, until the angle of attack goes below the stall angle again.</p>
+<p>In other words, the vortex model adds two new time constants, \(T_v\) and \(T_{vl}\), while the onset criterion and the vortex feed come directly from the foil model. A time constant \(T_v\) of zero turns the vortex model off, in the same way as for the other time constants.</p>
+<h3 id="experimental-time-lag-in-the-internal-state"><a class="header" href="#experimental-time-lag-in-the-internal-state">Experimental: time lag in the internal state</a></h3>
+<blockquote>
+<p><strong>Note:</strong> This part of the model is experimental. It is mostly intended for rotor sails, and as a basis for future tests. It is turned off by default.</p>
+</blockquote>
+<p>Most section models have an <em>internal state</em>, in addition to the angle of attack, that controls the force coefficients. The lag is applied to the internal state that is given to the section model on each line element, which is not always the same as the internal state that is set on the wing. For a rotating cylinder, the internal state of the wing is the revolutions per second, while the internal state on each line element is the <a href="#rotating-cylinder">spin ratio</a>, so it is the spin ratio that is lagged. For other section models, the internal state is, for instance, a flap angle or a suction coefficient. For a single element foil, the internal state is not used, so the lag has no effect. The dynamic stall model can apply a first order time lag to the internal state, \(x\), with the same deficiency function as for the other lags, and a time constant \(T_i\):</p>
+<p>\[
+D_{x,i} = D_{x,i-1} e^{-\Delta \tau/ T_i} + (x_i - x_{i-1})e^{-\Delta \tau / (2 T_i)}
+\]</p>
+<p>\[
+x_{lagged,i} = x_i - D_{x,i}
+\]</p>
+<p>The lag is applied before all the other steps, so that the foil model, if any, is evaluated with the lagged internal state. The lagged internal state is used for all the force coefficients, i.e., both the lift and the drag, but not for the power, which is always computed from the instantaneous internal state.</p>
+<p>The motivation comes from rotor sails. As far as the author knows, there are no established dynamic stall models for rotating cylinders. However, the forces on a rotating cylinder depend on the boundary layer, which is driven by the rotating surface. When the spin ratio changes, for instance due to a change in the wind speed or in the rotational speed of the rotor, it can be expected that the boundary layer, and therefore the forces, need some time to adapt to the new spin ratio. The lag on the internal state is a simple way to model this. For rotating cylinders, this is the only part of the dynamic stall model that is used.</p>
+<p>Some notes on the use of the lag:</p>
+<ul>
+<li><strong>It is not a model of the actuator.</strong> The lag is applied in non-dimensional time, and is meant to represent the response of the flow to a change in the internal state. The time it takes for an actuator to change the internal state, for instance for a motor to change the rotational speed of a rotor, does not scale with the flow velocity, and should rather be modelled in the controller, for instance with the maximum change rate of the internal state of the wing.</li>
+<li><strong>The spin ratio depends on the velocity.</strong> As the spin ratio is computed from the revolutions per second, the diameter and the local velocity on each line element, the lag also acts on changes in the velocity, for instance due to gusts or motions, even when the revolutions per second are constant.</li>
+<li><strong>The static model is recovered in steady conditions.</strong> When the internal state is constant, the deficiency function goes to zero, and the static force coefficients are recovered.</li>
+<li><strong>The time constant is not calibrated.</strong> There are no recommended values for \(T_i\) yet, which is why the default value is zero.</li>
+</ul>
+<h2 id="implementation"><a class="header" href="#implementation">Implementation</a></h2>
+<h3 id="activating-the-model"><a class="header" href="#activating-the-model">Activating the model</a></h3>
+<p>The dynamic stall model is set for each wing, through the optional <code>dynamic_stall</code> field in the <a href="#wing-builder">wing builder</a>. The field takes a <code>DynamicStallModelBuilder</code>, which only contains the parameters of the model:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct DynamicStallModelBuilder {
+    pub pressure_time_constant: Option&lt;f64&gt;,
+    pub separation_time_constant: Option&lt;f64&gt;,
+    pub vortex_time_constant: Option&lt;f64&gt;,
+    pub vortex_passage_time: Option&lt;f64&gt;,
+    pub internal_state_time_constant: f64,
+}
+<span class="boring">}</span></code></pre>
+<ul>
+<li><code>pressure_time_constant</code>: the non-dimensional time constant for the pressure lag, \(T_p\). The default value is 1.7.</li>
+<li><code>separation_time_constant</code>: the non-dimensional time constant for the separation lag, \(T_f\). The default value is 3.0.</li>
+<li><code>vortex_time_constant</code>: the non-dimensional time constant for the decay of the leading edge vortex lift, \(T_v\). The default value is 6.0.</li>
+<li><code>vortex_passage_time</code>: the non-dimensional time it takes for the leading edge vortex to pass the trailing edge, \(T_{vl}\). The default value is 7.0.</li>
+<li><code>internal_state_time_constant</code>: <strong>experimental</strong>. The non-dimensional time constant for the <a href="#experimental-time-lag-in-the-internal-state">lag in the internal state</a>, \(T_i\). The default value is 0.0, which turns the lag off.</li>
+</ul>
+<p>The first four parameters control the stall in the foil model. They are optional, and values that are not set use the default values. They can only be set for section models that build on the foil model. Setting them for other section models, such as a rotating cylinder, gives an error, so that parameters are never silently ignored. The <code>internal_state_time_constant</code> can be used for all section models.</p>
+<p>All the time constants must be zero or larger, where zero turns the corresponding lag off. A <code>vortex_time_constant</code> of zero turns the leading edge vortex off, so that only the time lags in the separation are used. The model is not used by default. To activate it with the default values, it is enough to give an empty object in the JSON input:</p>
+<pre><code class="language-json">{
+    "section_points": [...],
+    "chord_vectors": [...],
+    "section_model": {"SingleElementFoil": {...}},
+    "dynamic_stall": {}
+}
+</code></pre>
+<p>In Python, using <code>stormbird_setup</code>, the same is done with the <code>DynamicStallModelBuilder</code> class from <code>stormbird_setup.section_models</code>:</p>
+<pre><code class="language-python">from stormbird_setup.section_models import DynamicStallModelBuilder
+
+wing_builder = WingBuilder(
+    section_points = ...,
+    chord_vectors = ...,
+    section_model = ...,
+    dynamic_stall = DynamicStallModelBuilder(
+        pressure_time_constant = 1.7,
+        separation_time_constant = 3.0,
+        vortex_time_constant = 6.0,
+        vortex_passage_time = 7.0
+    )
+)
+</code></pre>
+<p>The full model is used together with section models that build on the foil model, i.e., <code>SingleElementFoil</code>, <code>MultiElementFoil</code> and <code>ActiveAirFlowFoil</code>. For a rotating cylinder, only the lag in the internal state is used, so the model must then be set with only the <code>internal_state_time_constant</code>:</p>
+<pre><code class="language-json">"dynamic_stall": {"internal_state_time_constant": 2.0}
+</code></pre>
+<p>Note that an empty object has no effect for a rotating cylinder, as the lag in the internal state is off by default.</p>
+<p>The model depends on the time history of the flow, and can therefore only be used in lifting line simulations with <a href="#simulation-overview">dynamic simulation settings</a>, or in <a href="#simulation-overview-1">actuator line simulations</a>. Using it together with quasi-steady settings gives an error.</p>
+<p>From the perspective of the dynamic stall model, an actuator line simulation is equivalent to a dynamic lifting line simulation. The time variation in the circulatory lift is resolved by the shed vorticity in both cases, in the dynamic wake for the lifting line and in the CFD domain for the actuator line, so the same model and parameters are used for both.</p>
+<h3 id="internal-state-and-time-stepping"><a class="header" href="#internal-state-and-time-stepping">Internal state and time stepping</a></h3>
+<p>When the line force model is built, each wing with a dynamic stall model gets a <code>DynamicStallModel</code>, which contains both the parameters and the state from the last completed time step for each line segment on the wing. That is, the internal state, the angle of attack, the deficiency functions, the amounts of stall, the vortex feed, the vortex time, and the vortex lift. For section models that do not build on the foil model, only the internal state and its deficiency function are used. The structure is defined together with the section models, as it is fundamentally a two dimensional model, while the line force model holds one optional model for each wing.</p>
+<p>The solvers in the lifting line simulation evaluate the lift many times per time step. The dynamic stall model is therefore always evaluated based on the state from the last completed time step, and the state is not changed during the iterations. In each time step, the simulation does the following:</p>
+<ol>
+<li>Sets the time step in the dynamic stall models, which is needed to compute the non-dimensional time step.</li>
+<li>Solves for the circulation strength, where the dynamic amount of stall is used in the lift coefficients.</li>
+<li>Computes the forces, with the same state as in the solver.</li>
+<li>Updates the state of the dynamic stall models, based on the angles of attack, internal states and velocities in the force input of the result, i.e., the same values as the forces are computed from.</li>
+</ol>
+<p>In actuator line simulations, the model is updated in the same way, but the CFD solver may call the actuator line model several times per time step, e.g., in each outer iteration. The time given to the actuator line model is therefore used to detect when a new time step starts. The state is then updated from the last result of the previous time step, before the time step is changed. Calls with the same time are all evaluated from the same state.</p>
+<p>In the first time step, there is no time history available, so the model gives the static values, and the state is initialized from the result. The state is also reset when the simulation is initialized again, for instance in the <code>do_multiple_steps</code> function of the complete sail model. The steady state functions of the complete sail model reset the state before each iteration, as the iterations are not a time history, so that the results are always based on the static foil model. When the state is initialized at an angle of attack above the stall angle, any leading edge vortex is assumed to have passed the trailing edge a long time ago, so that a new vortex is only created after the lagged angle of attack has been below the stall angle first.</p>
+<p>The dynamic stall model does not compute the forces itself. Instead, it only gives the effects that enter the force coefficients on each line segment: the lagged internal state, the dynamic amount of stall and the vortex lift. The force coefficients are then computed in two passes. First, the dynamic stall model is evaluated for each wing that has one, while wings without a dynamic stall model use the instantaneous internal state, the static amount of stall and no vortex lift. Second, the lift and drag coefficients are computed from the section model, where the internal state and the amount of stall from the first pass replace the instantaneous internal state and the static amount of stall. The lift and drag curves are always evaluated at the instantaneous angle of attack, so the lagged angle of attack is only used internally in the dynamic stall model. The power is always computed from the instantaneous internal state.</p>
+<p>The dynamic amount of stall affects both the pre-stall lift, which is used for the circulation, and the post-stall lift, which is used either for the viscous lift force or in the circulation, depending on the <code>include_viscous_lift_in_the_circulation</code> setting. The lift from the leading edge vortex is added to the post-stall lift, and is therefore treated in the same way. See the <a href="#circulation-strength">circulation strength chapter</a> for more.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="lifting-line-simulations"><a class="header" href="#lifting-line-simulations">Lifting line simulations</a></h1>
 <p>The basics of the lifting line simulations in Stormbird have a lot in common with the classical approaches made by Lanchester (1907) and Prandtl (1918) more than 100 years ago, and which are also often taught in many introduction courses for fluid dynamics and lifting surfaces (e.g., the text books in the <a href="#simulation-methods">literature chapters</a>). That is, the overall concept and equations are the same. The wing geometry is reduced to vortex lines along the span, the lift and circulation on the line elements are estimated from the local velocity and angle of attack based on a two-dimensional sectional model, and the lift-induced velocities due to the estimated circulation is calculated based on a potential theory wake model.</p>
 <p>However, the Stormbird implementation also differs from the classical lifting line approach in at least three broad-stroke ways, explained further in the subsections below.</p>
@@ -1767,7 +2000,7 @@ pub struct DynamicSettings {
 \]</p>
 <p>The benefit of this solver is that it is simple and technically more correct than the linearized solver, as there are no assumptions about small lift-induced velocities. It will also handle non-linear effects on the lift directly, without any post-solver corrections, like in the case for the linearized solver. It is generally robust <strong>if the damping factor is set low enough</strong>, but may also give noise in the final results right at the stall point in some cases. This is typically handled by applying some <a href="#circulation-strength">smoothing to the circulation strength</a> in the line force model. It is also the <strong>most suitable solver for unsteady simulations</strong>, which typically do not require many iterations for each time step, as the change in the circulation strength is small.</p>
 <h2 id="residual-damping-factor-and-convergence-testing"><a class="header" href="#residual-damping-factor-and-convergence-testing">Residual, damping factor, and convergence testing</a></h2>
-<p>The residual is a measure on how close the solver is to the <em>correct solution</em>. It is calculated from the difference in the lift coefficient on each line element with the current best guess of the circulation distribution, \( \Gamma_i \) from the equations above, and the lift coefficient directly from the <a href="#section-models">sectional model</a> using the current estimated lift-induced velocities. That is, this will also be the same as the lift coefficient calculated with the current estimated circulation distribution, or \( \Gamma_{i, estimated} \) from the equations above.</p>
+<p>The residual is a measure on how close the solver is to the <em>correct solution</em>. It is calculated from the difference in the lift coefficient on each line element with the current best guess of the circulation distribution, \( \Gamma_i \) from the equations above, and the lift coefficient directly from the <a href="#section-models">sectional model</a> using the current estimated lift-induced velocities. That is, this will also be the same as the lift coefficient calculated with the current estimated circulation distribution, or \( \Gamma_{i, estimated} \) from the equations above. The lift coefficient from the sectional model is the same part of the lift that is used to compute the circulation strength, i.e., the pre-stall lift by default, and the sum of the pre-stall and post-stall lift if the <code>include_viscous_lift_in_the_circulation</code> setting is used (see the <a href="#circulation-strength">circulation strength chapter</a>).</p>
 <p>As an equation, the residual, \(r\), for a line element is calculated as follows, where \(C_L(\Gamma) \) is the lift coefficient based on the induced velocities due to \( \Gamma \):</p>
 <p>\[
 r_i = C_L(\Gamma_{i}) - C_L(\Gamma_{i, estimated})
@@ -2349,7 +2582,7 @@ for wind_direction_deg in range(0, 181, 30):
     pub start_time: f64,
     pub controller: Option&lt;ControllerBuilder&gt;,
     pub lifting_line_correction: Option&lt;LiftingLineCorrectionBuilder&gt;,
-    pub empirical_circulation_correction: Option&lt;EmpiricalCirculationCorrection&gt;,
+    pub tip_loss_correction: Option&lt;TipLossCorrection&gt;,
     pub spanflow_damper: Option&lt;SpanflowDamper&gt;,
 }
 <span class="boring">}</span></code></pre>
@@ -2361,10 +2594,13 @@ for wind_direction_deg in range(0, 181, 30):
 <ol>
 <li>The <strong>velocity on the control point of each line segment</strong> in the line force model is sampled from the CFD domain, using one of the available <a href="#velocity-sampling">velocity sampling methods</a>.</li>
 <li><strong>The circulation strength on each line segment is calculated</strong> based on the sampled velocity and the sectional models, in the same way as for the <a href="#solver">non-linear solver</a> in the lifting line model, but with only one iteration. That is, the new circulation is estimated directly from the velocity, but the final values can be based on the previous time step as well, using the same general damping technique as for the lifting line model. The reason for using only one iteration is that there is no way to update the velocity fields in the CFD domain outside the general solver loop. As such, the number of iterations are inherently controlled by the CFD solver directly, and not by the actuator line model.</li>
-<li><strong>If any corrections are enabled</strong>, these are applied to the estimated circulation strength. The corrections may be crucial for accurate results. See the <a href="#corrections">corrections chapter</a> for more details on what corrections are available and when they should be used.</li>
-<li>Based on the estimated circulation strength, the forces on each line segment are calculated, and the <strong>circulatory forces are projected back to the CFD grid</strong> using the methods and settings specified in the <a href="#force-projection">force projection chapter</a>.</li>
+<li><strong>If any corrections are enabled</strong>, these are applied to the estimated circulation strength. The corrections may be crucial for accurate results. See the <a href="#corrections">corrections chapter</a> for more details on what corrections are available and when they should be used. The tip loss correction can also be set to only apply to the circulation used for the projected forces, in which case it is applied after the damping.</li>
+<li>Based on the estimated circulation strength, the forces on each line segment are calculated, and the <strong>circulatory forces are projected back to the CFD grid</strong> using the methods and settings specified in the <a href="#force-projection">force projection chapter</a>. The projected forces are computed from the same circulation as the forces on the wings, unless the tip loss correction is only applied to the projected forces.</li>
 <li>The <strong><a href="#force-calculations">result data</a></strong> for each time step will finally be written to disk, and the actuator line model is ready for the next time step.</li>
 </ol>
+<h2 id="dynamic-stall-1"><a class="header" href="#dynamic-stall-1">Dynamic stall</a></h2>
+<p>The <a href="#dynamic-stall">dynamic stall model</a> can be used in actuator line simulations in the same way as in dynamic lifting line simulations, by setting it on the wings in the line force model. The actuator line model can be called several times per time step, e.g., in each outer iteration of the CFD solver, and the state of the dynamic stall model is only updated when the time increases.</p>
+<p>Note that the damping of the circulation, set with the <code>damping_factor</code> in the <code>SolverSettings</code>, acts as an additional numerical time lag on the circulation of about <code>1 / damping_factor</code> time steps. For simulations of dynamic effects, the damping, as well as the rest of the setup, should be chosen so that this lag is small compared to the time scales of interest. A warning is given when the model has a dynamic stall model and the damping factor is below one.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="velocity-sampling"><a class="header" href="#velocity-sampling">Velocity sampling</a></h1>
 <p>As with the lifting line method, the actuator line method needs the velocity at each control point in the line force model to compute the forces acting on each line segment. There are in general two different methods to obtain these, described in the subsections below. The overall structure controlling the sampling method is also shown below:</p>
@@ -2448,12 +2684,13 @@ pub struct ProjectionSettings {
 <p>The accuracy of an actuator line model is sensitive to both the force projection (shape and width), the mesh resolution in the CFD simulation, and the velocity sampling method. First, just to clarify, it is generally thought that wings will be simulated with a similar accuracy as a lifting line model IF the projection width is set to be sufficiently small, AND the mesh resolution is sufficiently high to allow for a small projection width. That is, an <strong>actuator line model should converge towards a lifting line model</strong> when the projection width is reduced.</p>
 <p>However, at least when using isotropic force projections, it is often impractical to have a small enough force projection width to allow for this. This is especially the case as the whole point of using an actuator line model, rather than a direct CFD simulation, is to significantly reduce the number of cells used in a simulation. As such, it is fairly <strong>common to combine an actuator line model with some form of correction</strong> to the <em>raw circulation distribution</em>, to achieve better accuracy at coarse meshes. In particular, the main issue with an actuator line model is typically that the <strong>tip circulation is predicted to be too large</strong>. Or, in other words, the lift-induced velocities on the tip is too small.</p>
 <p>As explored in the paper by <a href="#an-advanced-actuator-line-method-for-wind-energy-applications-and-beyond-2017">Churchfield et al., 2017</a>, this is an issue that might also be solved by using force projection shapes that are more physically representative of a real wing, i.e. like with anisotropic kernels. However, other techniques are also often used, and the exact effect of the anisotropic force projection width deserves more investigation.</p>
-<p>The Stormbird library currently implements two different correction methods based on suggestions from the literature.</p>
+<p>The Stormbird library currently implements two different correction methods based on suggestions from the literature: a lifting line correction of the sampled velocity, and an empirical tip loss correction of the circulation.</p>
 <h2 id="lifting-line-correction-for-the-induced-velocity"><a class="header" href="#lifting-line-correction-for-the-induced-velocity">Lifting line correction for the induced velocity</a></h2>
 <h3 id="background"><a class="header" href="#background">Background</a></h3>
 <p>The first, and perhaps most promising, correction technique comes from the paper by <a href="#a-new-tip-correction-for-actuator-line-computations-2020">Dag and Sørensen, 2020</a>. The idea is based on an important observation: the lift-induced velocities from an actuator line model with a certain projection width, and an isotropic force projection kernel, seem to almost perfectly match the lift-induced velocity from a lifting line model with the same circulation distribution and a <strong>viscous core length equal to the projection width</strong>. That is, the vortices created by an actuator line model are like a smoothed, viscous, version of a pure potential theory vortex. The solution from this observation, suggested by Dag and Sørensen, is then to compute the error in the velocity field explicitly using a simple lifting line model, that directly quantifies the effect of the viscous core.</p>
 <p>For each time step in the simulation, the circulation strength from the previous time step is known. These strength values are also the values used when projecting the forces at the previous time step, and the strength that was active when the velocity from the CFD domain was sampled. A correction to the sampled velocity can then be computed based on the difference in the induced velocity from a lifting line model with and without a viscous core.</p>
 <p>This is done by first computing the lift-induced velocities from a lifting line wake model with a viscous core equal to the projection width, and then doing the same calculation with very small core length. The difference in the induced velocity between the two wake models at each control point can then be used to correct the sampled velocity from the CFD grid.</p>
+<p>Normally, the same circulation distribution is used in both wake models. The exception is when the <a href="#tip-loss-correction">tip loss correction</a> is only applied to the projected forces. The circulation used for the projected forces then differs from the circulation used for the forces on the wings. The wake model with the viscous core represents what is induced in the CFD domain, and therefore uses the projected circulation, while the wake model with the small core uses the circulation from the forces on the wings. See the <a href="#application-to-the-projected-forces-only">section on the application of the tip loss correction</a> for more.</p>
 <h3 id="wake-shape"><a class="header" href="#wake-shape">Wake shape</a></h3>
 <p>One challenge with such an approach is that the shape of the wake must be assumed somehow. This is a trivial task if there is only a single wing, but more difficult if there are multiple wings in close proximity OR wings standing on a ship superstructure. However, the point of the lifting line corrections is <strong>only to compute the error due to a too large projection width</strong>. The effect of a viscous core on the induced velocities is most significant from the wake close to the wing. The effect from the vortices far downstream should be small. The exact wake shape for the correction may, therefore, not be that important.</p>
 <p>As a simple solution to this, the lifting line correction in Stormbird assumes a steady wake shape, with a direction equal to the sampled velocity along each wing.</p>
@@ -2485,28 +2722,56 @@ pub struct ProjectionSettings {
 <li><code>virtual_extension_factors</code>: length of a virtual extension of each wing at the first and the last end, relative to the chord length at that end. The extensions are only included in the reference model with the small viscous core, and carry the circulation of the outermost line element, which moves the tip vortices away from the ends of the wing. This can be used to represent end plates. Zero by default, which means no extensions.</li>
 </ul>
 <p>Experience from this correction technique is that it works very well for actuator line simulations that only include wings. Even with a <strong>large isotropic projection width</strong>, the result from an actuator line simulation will match the lifting line model almost perfectly. However, it can also create instabilities when combined with complex ship geometries. <strong>The hope is to find a solution to this in the future</strong>, as this type of correction is believed to be very general and promising for practical use cases.</p>
-<h2 id="empirical-circulation-correction"><a class="header" href="#empirical-circulation-correction">Empirical circulation correction</a></h2>
-<p>A more classical correction technique for actuator line simulations is to use an empirical correction factor to the calculated circulation on each wing. As mentioned, the <em>raw circulation at the tips</em> is often predicted to be too large. A simple solution is, then, to artificially reduce it based on an analytical correction. There are many small variations in how this is done. A recent discussion about the topic can be found in the paper by <a href="#spanwise-flow-corrections-for-tidal-turbines-2018">Wimshurst and Willden, 2018</a>. The correction in Stormbird follows the following principle:</p>
+<h2 id="tip-loss-correction"><a class="header" href="#tip-loss-correction">Tip loss correction</a></h2>
+<p>A more classical correction technique for actuator line simulations is to use an empirical correction factor to the calculated circulation on each wing, often referred to as a tip loss correction. As mentioned, the <em>raw circulation at the tips</em> is often predicted to be too large. A simple solution is, then, to artificially reduce it based on an analytical correction. There are many small variations in how this is done. A recent discussion about the topic can be found in the paper by <a href="#spanwise-flow-corrections-for-tidal-turbines-2018">Wimshurst and Willden, 2018</a>. The correction in Stormbird follows the following principle:</p>
 <p>The raw circulation distribution, \( \Gamma_{raw} \), estimated directly from the sampled velocity, is multiplied by a correction function, \( f_{cor}(s) \), that takes the non-dimensional span distance at each wing, \( s \) as input, as well as a shape parameter \( \beta \). The function has the following shape:</p>
 <p>\[
 f_{cor}(s) = \frac{2.0}{\pi}\cos^{-1}(e^{-\beta (0.5 - |s|)})
 \]</p>
-<p>The plot below shows how the correction function looks for different values of \( \beta \). In general, any value of \( \beta \) will force the circulation towards zero at the tips. However, the larger the value, the steeper the reduction towards the tip, and the less effect it has on the inner part of the wing.</p>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<div id="circulation-correction-plot"></div>
+<p>The plot below shows how the correction function looks for different values of \( \beta \), which can be adjusted with the slider, or by typing in a value, below the plot. In general, any value of \( \beta \) will force the circulation towards zero at the tips. However, the larger the value, the steeper the reduction towards the tip, and the less effect it has on the inner part of the wing.</p>
+<p>The plot also shows the corrected circulation, relative to the raw circulation, for a wing with a constant raw circulation along the span when the mean value is maintained, as explained in the <a href="#input-structure">input structure section</a> below. The constant raw circulation is shown as a dashed line.</p>
+<link rel="stylesheet" href="../sectional_models/interactive/model_explorer.css">
+<div data-tip-loss-correction-explorer="">
+    <noscript>The interactive plot requires JavaScript.</noscript>
+</div>
 
-<script src="plot_scripts/circulation-correction-plot.js"></script>
+<script src="../sectional_models/interactive/model_explorer.js"></script>
+<script src="interactive/tip_loss_correction_explorer.js"></script>
 <h3 id="input-structure-1"><a class="header" href="#input-structure-1">Input structure</a></h3>
-<p>To activate this correction, the <code>EmpiricalCirculationCorrection</code> structure must be set in the <code>ActuatorLineBuilder</code>, as shown below:</p>
+<p>To activate this correction, the <code>TipLossCorrection</code> structure must be set as the <code>tip_loss_correction</code> in the <code>ActuatorLineBuilder</code>. The available options are shown below:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>pub struct EmpiricalCirculationCorrection {
+</span>pub struct TipLossCorrection {
     pub exp_factor: f64,
-    pub overall_correction: f64,
+    pub maintain_mean_value: bool,
+    pub application: TipLossApplication,
+}
+
+pub enum TipLossApplication {
+    Circulation,
+    ProjectedForces,
 }
 <span class="boring">}</span></code></pre>
 <p>The <code>exp_factor</code> corresponds to the \( \beta \) variable in the equation above. It is set to 10.0 by default, but should ideally always be tuned for the specific case. The idea with this type of correction is to first tune the shape parameter based on simulation of a single wing, and then assume that it can remain constant also when simulating multiple wings or wings on a ship.</p>
-<p>The <code>overall_correction</code> is a global correction factor applied to the entire circulation distribution, that can be used to either increase or decrease the overall circulation level. It is set to 1.0 by default.</p>
+<p>The <code>maintain_mean_value</code> flag is set to true by default. The correction function above is always less than one, so on its own, it reduces the mean circulation on each wing, and therefore also the total lift. When <code>maintain_mean_value</code> is true, the corrected circulation on each wing is instead scaled with a constant factor, so that the mean value over the span, weighted with the length of each line segment, is the same as before the correction:</p>
+<p>\[
+\Gamma_{cor} = k , f_{cor} , \Gamma_{raw}, \quad k = \frac{\sum \Gamma_{raw} , l}{\sum f_{cor} , \Gamma_{raw} , l}
+\]</p>
+<p>where \( l \) is the length of each line segment, and the sums are taken over all the line segments on the wing. The correction then only changes the shape of the circulation distribution, by moving circulation from the ends of the wing towards the middle. The idea is that the actuator line model is assumed to predict the overall level of the circulation well, while the circulation at the ends is too large. If the sum in the denominator is close to zero compared to the sum of the absolute values of the raw circulation, for instance when the lift on the wing is close to zero, the scaling is skipped to avoid dividing by a very small number. Setting <code>maintain_mean_value</code> to false gives the correction without any scaling.</p>
+<p>The <code>application</code> field determines where the correction is applied. The default, <code>Circulation</code>, applies the correction to the estimated circulation, as described above. Both the forces on the wings and the forces projected to the CFD grid are then computed from the corrected circulation. The other option, <code>ProjectedForces</code>, is explained in the next section.</p>
+<h3 id="application-to-the-projected-forces-only"><a class="header" href="#application-to-the-projected-forces-only">Application to the projected forces only</a></h3>
+<blockquote>
+<p><strong>Experimental:</strong> this option is new, and has so far only been tested for rotor sails. The recommended settings may change.</p>
+</blockquote>
+<p>The tip loss correction can also be used for a different purpose than correcting a too large circulation at the tips: to <strong>stabilize</strong> simulations of wings with a large circulation at the ends, such as rotor sails. The circulation on a rotor sail is almost constant along the span, which gives very strong tip vortices. When combined with the <a href="#lifting-line-correction-for-the-induced-velocity">lifting line correction</a>, this has been found to give unstable simulations. Reducing the circulation towards the ends smears the tip vortex over a larger part of the span, which stabilizes the simulation. However, if the correction is applied to the circulation itself, it also changes the forces on the wing. In particular, it reduces the lift-induced drag, as the circulation distribution is no longer as close to a constant distribution, which then must be corrected for in some other way.</p>
+<p>Setting <code>application</code> to <code>ProjectedForces</code> separates the two effects. The circulation estimated from the sampled velocity, \( \Gamma_{raw} \), is used for all the forces on the wings, and is the circulation that is written in the results. The tip loss correction is only applied to a copy of the circulation, \( \Gamma_{proj} \), that is used for the forces projected to the CFD grid. As such, only the tip vortices in the CFD domain are smeared out. The correction is applied after the damping of the circulation in the <a href="#running-a-simulation-1">solver</a>, so that the damping only acts on the uncorrected circulation.</p>
+<p>This option is primarily intended to be combined with the lifting line correction. The two wake models in the lifting line correction then use different circulation distributions:</p>
+<p>\[
+\mathbf{u}_{cor} = \mathbf{u}_{CFD} + \mathbf{u}_{ref}(\Gamma_{raw}) - \mathbf{u}_{visc}(\Gamma_{proj})
+\]</p>
+<p>where \( \mathbf{u}_{ref} \) is the induced velocity from the wake model with the small viscous core, and \( \mathbf{u}_{visc} \) is the induced velocity from the wake model with the viscous core equal to the projection width. The idea is that the sampled velocity, \( \mathbf{u}_{CFD} \), contains the induced velocities from the smeared, projected, circulation, which is removed by the last term. The corrected velocity is then approximately the velocity from a lifting line model with the uncorrected circulation. In other words, the smearing of the tip vortices in the CFD domain is purposely neglected when the forces on the wings are calculated, which means that the lift-induced drag from the full tip vortices is kept, without any need for additional corrections.</p>
+<p>With <code>maintain_mean_value</code> set to true, the total projected lift on each wing is the same as the lift computed from the uncorrected circulation. Setting it to false with this option will, therefore, project less lift to the CFD domain than what is acting on the wings, which is generally not what is wanted.</p>
+<p><strong>Note on the limit of the lifting line correction:</strong> with an almost constant circulation, the velocity correction becomes very large at the outermost line elements, and a large part of the lift-induced drag comes from these elements. A low value for the <code>max_correction_ratio</code> in the lifting line correction will cut this part of the correction, and therefore also a large part of the lift-induced drag. For rotor sails, a value of 2.0 has been found to work better than 1.0 when the tip loss correction is only applied to the projected forces. This is likely sensitive to the number of line elements, as the correction at the outermost elements depends on how close they are to the end of the wing.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="openfoam-interface"><a class="header" href="#openfoam-interface">OpenFOAM interface</a></h1>
 <p>The actuator line functionality in the core Stormbird library is written in a general way, and could be coupled to any CFD solver. At the moment, there are two ready-made couplings: an interface to the open-source CFD solver <a href="https://openfoam.com/">OpenFOAM</a>, and the dedicated solver <a href="#stormflow">Stormflow</a>. This chapter describes how the coupling works in practice, and what is necessary to set up a simulation using OpenFOAM together with Stormbird.</p>
@@ -2569,20 +2834,35 @@ actuatorLine
 <h3 id="turbulence"><a class="header" href="#turbulence">Turbulence</a></h3>
 <p>By default, there is no turbulence model, and the <code>effective_viscosity</code> is a constant viscosity in the whole domain. Optionally, the realizable k-epsilon RANS model can be used, implemented in the same way as <code>realizableKE</code> in OpenFOAM. The main purpose is to make comparisons with conventional RANS solvers easier, as the eddy viscosity has a large effect on the wakes. When the model is used, <code>effective_viscosity</code> should be the molecular viscosity.</p>
 <h3 id="boundary-conditions"><a class="header" href="#boundary-conditions">Boundary conditions</a></h3>
-<p>The outer boundaries are defined relative to the up direction of the <a href="#wind-environment">wind environment</a>, which must be aligned with one of the grid axes.</p>
+<p>How the boundary conditions are assigned to the outer boundaries of the domain is set with the <code>boundary_condition_type</code> setting, which takes a <code>BoundaryConditionType</code>. In both variants, the up direction of the <a href="#wind-environment">wind environment</a> must be aligned with one of the grid axes.</p>
+<p>The default, <code>WindInletOutlet</code>, is for wind propulsion devices in the open air. The boundaries are defined relative to the up direction:</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th></tr>
+<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th><th>Turbulence</th></tr>
 </thead>
 <tbody>
-<tr><td>Vertical sides</td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td></tr>
-<tr><td>Top</td><td>Zero gradient</td><td>Fixed at zero</td></tr>
-<tr><td>Bottom</td><td>Slip</td><td>Zero gradient</td></tr>
+<tr><td>Vertical sides</td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td><td>Inlet value where the flow enters, zero gradient where it leaves</td></tr>
+<tr><td>Top</td><td>Zero gradient</td><td>Fixed at zero</td><td>Zero gradient</td></tr>
+<tr><td>Bottom</td><td>Slip</td><td>Zero gradient</td><td>Zero gradient</td></tr>
 </tbody>
 </table>
 </div>
-<p>The apparent wind at the sides varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>. All boundaries except the top can be changed to slip walls with the <code>slip_wall_boundary_override</code> setting.</p>
+<p><code>WindTunnel</code> is for reproducing wind tunnel experiments. The x axis goes from the inlet to the outlet, and all other faces are walls:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th><th>Turbulence</th></tr>
+</thead>
+<tbody>
+<tr><td>Start of the x axis (inlet)</td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td><td>Inlet value where the flow enters, zero gradient where it leaves</td></tr>
+<tr><td>End of the x axis (outlet)</td><td>Zero gradient</td><td>Fixed at zero</td><td>Zero gradient</td></tr>
+<tr><td>All faces along the y and z axes</td><td>Slip</td><td>Zero gradient</td><td>Zero gradient</td></tr>
+</tbody>
+</table>
+</div>
+<p>The apparent wind must be along the positive x axis at all heights, and the up direction must be along the y or z axis. Both are checked when the simulation is built. The walls are slip walls, so the boundary layers on the walls of the wind tunnel are not modeled.</p>
+<p>In both variants, the apparent wind at the inlet varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>. The velocity profile can therefore be constant, by giving a constant <code>velocity_variation</code> in the wind condition, or follow an atmospheric boundary layer, by using a logarithmic or power law model. The apparent wind is also used as the initial velocity in the domain. The inlet values of the turbulence, if the turbulence model is used, are set separately with <code>turbulence.inlet</code>.</p>
 <h2 id="installation-1"><a class="header" href="#installation-1">Installation</a></h2>
 <p><code>pystormflow</code> is installed with pip. It is compiled during the installation, so the <a href="https://rust-lang.org/">Rust toolchain</a> must be installed first:</p>
 <pre><code class="language-bash">pip install pystormflow
@@ -2647,6 +2927,7 @@ simulation_builder.effective_viscosity = 1.5e-5
 <li><code>actuator_line</code>: an <code>ActuatorLineBuilder</code>, as described in the <a href="#simulation-overview-1">simulation overview</a>.</li>
 <li><code>wind_condition</code> and <code>linear_velocity</code>: the true wind and the velocity due to the motion of the ship, which are added together to give the apparent wind in the domain. The optional <code>wind_environment</code> field controls how the wind condition is interpreted. See the <a href="#wind-environment">wind environment chapter</a>.</li>
 <li><code>geometries</code> and <code>slip_geometries</code>: other structures in the domain, with no-slip and slip walls respectively. Typically created with <code>GeometryBuilder.new_triangle_mesh(file_path)</code>.</li>
+<li><code>boundary_condition_type</code>: how the boundary conditions are assigned to the outer boundaries of the domain, given as a <code>BoundaryConditionType</code>, which can be imported from both <code>stormbird_setup.stormflow</code> and <code>stormbird_setup.openfoam</code>. The default, <code>WindInletOutlet</code>, is for wind propulsion devices in the open air, with the ground at the bottom of the domain, an open top, and the apparent wind flowing in and out through the vertical sides. <code>WindTunnel</code> is for reproducing wind tunnel experiments, with an inlet at the start of the x axis, an outlet at the end of it, and slip walls on all other faces. It requires the apparent wind to be along the positive x axis. The details for each solver are given in the <a href="#boundary-conditions">Stormflow chapter</a> and the <a href="#boundary-conditions-1">OpenFOAM section</a> below.</li>
 <li><code>grid</code>: the domain size and resolution. The resolution is specified as a number of cells per <em>representative length</em>, which by default is the average chord length of the wings. It can be set manually with <code>grid.representative_length</code>, which is required if there is no actuator line model.</li>
 </ul>
 <h2 id="stormflow-1"><a class="header" href="#stormflow-1">Stormflow</a></h2>
@@ -2666,7 +2947,7 @@ simulation_builder = SimulationBuilder(
     geometries=[GeometryBuilder.new_triangle_mesh("superstructure.obj")],
 )
 </code></pre>
-<p>The builder also contains the solver settings (<code>velocity_solver</code>, <code>pressure_solver</code>, <code>solver_settings</code>, <code>turbulence</code> and <code>effective_viscosity</code>), which all have default values. The JSON string from the builder is the direct input to Stormflow:</p>
+<p>The builder also contains the solver settings (<code>velocity_solver</code>, <code>pressure_solver</code>, <code>solver_settings</code>, <code>turbulence</code> and <code>effective_viscosity</code>), which all have default values. The boundary conditions are described in the <a href="#boundary-conditions">Stormflow chapter</a>. The JSON string from the builder is the direct input to Stormflow:</p>
 <pre><code class="language-python">from pystormflow import Simulation
 
 simulation = Simulation(simulation_builder.to_json_string())
@@ -2715,6 +2996,8 @@ dynamic = DynamicTimeControl(time_step=0.01, end_time=60.0, max_courant_number=1
 </ul>
 <p>The fields are written 10 times during the simulation, and only the latest write is kept (<code>purgeWrite 1</code>). The base folder contains a steady and a dynamic version of <code>system/controlDict</code> and <code>system/fvSchemes</code>, marked with the suffixes <code>.steady</code> and <code>.dynamic</code>, and the matching version is used in the case.</p>
 <h3 id="boundary-conditions-1"><a class="header" href="#boundary-conditions-1">Boundary conditions</a></h3>
+<p>The boundary conditions are set up from the patches in the base folder, according to <code>boundary_condition_type</code>.</p>
+<p>With the default, <code>WindInletOutlet</code>, the patches in the base folder are used as they are: <code>vertical_sides</code>, <code>z_max</code> (top) and <code>z_min</code> (bottom):</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -2729,7 +3012,23 @@ dynamic = DynamicTimeControl(time_step=0.01, end_time=60.0, max_courant_number=1
 </tbody>
 </table>
 </div>
-<p>The apparent wind at the vertical sides varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>. It is also used as the initial velocity in the domain, evaluated at 10 m height. Since the base folder assumes that z is up, <code>wind_environment.up_direction</code> must be <code>(0, 0, 1)</code>. Gusts and inflow corrections are not supported.</p>
+<p>With <code>WindTunnel</code>, the patches are replaced by <code>inlet</code> (the start of the x axis), <code>outlet</code> (the end of the x axis) and <code>tunnel_walls</code> (the faces along the y and z axes). The conditions are taken from the patches in the base folder: the inlet gets the conditions of the vertical sides, the outlet the conditions of the top, and the walls the slip conditions of the bottom. A custom base folder must therefore contain the same patches as the default one.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th><th>Turbulence</th></tr>
+</thead>
+<tbody>
+<tr><td><code>inlet</code></td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td><td>Inlet value where the flow enters, zero gradient where it leaves</td></tr>
+<tr><td><code>outlet</code></td><td>Zero gradient</td><td>Fixed at zero</td><td>Zero gradient</td></tr>
+<tr><td><code>tunnel_walls</code></td><td>Slip</td><td>Slip</td><td>Slip</td></tr>
+<tr><td><code>geometries</code></td><td>No slip</td><td>Zero gradient</td><td>Wall functions</td></tr>
+<tr><td><code>slip_geometries</code></td><td>Slip</td><td>Slip</td><td>Slip</td></tr>
+</tbody>
+</table>
+</div>
+<p>The apparent wind must be along the positive x axis at all heights in the domain for <code>WindTunnel</code>, which is checked when the builder is created. Whether the flow enters the domain is decided from the direction of the apparent wind relative to the boundary, so the whole inlet has a fixed velocity in this case. This is a small difference from Stormflow, where the decision is made from the local velocity in the domain.</p>
+<p>In both variants, the apparent wind at the inlet varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>, so the velocity profile can be constant or follow an atmospheric boundary layer. It is also used as the initial velocity in the domain, evaluated at 10 m height. Since the base folder assumes that z is up, <code>wind_environment.up_direction</code> must be <code>(0, 0, 1)</code>. Gusts and inflow corrections are not supported.</p>
 <p>The turbulence is set by <code>inlet_turbulence</code>, which is an <code>IntensityAndViscosityRatio</code> with the fields <code>turbulence_intensity</code> (default 0.01) and <code>eddy_viscosity_ratio</code> (default 10). The values are the same at all heights, and are computed as <code>k = 1.5 (I U)^2</code> and <code>omega = k / (r nu)</code>, where <code>U</code> is the true wind velocity at 10 m height, or the magnitude of <code>linear_velocity</code> if there is no true wind, and <code>nu</code> is the viscosity in the base folder.</p>
 <h3 id="writing-the-case"><a class="header" href="#writing-the-case">Writing the case</a></h3>
 <pre><code class="language-python">simulation_builder.write_foam_case("path/to/case")
@@ -2756,10 +3055,8 @@ bash run.sh 8    # 8 processes
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="other-functionalities"><a class="header" href="#other-functionalities">Other functionalities</a></h1>
 <p>The library also contains several helper functionalities that model things that are useful for wind propulsion simulations, but that, technically speaking, are not part of either the lifting line or actuator line methods. These functionalities are described in this chapter.</p>
-<p>This chapter is, however, still under construction. The plan is to extend the sub-chapters with <strong>more details “soon”</strong>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="wind-environment"><a class="header" href="#wind-environment">Wind environment</a></h1>
-<p>DESCRIPTION TO BE EXTENDED LATER. ALSO, THE EXACT SHAPE OF THE DATA STRUCTURE STILL UNDER DEVELOPMENT.</p>
 <p>The Stormbird library contains a data structure for representing the wind environment in different situations. The main point of this structure is to be able to provide spatially varying inflow conditions at all relevant points in a simulation. This fits most naturally with the lifting line simulations, but the wind model is kept separate so that it can, potentially, also be used with other simplified models of wind propulsion devices if needed.</p>
 <p>The basic structure for the wind environment is given below:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -2775,7 +3072,7 @@ bash run.sh 8    # 8 processes
 <p>The fields in the structure are described below:</p>
 <ul>
 <li><code>up_direction</code>: A vector defining the “up” direction in the simulation. This is used to determine the height above the water surface.</li>
-<li><code>wind_rotation_axis</code>: A vector defining the axis where the wind direction is rotated around when changing wind direction.</li>
+<li><code>wind_rotation_axis</code>: A vector defining the axis where the wind direction is rotated around when changing wind direction. The default is the negative z-axis, i.e., opposite of the default up direction, so that the wind direction is measured clockwise seen from above.</li>
 <li><code>zero_direction_vector</code>: A vector defining the reference direction for the wind. The wind will point along this vector when the wind direction angle is zero.</li>
 <li><code>water_plane_height</code>: A scalar defining the height of the water plane in the simulation.</li>
 <li><code>inflow_corrections</code>: An optional structure containing corrections to be applied to the inflow velocity, which is primarily intended for modeling disturbances due to the rest of the ship. See more about this correction model below.</li>
@@ -2821,9 +3118,8 @@ pub struct LogarithmicModel {
 <span class="boring">}</span></code></pre>
 <p>For the power model, the <code>reference_height</code> is set to 10 m by default and the <code>power_factor</code> to 1/9. For the logarithmic model, the <code>friction_velocity</code> and <code>surface_roughness</code> must be specified. The <code>obukhov_length</code> is optional, and can be used to correct the profile for non-neutral (stable or unstable) atmospheric conditions. The remaining fields have default values that should be useful in most cases.</p>
 <h2 id="inflow-corrections"><a class="header" href="#inflow-corrections">Inflow corrections</a></h2>
-<p>NOTE: These structures, in particular, have room for improvements. Might therefore change in future versions. MORE TO COME LATER.</p>
 <p>The <code>inflow_corrections</code> variable is a data structure used to store corrections to the freestream velocity due to anything that might disturb the inflow. That is, it is primarily intended to model the wind disturbances caused by the ship itself. The data structure is set up such that the correction can depend on both the spanwise position along each sail and the apparent wind direction.</p>
-<p>The correction factors themselves consist of two parts: A magnitude factor that scales the local inflow velocity, and an angle correction that modifies the local apparent wind angle.</p>
+<p>The correction factors themselves consist of two parts: A magnitude factor that scales the local inflow velocity, and an angle correction, in radians, that rotates the local inflow velocity around the <code>up_direction</code>.</p>
 <p>The data structures to set this up are shown below. In practice, these structures are just used to do linear interpolation on the correction factors as needed during the simulation:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2839,8 +3135,84 @@ pub struct InflowCorrections {
     pub corrections: Vec&lt;InflowCorrectionsSingleDirection&gt;,
 }
 <span class="boring">}</span></code></pre>
+<p>The corrections are applied as follows:</p>
+<ul>
+<li><strong>Each sail has its own corrections.</strong> The <code>wing_indices</code> give the range of values in the vectors that belong to each sail. The corrections for a sail are interpolated linearly between the <code>height_values</code>, where the height of a control point is its position along the <code>up_direction</code>. A single value for a sail gives a correction that is constant along the span.</li>
+<li><strong>The corrections are interpolated between apparent wind directions.</strong> The corrected velocity is computed with the corrections for each of the <code>apparent_wind_directions</code>, and then interpolated linearly at the current apparent wind direction. The apparent wind direction is measured from the <code>zero_direction_vector</code>, around the <code>wind_rotation_axis</code>. In the complete sail model, it is computed at a reference height of 10 m.</li>
+<li><strong>The directions must be sorted.</strong> The <code>apparent_wind_directions</code> must be in increasing order. Outside the range of the given directions, the closest corrections are used. There is no wrap-around at ±180 degrees, so the corrections must cover the full range of directions that are relevant.</li>
+</ul>
 <h3 id="tuning-the-inflow-corrections"><a class="header" href="#tuning-the-inflow-corrections">Tuning the inflow corrections</a></h3>
-<p>TO COME</p>
+<p>The correction factors must come from an external source, typically CFD simulations of the ship. There are two general approaches to find them.</p>
+<h4 id="approach-1-velocity-measurements-without-sails"><a class="header" href="#approach-1-velocity-measurements-without-sails">Approach 1: velocity measurements without sails</a></h4>
+<p>The first approach is to simulate the ship without any sails, and to measure the velocity at the positions where the sails will be placed. The magnitude correction is then the ratio between the measured velocity and the undisturbed apparent wind at the same location, and the angle correction is the angle between the two. This gives corrections that vary along the span, which is the main advantage of the approach. However, it does not capture any interaction between the sails and the flow around the ship, and the corrections are only as good as the assumption that the velocity without sails is the relevant inflow to the sails.</p>
+<p>One way to do the measurements is to use an actuator line model in the CFD simulation, where the sails use the <code>EffectiveWindSensor</code> section model. The sails then give no forces, but the velocity is still sampled at the control points. The <code>InflowCorrectionsSingleDirection.from_simulation_result</code> function in <code>stormbird_setup</code> computes the corrections from the result of such a simulation:</p>
+<pre><code class="language-python">import json
+
+from stormbird_setup.wind import (
+    WindEnvironment, WindCondition, PowerModel, InflowCorrectionsSingleDirection
+)
+
+wind_environment = WindEnvironment()
+
+# Must match the inflow conditions in the CFD simulation, including any variation with height
+wind_condition = WindCondition(
+    direction_coming_from = direction,
+    velocity_variation = PowerModel(reference_velocity = 10.0)
+)
+
+with open("postProcessing/stormbird_full_results/full_results_1000.json") as file:
+    stormbird_result = json.load(file)
+
+corrections = InflowCorrectionsSingleDirection.from_simulation_result(
+    stormbird_result,
+    wind_environment,
+    wind_condition,
+    ship_velocity = 5.0
+)
+
+apparent_wind_direction = wind_environment.apparent_wind_direction_from_condition_and_linear_velocity(
+    wind_condition,
+    wind_environment.linear_velocity_from_ship_velocity(5.0)
+)
+</code></pre>
+<p>The undisturbed apparent wind is computed from the wind environment, the wind condition, and the ship velocity, which is along the <code>zero_direction_vector</code>, as in the complete sail model. Only the part of the measured velocity that is normal to the <code>up_direction</code> is used. The sails do not need to be aligned with the flow.</p>
+<h4 id="approach-2-force-tuning"><a class="header" href="#approach-2-force-tuning">Approach 2: force tuning</a></h4>
+<p>The second, and generally more accurate, approach is to tune the corrections so that the forces from a lifting line simulation match force measurements, for instance from CFD simulations with the sails present. The measurements can either come from simulations with the full geometry of the sails, or from simulations with actuator lines. This includes the interaction between the sails and the flow around the ship, but gives only one magnitude correction and one angle correction for each sail and condition, which are constant along the span.</p>
+<p>The choice of measurement affects what the corrections represent:</p>
+<ul>
+<li><strong>Actuator line simulations</strong> use the same section models as the lifting line simulation. Any difference in the forces can then be attributed to the inflow, so the corrections isolate the effect of the ship.</li>
+<li><strong>Simulations with the full geometry</strong> also include any errors in the section models, which the corrections will then compensate for as well. That can be useful, but means that the corrections are tied to the section models used in the tuning.</li>
+</ul>
+<p>In both cases, the measured forces must be the total force on each sail, in the same coordinate system as the lifting line simulation, and the sails must have the same settings as in the measurements, e.g., the same local wing angles and internal states.</p>
+<p>The tuning based on forces can be done with the <code>InflowCorrectionsForceTuner</code> class in <code>stormbird_setup</code>. It runs lifting line simulations, and therefore requires pystormbird, which is an optional dependency that can be installed with <code>pip install stormbird_setup[force-tuning]</code>. The tuner takes a builder for a quasi-steady lifting line simulation and a wind environment. Each measurement is given as a <code>ForceTuningCase</code>:</p>
+<pre><code class="language-python">from stormbird_setup.wind import (
+    WindEnvironment, WindCondition, PowerModel, InflowCorrectionsForceTuner, ForceTuningCase
+)
+
+tuner = InflowCorrectionsForceTuner(
+    simulation_builder = simulation_builder, # Must use quasi-steady settings
+    wind_environment = WindEnvironment()
+)
+
+cases = [
+    ForceTuningCase(
+        wind_condition = WindCondition(
+            direction_coming_from = direction,
+            velocity_variation = PowerModel(reference_velocity = 10.0)
+        ),
+        ship_velocity = 5.0,
+        local_wing_angles = local_wing_angles,      # One value for each sail
+        target_forces = measured_forces,            # One SpatialVector for each sail
+    )
+    for direction, local_wing_angles, measured_forces in measurements
+]
+
+result = tuner.tune(cases)
+
+wind_environment = WindEnvironment(inflow_corrections = result.inflow_corrections)
+</code></pre>
+<p>For each case, the magnitude and angle corrections for all sails are found together, as the sails affect each other through the induced velocities. This is done with a least squares optimization of the difference between the simulated and the measured forces, relative to the mean magnitude of the measured forces in the case. The corrections are combined into inflow corrections that are sorted by the apparent wind direction, which is computed at the <code>reference_height</code> in the settings, 10 m by default, as in the complete sail model. The cases must therefore have different apparent wind directions. To tune corrections for different ship velocities, tune the cases for each velocity separately.</p>
+<p>The <code>ForceTuningSettings</code> control the bounds of the corrections, optional weights for the error in each force component, the reference height, and the step for the finite difference approximation in the optimization. The result for each case contains the tuned corrections, the simulated forces, the remaining error, and whether the optimization converged. This should be checked, as corrections that end at the bounds indicate that the forces can not be matched with a reasonable correction of the inflow alone.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="control-system"><a class="header" href="#control-system">Control system</a></h1>
 <p>NOTE: MORE TO COME ON THIS LATER.</p>

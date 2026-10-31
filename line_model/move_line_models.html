@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -200,13 +200,15 @@
     pub velocity: Vec&lt;SpatialVector&gt;,
     pub angles_of_attack: Vec&lt;f64&gt;,
     pub section_models_internal_state: Vec&lt;f64&gt;,
+    pub amount_of_stall: Vec&lt;f64&gt;,
     pub acceleration: Vec&lt;SpatialVector&gt;,
     pub rotation_velocity: SpatialVector,
     pub coordinate_system: CoordinateSystem,
 }
 <span class="boring">}</span></code></pre>
 <p>Each element in the vectors in the <code>SectionalForcesInput</code> corresponds to a line element in the <code>LineForceModel</code>. Both the velocity and the acceleration are a combination of freestream conditions, induced velocities, and motion velocities.</p>
-<p>The <code>section_models_internal_state</code> is the internal state given to the section model on each line element, which is converted from the internal state set on the wing (see the <a href="#control-variables">control variables</a> below). For some section models, the conversion depends on the local velocity, which means that the motion can also affect the section internal states. For instance, the spin ratio of a rotor sail with a constant rotational speed changes when the felt velocity changes, and the suction coefficient of a suction sail with a constant fan power varies with the local flow conditions. The motion velocities can either be automatically calculated based on finite difference and the time history of the motion or set manually if the variables are available from some other sources (e.g., a rigid body solver of a ship).</p>
+<p>The <code>section_models_internal_state</code> is the internal state given to the section model on each line element, which is converted from the internal state set on the wing (see the <a href="#control-variables">control variables</a> below). For some section models, the conversion depends on the local velocity, which means that the motion can also affect the section internal states. For instance, the spin ratio of a rotor sail with a constant rotational speed changes when the felt velocity changes, and the suction coefficient of a suction sail with a constant fan power varies with the local flow conditions. The <code>amount_of_stall</code> is the amount of stall used for the lift and drag on each line element, between 0 (no stall) and 1 (full stall), as explained in the <a href="../sectional_models/foil_model.html">foil model chapter</a>. For wings with a <a href="../sectional_models/dynamic_stall.html">dynamic stall model</a>, this is the dynamic amount of stall. The value is zero for section models that do not build on the foil model, such as the rotating cylinder.</p>
+<p>The motion velocities can either be automatically calculated based on finite difference and the time history of the motion or set manually if the variables are available from some other sources (e.g., a rigid body solver of a ship).</p>
 <h2 id="control-variables"><a class="header" href="#control-variables">Control variables</a></h2>
 <p>Two types of control variables exist for the sails in a <code>LineForceModel</code>.</p>
 <p>The first is the <code>local_wing_angles</code>, which defines the rotation of the sails around its local axis. The local axis is defined as the axis of the first span line. If the sail is defined to be oriented in the z-direction as the span direction, a local wing angle value will then rotate all chord vectors around the z-axis.</p>

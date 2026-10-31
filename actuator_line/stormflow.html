@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -196,20 +196,35 @@
 <h3 id="turbulence"><a class="header" href="#turbulence">Turbulence</a></h3>
 <p>By default, there is no turbulence model, and the <code>effective_viscosity</code> is a constant viscosity in the whole domain. Optionally, the realizable k-epsilon RANS model can be used, implemented in the same way as <code>realizableKE</code> in OpenFOAM. The main purpose is to make comparisons with conventional RANS solvers easier, as the eddy viscosity has a large effect on the wakes. When the model is used, <code>effective_viscosity</code> should be the molecular viscosity.</p>
 <h3 id="boundary-conditions"><a class="header" href="#boundary-conditions">Boundary conditions</a></h3>
-<p>The outer boundaries are defined relative to the up direction of the <a href="../utils/wind_environment.html">wind environment</a>, which must be aligned with one of the grid axes.</p>
+<p>How the boundary conditions are assigned to the outer boundaries of the domain is set with the <code>boundary_condition_type</code> setting, which takes a <code>BoundaryConditionType</code>. In both variants, the up direction of the <a href="../utils/wind_environment.html">wind environment</a> must be aligned with one of the grid axes.</p>
+<p>The default, <code>WindInletOutlet</code>, is for wind propulsion devices in the open air. The boundaries are defined relative to the up direction:</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th></tr>
+<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th><th>Turbulence</th></tr>
 </thead>
 <tbody>
-<tr><td>Vertical sides</td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td></tr>
-<tr><td>Top</td><td>Zero gradient</td><td>Fixed at zero</td></tr>
-<tr><td>Bottom</td><td>Slip</td><td>Zero gradient</td></tr>
+<tr><td>Vertical sides</td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td><td>Inlet value where the flow enters, zero gradient where it leaves</td></tr>
+<tr><td>Top</td><td>Zero gradient</td><td>Fixed at zero</td><td>Zero gradient</td></tr>
+<tr><td>Bottom</td><td>Slip</td><td>Zero gradient</td><td>Zero gradient</td></tr>
 </tbody>
 </table>
 </div>
-<p>The apparent wind at the sides varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>. All boundaries except the top can be changed to slip walls with the <code>slip_wall_boundary_override</code> setting.</p>
+<p><code>WindTunnel</code> is for reproducing wind tunnel experiments. The x axis goes from the inlet to the outlet, and all other faces are walls:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Boundary</th><th>Velocity</th><th>Pressure</th><th>Turbulence</th></tr>
+</thead>
+<tbody>
+<tr><td>Start of the x axis (inlet)</td><td>Apparent wind where it flows into the domain, zero gradient where it flows out</td><td>Zero gradient</td><td>Inlet value where the flow enters, zero gradient where it leaves</td></tr>
+<tr><td>End of the x axis (outlet)</td><td>Zero gradient</td><td>Fixed at zero</td><td>Zero gradient</td></tr>
+<tr><td>All faces along the y and z axes</td><td>Slip</td><td>Zero gradient</td><td>Zero gradient</td></tr>
+</tbody>
+</table>
+</div>
+<p>The apparent wind must be along the positive x axis at all heights, and the up direction must be along the y or z axis. Both are checked when the simulation is built. The walls are slip walls, so the boundary layers on the walls of the wind tunnel are not modeled.</p>
+<p>In both variants, the apparent wind at the inlet varies with height, as given by the <code>wind_condition</code>, <code>wind_environment</code> and <code>linear_velocity</code>. The velocity profile can therefore be constant, by giving a constant <code>velocity_variation</code> in the wind condition, or follow an atmospheric boundary layer, by using a logarithmic or power law model. The apparent wind is also used as the initial velocity in the domain. The inlet values of the turbulence, if the turbulence model is used, are set separately with <code>turbulence.inlet</code>.</p>
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <p><code>pystormflow</code> is installed with pip. It is compiled during the installation, so the <a href="https://rust-lang.org/">Rust toolchain</a> must be installed first:</p>
 <pre><code class="language-bash">pip install pystormflow

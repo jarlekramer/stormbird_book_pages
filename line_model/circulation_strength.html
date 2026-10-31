@@ -38,10 +38,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-87625286.js";
+            window.path_to_searchindex_js = "../searchindex-ce7dd6fd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-8bb202f0.js"></script>
+        <script src="../toc-089a1913.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -199,27 +199,22 @@ L = 0.5 \cdot \rho \cdot c \cdot C_L \cdot U^2
 </span>pub fn circulation_strength_raw(
     &amp;self, 
     angles_of_attack: &amp;[f64],
+    internal_states: &amp;[f64],
     velocity: &amp;[SpatialVector], 
 ) -&gt; Vec&lt;f64&gt; {
-    let mut cl = self.lift_coefficients_pre_stall_with_stall_drop_off(
+    let cl = self.lift_coefficients_for_circulation(
         angles_of_attack, 
+        internal_states,
         velocity
     );
-    
-    if self.force_calculation_settings.include_viscous_lift_in_the_circulation {
-        let cl_viscous = self.lift_coefficients_post_stall_with_stall_weight(angles_of_attack);
-        
-        for i in 0..cl.len() {
-            cl[i] += cl_viscous[i];
-        }
-    }
 
     (0..velocity.len()).map(|index| {
         -0.5 * self.chord_lengths[index] * velocity[index].length() * cl[index]
     }).collect()
 }
 <span class="boring">}</span></code></pre>
-<p>Note that, by default, only the pre-stall part of the lift coefficient from the sectional model is used to calculate the circulation strength. The post-stall part of the lift is instead treated as a separate <em>viscous lift</em> force, which does not affect the lift-induced velocities. This can be changed with the <code>include_viscous_lift_in_the_circulation</code> setting. See the <a href="./force_calculations.html">force calculations chapter</a> for more.</p>
+<p>Note that, by default, only the pre-stall part of the lift coefficient from the sectional model is used to calculate the circulation strength. The post-stall part of the lift is instead treated as a separate <em>viscous lift</em> force, which does not affect the lift-induced velocities. This can be changed with the <code>include_viscous_lift_in_the_circulation</code> setting, in which case <code>lift_coefficients_for_circulation</code> returns the sum of the pre-stall and post-stall parts. The same lift coefficient is used when computing the residual in the solvers. See the <a href="./force_calculations.html">force calculations chapter</a> for more.</p>
+<p>For wings with a <a href="../sectional_models/dynamic_stall.html">dynamic stall model</a>, the split between the pre-stall and the post-stall lift is based on the dynamic amount of stall rather than the static value, and the lift is computed with the lagged internal state, if that lag is used. This is the reason why the velocity is also given to the lift coefficient function, as the dynamic stall model needs it to compute the non-dimensional time step. The pre-stall and post-stall parts are computed together, so that the dynamic stall model is only evaluated once for each line element.</p>
 <h2 id="optional-corrections"><a class="header" href="#optional-corrections">Optional corrections</a></h2>
 <p>Sometimes, there might be noise in the estimated circulation strength, which might cause instabilities and errors in the estimated forces. A typical example is lifting line simulations of stalled wings - especially when the lift coefficient is very large.</p>
 <p>To handle such cases in a practical manner, there are optional <em>corrections methods</em> that can be used when estimating the circulation strength. These methods are controlled through a <code>CirculationCorrection</code> enum that is specified for the line force model. To set up different types of corrections, a <code>CirculationCorrectionBuilder</code> is used, which has the following structure:</p>
